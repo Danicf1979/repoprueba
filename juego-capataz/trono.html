@@ -230,7 +230,7 @@ a { color: var(--oro); }
         <kbd>Z</kbd><span>Mecida: luce en la plaza, pero ensancha el trono y cansa</span>
         <kbd>P</kbd><span>A pulso: sube el trono 45 cm unos segundos; luce mucho ante la tribuna</span>
         <kbd>V · rueda</kbd><span>Cámara: detrás, mayordomo, desde arriba, capataz de la esquina · acercar o alejar</span>
-        <kbd>B</kbd><span><em>¡Música!</em>: pedir a la banda que toque una marcha si está a tambor o en silencio</span>
+        <kbd>B</kbd><span><em>¡Música!</em>: pedir a la banda que toque una marcha si está a tambor o en silencio. Su repertorio son 5 marchas; si bajas el trono, la banda corta la que esté tocando</span>
         <kbd>M · N · R</kbd><span>Quitar o poner el sonido de la banda · voz · volver a empezar</span>
       </div>
       <p>El trono mide 4,4 m de ancho con los hombres de trono, 13 m de largo con varales y 4,6 m de alto con el palio. El mapa marca con línea discontinua lo que está en alto.</p>
@@ -616,10 +616,14 @@ function bombo(t) { const c = ac(); if (!c) return; const o = c.createOscillator
 function caja(t, v) { const c = ac(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'highpass'; f.frequency.value = 1700; env(g, t, v, 0.11); s.connect(f); f.connect(g); g.connect(AU.master); s.start(t); s.stop(t + 0.15); }
 function metal(t, f0, v) { const c = ac(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'sawtooth'; o.frequency.value = f0; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; env(g, t, v, BEAT * 0.9); o.connect(lp); lp.connect(g); g.connect(AU.master); o.start(t); o.stop(t + BEAT); }
 function sGolpe(fuerza) { const c = ac(); if (!c) return; const t = c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(80, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.3); env(g, t, 0.6 + 0.4 * fuerza, 0.4); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.45); const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'lowpass'; f.frequency.value = 900; env(g2, t, 0.5, 0.3); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.35); }
-// Dos marchas inventadas (16 compases de melodía que se repiten) y el toque de tambor
+// Repertorio de la banda: 5 marchas inventadas, elegidas entre la banda y la hermandad; solo toca estas.
+// (Melodías de 16 tiempos que se repiten; en el modo historia, el repertorio lo elegirá el jugador.)
 const MARCHAS = [
-  { nombre: 'Marcha procesional nº 1', notas: [220, 247, 262, 247, 220, 196, 220, 0, 196, 220, 247, 262, 294, 262, 247, 0] },
-  { nombre: 'Marcha procesional nº 2', notas: [196, 0, 220, 233, 262, 0, 233, 220, 196, 175, 196, 0, 220, 196, 175, 0] },
+  { nombre: 'Esperanza de San Roque', notas: [294, 0, 349, 330, 294, 262, 294, 0, 220, 262, 294, 349, 392, 349, 330, 0] },
+  { nombre: 'Plaza de la Tribuna', notas: [440, 0, 392, 349, 330, 349, 392, 0, 349, 330, 294, 262, 294, 330, 294, 0] },
+  { nombre: 'Madrugada en el Ángel', notas: [220, 262, 294, 0, 294, 330, 349, 0, 392, 349, 330, 294, 262, 0, 294, 0] },
+  { nombre: 'Nave y campana', notas: [349, 0, 440, 392, 349, 330, 349, 392, 440, 0, 466, 440, 392, 349, 330, 0] },
+  { nombre: 'Calle Real', notas: [294, 294, 0, 262, 233, 220, 0, 233, 262, 294, 330, 349, 330, 294, 0, 0] },
 ];
 const BEATS_MARCHA = 64, BEATS_TAMBOR = 24;
 let vozES = null;
@@ -667,7 +671,7 @@ function nuevaPartida() {
     golpes: 0, ultimoGolpe: -9, shake: 0, inclin: 0, danio: 0,
     luci: 0, lev: { perfectas: 0, buenas: 0, desiguales: 0 }, descansos: 0,
     t0: null, tiempo: 0, fin: false, cola: [], beatAcc: 0, beatN: 0,
-    banda: { estado: 'silencio', beats: 0, marcha: 0, pedida: false },
+    banda: { estado: 'silencio', beats: 0, marcha: Math.floor(Math.random() * MARCHAS.length) - 1, pedida: false },
   };
   G.alt = -0.4; G.altObj = -0.4;
   camSnap = true;
@@ -695,7 +699,7 @@ const ACC = {
       G.toques.push(now); G.sec.push('s'); pintarToques();
     } else if (arriba()) {
       if (enMarcha()) { G.vObj = 0; G.wObj = 0; G.latObj = 0; G.paso = 1; G.giroHeld = 0; G.latHeld = 0; G.sec = ['s']; pintarToques('Parar'); }
-      else if (G.estado === 'arriba') { G.estado = 'bajando'; G.liftT = 0; G.sec = ['s', 's']; pintarToques('Abajo'); }
+      else if (G.estado === 'arriba') { G.estado = 'bajando'; G.liftT = 0; cortarBanda(); G.sec = ['s', 's']; pintarToques('Abajo'); }
     }
   },
   fuerte() {
@@ -830,8 +834,10 @@ function terminar() {
 }
 
 // ---------------------------------------------------------------- bucle
-// La banda va a lo suyo: toca la marcha entera aunque el trono se pare o se baje;
+// La banda va a lo suyo: sigue la marcha aunque el trono se pare, pero la corta si lo bajan;
 // al acabar descansa: a tambor si el trono anda, en silencio si está parado o en el suelo.
+// Si bajan el trono a mitad de marcha, la banda la corta.
+function cortarBanda() { const B = G.banda; if (B.estado !== 'marcha') return; B.estado = 'silencio'; B.beats = 0; B.pedida = false; const c = ac(); if (c && AU.musica) bombo(c.currentTime + 0.02); }
 function empezarMarcha() { const B = G.banda; B.estado = 'marcha'; B.beats = 0; B.marcha = (B.marcha + 1) % MARCHAS.length; B.pedida = false; }
 function onBeat() {
   G.beatN++;
@@ -879,7 +885,7 @@ function update(dt) {
     G.cans += (mov ? 0.32 * (G.v > 0.05 ? [1, 2, 3.5][G.paso - 1] : 1) : 0.2) * dt + (G.mecida ? 0.25 * dt : 0) + (G.estado === 'pulso' ? 2.5 * dt : 0);
     if (G.cans >= 100 && G.estado === 'arriba') {
       G.cans = 100; toast('¡La cuadrilla no puede más! El trono baja de golpe.'); G.lev.desiguales++; G.danio += 8; G.shake = 0.6; sGolpe(0.7);
-      G.estado = 'bajando'; G.liftT = 0.5; G.vObj = 0; G.wObj = 0; G.latObj = 0;
+      G.estado = 'bajando'; G.liftT = 0.5; G.vObj = 0; G.wObj = 0; G.latObj = 0; cortarBanda();
     }
   }
 
