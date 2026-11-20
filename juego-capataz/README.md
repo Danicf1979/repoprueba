@@ -7,7 +7,7 @@ Prototipo jugable en el navegador de un juego de Semana Santa en el que mandas u
 
 ## El trono (etapa 2)
 
-Eres el mayordomo de trono y llevas un trono de palio desde la nave hasta la entrada del recorrido oficial, antes de las 19:40.
+Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa hermandad hasta la entrada del recorrido oficial, antes de las 20:10, por un barrio con varias calles. Antes de salir eliges el itinerario en un plano.
 
 | Tecla | Orden |
 |---|---|
@@ -26,7 +26,11 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave hasta la ent
 - **Cuerpos del trono:** varales y hombres de trono (4,4 × 13 m, hasta 1,9 m), mesa y candelería (hasta 3,1 m), palio (hasta 4,6 m) y cuatro arbotantes de hojarasca (dorados o de plata) que se abren en diagonal desde las esquinas del cajillo (5,1 m de ancho entre 3,15 y 4,75 m de alto). Si un arbotante choca, se rompen y se apagan tulipas, que quedan apuntadas como desperfectos.
 - **Cansancio sin relevos:** solo baja con el trono en el suelo. Si se descansa más de 35 s, la cuadrilla se enfría y la levantá sale peor.
 - **Retardo:** las voces tardan 0,7 s en cumplirse (los capataces de las esquinas las repiten); la campana es inmediata.
-- **Recorrido:** nave → calle Ancha (ficus, terraza, quiosco) → plaza de la Tribuna (fuente, público) → calle del Ángel → esquina estrecha → calle Real (semáforo, farol, guirnalda a 4,75 m, balcón) → recorrido oficial.
+- **Itinerario:** el barrio tiene tres calles que suben hacia el recorrido oficial (Carretería, la de los Balcones y Granada) y tres que las cruzan (del Ángel/Compañía, Álamos y Císter), con la plaza de la Tribuna. Se elige tocando los cruces en el plano o con uno de los tres itinerarios propuestos. Las calles del itinerario las corta la policía y se llenan de público; las demás tienen coches aparcados, y salirse del itinerario resta un punto («la Agrupación lo apuntará»).
+- **Cada calle tiene su dificultad:** ficus alternos en Carretería, balcones a 4,4 m que dejan unos centímetros a los arbotantes en la de los Balcones, naranjos en Granada, un andamio en Álamos, semáforos con el brazo metido, guirnaldas y cables a los que no se puede subir a pulso. Los cruces tienen chaflanes para poder girar el trono sobre sí mismo.
+- **Momentos:** parado delante de la iglesia de Santiago, alguien canta una saeta; delante del convento de las Clarisas, en silencio, cantan las monjas. La tribuna de la plaza y la peña de calle Císter dan lucimiento a la mecida y a la levantá a pulso.
+- **Partida guardada:** cada vez que bajas el trono para descansar se guarda; en la pantalla de inicio aparece «Continuar la partida».
+- **Gráficos:** reflejos de entorno para que el oro y la plata parezcan metal, resplandor (bloom) de velas, tulipas y farolas, sombras, Virgen con rostro pintado, rostrillo, corona imperial y ráfaga, público con cuerpo, brazos y piernas. El botón «Gráficos» baja la calidad en móviles lentos (altos: todo; medios: sin sombras; bajos: sin resplandor).
 
 ## La mudanza (etapa 1)
 
