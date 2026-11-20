@@ -125,6 +125,33 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
 .permiso { border: 1px solid var(--borde); border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; line-height: 1.4; margin-top: 6px; }
 .permiso.si { border-color: var(--verde); background: rgba(40,80,50,0.25); }
 .permiso.no { border-color: var(--sangre); background: rgba(80,20,30,0.25); }
+#panel .extra { display: none; }
+#panel.info .extra { display: block; }
+#panel.info #banda-fila { display: flex; }
+#siguiente { margin: 0; font-size: 0.86rem; line-height: 1.35; color: var(--cera); }
+#siguiente strong { color: var(--oro); font-weight: 500; }
+#b-info { padding: 1px 9px; font-family: var(--font-d); }
+#menu-herr { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.cab-inicio { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.btn.chico { padding: 6px 12px; font-size: 0.9rem; }
+.pasos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.pasos button { width: 100%; background: transparent; border: 1px solid var(--borde); border-radius: 8px; padding: 8px 6px; font-family: var(--font-d); font-size: 0.95rem; color: var(--cera-2); cursor: pointer; }
+.pasos button.on { background: var(--oro-suave); border-color: var(--oro); color: var(--cera); }
+section[data-panel] { display: grid; gap: 12px; }
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.tarjeta { text-align: left; background: rgba(255,255,255,0.03); border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: grid; gap: 4px; color: var(--cera); font: inherit; }
+.tarjeta b { font-family: var(--font-d); font-weight: 400; font-size: 1rem; color: var(--oro); }
+.tarjeta small { color: var(--cera-2); font-size: 0.78rem; }
+.tarjeta.on { border-color: var(--oro); background: var(--oro-suave); }
+.tarjeta[disabled] { opacity: 0.45; cursor: not-allowed; }
+.pie-inicio { display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--borde); padding-top: 12px; }
+.pantalla.mg { display: block; padding: 0; background: #0b0912; }
+#mg { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.mg-barra { position: absolute; top: calc(10px + var(--st)); left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 10px; }
+.mg-barra .nota { flex: 1; min-width: 160px; }
+.mg-info { position: absolute; left: 10px; bottom: calc(10px + var(--sb)); max-width: min(420px, calc(100% - 20px)); background: var(--panel-solido); border: 1px solid var(--oro); border-radius: 10px; padding: 10px 12px; line-height: 1.4; }
+.mg-leyenda { position: absolute; right: 10px; bottom: calc(10px + var(--sb)); max-width: 220px; background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 10px; font-size: 0.78rem; line-height: 1.6; color: var(--cera-2); }
+@media (max-width: 760px) { .mg-leyenda { display: none; } .pasos button { font-size: 0.78rem; } #panel .stats { grid-template-columns: repeat(3, 1fr); } #campana-fila > span:first-child { display: none; } #siguiente { font-size: 0.78rem; } #panel { gap: 4px; } }
 #plano { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--borde); background: #0b0912; cursor: pointer; touch-action: manipulation; }
 .btn.ruta { padding: 7px 12px; font-size: 0.9rem; }
 .btn.ruta.on { background: var(--oro-suave); border-color: var(--oro); }
@@ -155,24 +182,24 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
   <canvas id="c" aria-label="Escena 3D: un paso de misterio por calles estrechas, de noche"></canvas>
 
   <div id="panel" class="hud">
-    <div class="marca"><h1>Capataz</h1><span>La procesión · pasos</span></div>
-    <div class="stats">
+    <div class="marca"><h1>Capataz</h1><button class="mini" id="b-info" type="button" aria-label="Más información" title="Más información (I)">i</button></div>
+    <div class="stats"><b id="st-vel" hidden></b>
       <div><b id="st-hora">18:20</b><small>Hora</small></div>
       <div><b id="st-golpes">0</b><small>Golpes</small></div>
       <div><b id="st-luci">0</b><small>Lucimiento</small></div>
-      <div><b id="st-vel">0,00</b><small>m/s</small></div>
     </div>
     <div class="barra"><span class="t">Cansancio</span><span class="fondo"><i id="st-cans"></i></span><b id="st-cans-n">0</b></div>
     <div class="estado-fila"><i id="compas" aria-hidden="true"></i><span id="st-estado">En el suelo, sobre la mesa</span></div>
-    <div id="banda-fila" class="estado-fila" style="font-size:0.82rem;color:var(--cera-2)">Banda: <span id="st-banda">esperando a la levantá</span></div>
+    <div id="banda-fila" class="estado-fila extra" style="font-size:0.82rem;color:var(--cera-2)">Banda: <span id="st-banda">esperando a la levantá</span></div>
     <div id="campana-fila"><span>Llamador:</span><span class="toques" id="toques"></span><span id="campana-txt"></span></div>
-    <p id="objetivo"></p>
+    <p id="siguiente"></p>
+    <p id="objetivo" class="extra"></p>
   </div>
 
   <div id="mapa-wrap" class="hud">
     <canvas id="mapa" width="340" height="340" aria-label="Mapa de la calle alrededor del paso"></canvas>
     <div id="aviso" hidden><span class="t">Por delante</span><span class="v" id="aviso-txt"></span></div>
-    <div id="herr">
+    <div id="herr"><button class="mini" id="b-menu" type="button" aria-expanded="false">☰ Menú</button><div id="menu-herr" hidden>
       <button class="mini" id="b-cam" type="button">Cámara<kbd>V</kbd></button>
       <button class="mini" id="b-mus" type="button">Banda: sí<kbd>M</kbd></button>
       <button class="mini" id="b-voz" type="button">Voz: sí<kbd>N</kbd></button>
@@ -181,7 +208,8 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
       <button class="mini" id="b-graf" type="button">Gráficos: altos</button>
       <a class="mini" href="index.html">← La mudanza</a>
       <a class="mini" href="trono.html">El trono →</a>
-    </div>
+    <button class="mini" id="b-mapa-juego" type="button">Mapa<kbd>Tab</kbd></button>
+    </div></div>
   </div>
 
   <div id="orden" class="hud"><small id="orden-quien">El capataz manda</small><div id="orden-txt"></div><div id="orden-barra"><i></i></div></div>
@@ -208,36 +236,43 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
 
   <div id="inicio" class="pantalla">
     <div class="carta">
-      <h2>La procesión</h2>
-      <p class="sub" id="sub-inicio">Un paso de misterio desde el templo hasta la carrera oficial</p>
-      <p>Eres el capataz. Mandas a la cuadrilla con la voz y el llamador: los costaleros van dentro, no ven nada y solo te oyen a ti. Las calles son estrechas, con balcones y cables bajos. Los costaleros se cansan: haz los relevos a tiempo. Tienes que entrar en la carrera oficial antes de las 19:45, por el itinerario que elijas.</p>
-      <details class="como"><summary>Cómo se manda el paso</summary>
-      <div class="teclas">
-        <kbd>Espacio</kbd><span>Llamador. En tierra: un golpe, <em>«¡Atención, preparados!»</em>; otro golpe al poco, <em>«¡A esta es!»</em>, y el paso sube. Si llamas demasiado pronto o tarde, la levantá sale desigual</span>
-        <kbd>Espacio</kbd><span>En marcha, un golpe: <em>¡paramos!</em> Parado, otro: <em>¡ahí quedó!</em>, a tierra</span>
-        <kbd>W / S</kbd><span><em>¡De frente!</em> o atrás. En marcha, W otra vez da más paso y S lo afloja</span>
-        <kbd>A / D</kbd><span><em>Izquierda alante, derecha atrás</em> (y al revés): girar. Mantén pulsado</span>
-        <kbd>Q / E</kbd><span>Costero a costero: de lado</span>
-        <kbd>C</kbd><span><em>¡Agachaditos!</em>: el paso baja 35 cm para pasar bajo cables y balcones</span>
-        <kbd>X</kbd><span><em>Relevo</em>, con el paso en tierra: entra otra cuadrilla y el cansancio vuelve a cero, pero se pierde tiempo</span>
-        <kbd>Z · P</kbd><span>Mecida · levantá a pulso (luce, pero ojo con lo que haya encima)</span>
-      </div>
-      </details>
-      <h3>Nivel</h3>
-      <div class="acciones" id="niveles"></div>
-      <p class="nota"><strong id="nivel-titulo"></strong>. <span id="nivel-resumen"></span></p>
-      <h3>Itinerario</h3>
-      <p class="nota">Elige por dónde vas desde el templo hasta la carrera oficial: toca los cruces en orden (tocar el último lo quita) o elige uno propuesto. Las calles del itinerario se llenan de gente; si te sales, habrá coches aparcados y el Consejo lo apuntará. La partida se guarda en los puntos de guardado (los cruces con un aro en el plano), al terminar cada calle larga.</p>
-      <div class="acciones" id="rutas-tipo"></div>
-      <canvas id="plano" width="660" height="336" aria-label="Plano del barrio para elegir el itinerario"></canvas>
-      <p class="nota" id="ruta-info"></p>
-      <div class="acciones"><button class="btn sec" id="b-permiso" type="button">Pedir permisos</button></div>
-      <div id="permisos"></div>
-      <div class="acciones"><span class="nota">Orfebrería del paso:</span><button class="btn sec orfe" data-orfe="oro" type="button">Dorada</button><button class="btn sec orfe" data-orfe="plata" type="button">De plata</button></div>
-      <div class="acciones"><button class="btn" id="b-empezar" type="button">Empezar la salida</button><button class="btn sec" id="b-continuar" type="button" hidden>Continuar la partida</button><a class="btn sec" href="trono.html">El trono de Málaga</a></div>
-      <p class="nota" id="guardado"></p>
-      <p class="nota" id="record"></p>
+      <div class="cab-inicio"><h2>La procesión</h2><button class="btn sec chico" id="b-como" type="button">Cómo se juega</button></div>
+      <p class="sub" id="sub-inicio">Eres el capataz: mandas el paso con la voz y el llamador; los costaleros no ven nada.</p>
+      <ol class="pasos" role="tablist">
+        <li><button type="button" data-paso="1" class="on">1 · Nivel</button></li>
+        <li><button type="button" data-paso="2">2 · Itinerario</button></li>
+        <li><button type="button" data-paso="3">3 · Permisos y salida</button></li>
+      </ol>
+      <section data-panel="1">
+        <div class="tarjetas" id="niveles"></div>
+        <p class="nota"><strong id="nivel-titulo"></strong>. <span id="nivel-resumen"></span></p>
+        <div class="acciones"><button class="btn" type="button" data-ir="2">Elegir itinerario →</button><button class="btn sec" id="b-continuar" type="button" hidden>Continuar la partida guardada</button></div>
+        <p class="nota" id="guardado"></p>
+      </section>
+      <section data-panel="2" hidden>
+        <p class="nota">Toca los cruces en orden o elige un itinerario propuesto. Los cruces con aro son puntos de guardado.</p>
+        <div class="acciones" id="rutas-tipo"></div>
+        <canvas id="plano" width="660" height="336" aria-label="Plano del barrio para elegir el itinerario"></canvas>
+        <div class="acciones"><button class="btn sec" id="b-mapa-grande" type="button">Ver el mapa grande con los peligros</button></div>
+        <p class="nota" id="ruta-info"></p>
+        <div class="acciones"><button class="btn sec" type="button" data-ir="1">← Nivel</button><button class="btn" type="button" data-ir="3" id="b-a-permisos">Pedir permisos →</button></div>
+      </section>
+      <section data-panel="3" hidden>
+        <div id="permisos"></div>
+        <div class="acciones"><span class="nota">Orfebrería:</span><button class="btn sec orfe" data-orfe="oro" type="button">Dorada</button><button class="btn sec orfe" data-orfe="plata" type="button">De plata</button></div>
+        <div class="acciones"><button class="btn sec" type="button" data-ir="2">← Itinerario</button><button class="btn" id="b-empezar" type="button">¡Salimos!</button><button class="btn sec" id="b-permiso" type="button" hidden>Pedir permisos</button></div>
+        <p class="nota" id="record"></p>
+      </section>
+      <div class="pie-inicio"><a class="btn sec" href="trono.html">Tronos</a><a class="btn sec" href="index.html">La mudanza</a></div>
     </div>
+  </div>
+
+  <div id="mapa-grande" class="pantalla mg" hidden>
+    <canvas id="mg" aria-label="Mapa grande del barrio con los peligros"></canvas>
+    <div class="mg-barra"><strong id="mg-titulo">Mapa del barrio</strong><span class="nota">Toca un icono para ver qué hay. Toca los cruces para trazar el itinerario.</span>
+      <button class="btn sec chico" id="mg-mas" type="button">+</button><button class="btn sec chico" id="mg-menos" type="button">−</button><button class="btn chico" id="mg-cerrar" type="button">Cerrar</button></div>
+    <div class="mg-info" id="mg-info" hidden></div>
+    <div class="mg-leyenda" id="mg-leyenda"></div>
   </div>
 
   <div id="ayuda" class="pantalla" hidden>
@@ -331,6 +366,7 @@ const JUEGO = {
   federacion: 'el Consejo de Hermandades', fedCorta: 'Consejo', recorrido: 'la carrera oficial', arco: 'CARRERA OFICIAL', centro: 'sevilla',
   publico: (w) => (w >= 6 ? 0.9 : w >= 5 ? 0.6 : 0),
   coches: (w) => (w >= 6.5 ? [-1] : []),
+  anchoNecesario: 2.4,
   publicoPlaza: 1.2,
   mediaLargo: 2, altSuelo: -0.25, el: 'el paso',
   ayudaLevantar: 'Levanta el paso con el llamador (Espacio): un golpe, «¡preparados!»; otro, «¡a esta es!».',
@@ -1239,6 +1275,8 @@ const ACC = {
     if (G.banda.estado === 'marcha') { toast('La banda ya está tocando.', true); return; }
     G.banda.pedida = true; mostrarOrden('¡Música!', 'El capataz pide a la banda');
   },
+  mapaGrande() { if (!$('#inicio').hidden || !$('#final').hidden) return; if (MG.abierto) cerrarMG(); else abrirMG(true); },
+  info() { $('#panel').classList.toggle('info'); },
   camara() { camModo = (camModo + 1) % CAMS.length; camSnap = true; toast('Cámara: ' + CAMS[camModo].toLowerCase(), true); },
   musica() { AU.musica = !AU.musica; $('#b-mus').firstChild.textContent = 'Banda: ' + (AU.musica ? 'sí' : 'no'); },
   voz() { AU.voz = !AU.voz; $('#b-voz').firstChild.textContent = 'Voz: ' + (AU.voz ? 'sí' : 'no'); if (!AU.voz) try { speechSynthesis.cancel(); } catch (e) {} },
@@ -1517,9 +1555,10 @@ function irANivel(i, continuar) { try { localStorage.setItem(JUEGO.clave + '-niv
 { const caja = $('#niveles'), sup = superados();
   NIVELES_J.forEach((n, i) => {
     const abierto = i === 0 || sup.includes(NIVELES_J[i - 1].id) || sup.includes(n.id);
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn sec ruta' + (i === NIVEL_I ? ' on' : '');
-    b.textContent = `${i + 1}. ${n.titulo}${sup.includes(n.id) ? ' ✓' : ''}`; b.disabled = !abierto; if (!abierto) { b.style.opacity = '0.45'; b.title = 'Supera antes el nivel anterior'; }
-    b.addEventListener('click', () => { if (i !== NIVEL_I) irANivel(i); });
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tarjeta' + (i === NIVEL_I ? ' on' : '');
+    b.innerHTML = `<b>${i + 1}. ${n.titulo}${sup.includes(n.id) ? ' ✓' : ''}</b><small>${n.modo === 'ensayo' ? 'Ensayo · permiso del Ayuntamiento' : 'Procesión · Ayuntamiento y ' + JUEGO.fedCorta}</small><small>${abierto ? n.resumen.split('. ')[0] + '.' : 'Supera antes el nivel anterior.'}</small>`;
+    b.disabled = !abierto;
+    b.addEventListener('click', () => { if (i !== NIVEL_I) irANivel(i); else irAPaso(2); });
     caja.appendChild(b);
   });
   $('#nivel-titulo').textContent = NIVEL.titulo;
@@ -1536,8 +1575,7 @@ else plano.height = Math.round(plano.width * (PL.x1 - PL.x0) / (PL.z1 - PL.z0));
 function aPlano(x, z) { if (PL_VERT) { const k = plano.width / (PL.x1 - PL.x0); return [(PL.x1 - x) * k, (PL.z1 - z) * k]; } const k = plano.width / (PL.z1 - PL.z0); return [(z - PL.z0) * k, (PL.x1 - x) * k]; }
 function trazoCalle(ctx, t, T, paso = 4) { ctx.beginPath(); t.pts.forEach((p, i) => { if (i % paso && i !== t.pts.length - 1) return; const [a, c] = T(p.x, p.z); i ? ctx.lineTo(a, c) : ctx.moveTo(a, c); }); }
 function tramosDe(nodos) { const out = []; for (let i = 0; i + 1 < nodos.length; i++) { const t = tramoEntre(nodos[i], nodos[i + 1]); if (t) out.push(t); } return out; }
-function dibujarPlano() {
-  const W = plano.width, H = plano.height, k = W / (PL_VERT ? PL.x1 - PL.x0 : PL.z1 - PL.z0);
+function dibujarPlanoEn(px, W, H, aPlano, k) {
   px.setTransform(1, 0, 0, 1, 0, 0); px.fillStyle = '#16121f'; px.fillRect(0, 0, W, H);
   px.lineCap = 'butt'; px.lineJoin = 'round';
   // calles con su ancho (las que se estrechan se ven), plazas y nave
@@ -1557,7 +1595,7 @@ function dibujarPlano() {
   }
   px.setLineDash([]);
   // itinerario
-  px.strokeStyle = PERMISO.ok ? 'rgba(143,199,154,0.9)' : 'rgba(217,164,65,0.9)'; px.lineWidth = Math.max(3, 3.5 * k * 1.5); px.lineCap = 'round';
+  px.strokeStyle = PERMISO.ok ? 'rgba(143,199,154,0.9)' : 'rgba(217,164,65,0.9)'; px.lineWidth = Math.max(3, Math.min(9 * W / 660, 2.2 * k)); px.lineCap = 'round';
   for (const t of tramosDe(rutaSel)) { trazoCalle(px, t, aPlano); px.stroke(); }
   // nombres
   px.font = `${Math.round(11 * W / 660)}px "Alegreya Sans", sans-serif`; px.textAlign = 'center'; px.textBaseline = 'middle';
@@ -1581,6 +1619,7 @@ function dibujarPlano() {
   if (META) { const [a, c] = aPlano(META.x, META.z); px.fillText(cap1(JUEGO.recorrido.replace(/^el |^la /, '')), a + 12, c); }
   px.textAlign = 'right'; px.fillStyle = '#b8ab92'; px.fillText(PL_VERT ? 'norte ↑' : 'norte →', W - 8, H - 10);
 }
+function dibujarPlano() { const k = plano.width / (PL_VERT ? PL.x1 - PL.x0 : PL.z1 - PL.z0); dibujarPlanoEn(px, plano.width, plano.height, aPlano, k); }
 function rutaCompleta() { const u = rutaSel[rutaSel.length - 1]; return NIVEL.modo === 'ensayo' ? u === 'S' && rutaSel.length > 2 : u === NIVEL.meta.nodo; }
 function infoRuta() {
   const el = $('#ruta-info');
@@ -1591,7 +1630,7 @@ function infoRuta() {
     el.innerHTML = `<strong>${rutaCompleta() ? 'Itinerario completo' : 'Sin terminar'}:</strong> ${partes.join(' → ')}. Unos ${Math.round(L / 10) * 10} m.` + (rutaCompleta() ? '' : NIVEL.modo === 'ensayo' ? ' Sigue hasta volver a la nave.' : ' Sigue hasta la entrada en ' + JUEGO.recorrido + '.');
   }
   const okRuta = PERMISO.ok && PERMISO.ruta === rutaSel.join();
-  $('#b-permiso').disabled = !rutaCompleta(); $('#b-permiso').style.opacity = rutaCompleta() ? '' : '0.5';
+  $('#b-a-permisos').disabled = !rutaCompleta(); $('#b-a-permisos').style.opacity = rutaCompleta() ? '' : '0.5';
   $('#b-empezar').disabled = !okRuta; $('#b-empezar').style.opacity = okRuta ? '' : '0.5';
   document.querySelectorAll('[data-ruta]').forEach((b) => b.classList.toggle('on', RUTAS_TIPO[b.dataset.ruta].nodos.join() === rutaSel.join()));
 }
@@ -1607,16 +1646,18 @@ function elegirRuta(nodos) { rutaSel = nodos.slice(); if (PERMISO.ruta !== rutaS
 for (const [id, r] of Object.entries(RUTAS_TIPO)) { const b = document.createElement('button'); b.className = 'btn sec ruta'; b.type = 'button'; b.dataset.ruta = id; b.textContent = r.nombre; b.addEventListener('click', () => elegirRuta(r.nodos)); $('#rutas-tipo').appendChild(b); }
 { const b = document.createElement('button'); b.className = 'btn sec ruta'; b.type = 'button'; b.textContent = 'Borrar'; b.addEventListener('click', () => elegirRuta(['S'])); $('#rutas-tipo').appendChild(b); }
 $('#b-permiso').addEventListener('click', pedirPermisos);
+function tocarNodo(id) {
+  const ult = rutaSel[rutaSel.length - 1];
+  if (id === ult && rutaSel.length > 1) rutaSel.pop();
+  else if (!rutaCompleta() && vecinos(ult).includes(id) && (rutaSel.length < 2 || id !== rutaSel[rutaSel.length - 2])) rutaSel.push(id);
+  else if (id === 'S' && rutaSel.length === 1) rutaSel = ['S'];
+  elegirRuta(rutaSel);
+}
 plano.addEventListener('click', (e) => {
   const r = plano.getBoundingClientRect(), sx = (e.clientX - r.left) * plano.width / r.width, sy = (e.clientY - r.top) * plano.height / r.height;
   let mejor = null, dm = Infinity;
   for (const [id, n] of Object.entries(NODOS)) { const [a, c] = aPlano(n.x, n.z); const d = Math.hypot(a - sx, c - sy); if (d < dm) { dm = d; mejor = id; } }
-  if (dm > 28 * plano.width / 660) return;
-  const ult = rutaSel[rutaSel.length - 1];
-  if (mejor === ult && rutaSel.length > 1) rutaSel.pop();
-  else if (!rutaCompleta() && vecinos(ult).includes(mejor) && (rutaSel.length < 2 || mejor !== rutaSel[rutaSel.length - 2])) rutaSel.push(mejor);
-  else if (mejor === 'S' && rutaSel.length === 1) rutaSel = ['S'];
-  elegirRuta(rutaSel);
+  if (dm <= 28 * plano.width / 660) tocarNodo(mejor);
 });
 // Lo que toca ahora: el itinerario avanza cruce a cruce (G.k es el último cruce alcanzado)
 function siguientePaso() {
@@ -1635,6 +1676,131 @@ function siguientePaso() {
   const giro = grados < 15 ? 'sigue recto' : `gira a la ${cr > 0 ? 'izquierda' : 'derecha'} (${grados}°)`;
   return ` <strong>En ${NODOS[sig].nombre}:</strong> ${giro} hacia ${tOut.nombre}.`;
 }
+
+// ---------------------------------------------------------------- menú de inicio por pasos
+function irAPaso(n) {
+  if (n === 3 && !rutaCompleta()) n = 2;
+  document.querySelectorAll('[data-paso]').forEach((b) => b.classList.toggle('on', +b.dataset.paso === n));
+  document.querySelectorAll('section[data-panel]').forEach((s) => { s.hidden = +s.dataset.panel !== n; });
+  if (n === 2) { dibujarPlano(); infoRuta(); }
+  if (n === 3) pedirPermisos();
+}
+document.querySelectorAll('[data-paso]').forEach((b) => b.addEventListener('click', () => irAPaso(+b.dataset.paso)));
+document.querySelectorAll('[data-ir]').forEach((b) => b.addEventListener('click', () => irAPaso(+b.dataset.ir)));
+$('#b-como').addEventListener('click', () => { $('#ayuda').hidden = false; });
+$('#b-info').addEventListener('click', () => $('#panel').classList.toggle('info'));
+$('#b-menu').addEventListener('click', () => { const m = $('#menu-herr'); m.hidden = !m.hidden; $('#b-menu').setAttribute('aria-expanded', String(!m.hidden)); });
+// ---------------------------------------------------------------- mapa grande con los peligros
+const ICONOS = {
+  obras: ['🚧', 'En obras'], trafico: ['🚗', 'Tráfico'], reservada: ['⛔', 'Reservada a otra cofradía'], estrecha: ['↔', 'Se estrecha'], cuesta: ['⛰', 'Cuesta'], curva: ['↝', 'Curvas'],
+  cable: ['⚡', 'Cable'], guirnalda: ['✨', 'Guirnalda'], balcones: ['🏛', 'Balcones'], arboles: ['🌳', 'Árboles'], terraza: ['☕', 'Terraza'], quiosco: ['📰', 'Quiosco'], camion: ['🚚', 'Camión'],
+  semaforo: ['🚦', 'Semáforo'], farol: ['🏮', 'Farol'], iglesia: ['⛪', 'Saeta'], convento: ['🔔', 'Convento'], pena: ['★', 'Peña'], esquina: ['⌐', 'Esquina viva'], angulo: ['∠', 'Cruce en ángulo'], plaza: ['♛', 'Plaza: luce'], puerta: ['🚪', 'Puerta'],
+};
+const MARCAS = (() => {
+  const out = [], pon = (x, z, tipo, titulo, texto) => out.push({ x, z, tipo, titulo, texto });
+  const lado = (k) => (k.lado ? 'en una acera: pégate a la otra' : 'a los dos lados');
+  for (const t of TRAMOS) {
+    const L = L_UTIL(t), mid = Fr(t, L / 2);
+    if (t.obras) pon(mid.x, mid.z, 'obras', t.nombre, 'Está en obras y cortada con vallas: no se puede pasar y el Ayuntamiento no la autoriza.');
+    if (t.trafico) pon(mid.x, mid.z, 'trafico', t.nombre, NIVEL.modo === 'ensayo' ? 'Avenida con tráfico: el Ayuntamiento no la corta para un ensayo.' : 'Avenida con tráfico: habrá que cortarla durante el paso.');
+    if (t.reservada) pon(mid.x, mid.z, 'reservada', t.nombre, `A esa hora pasa por aquí ${t.reservada}: ${JUEGO.federacion} no la autoriza.`);
+    if (t.anchoMax - t.anchoMin > 1.5) { const p = t.pts.reduce((a, b) => (b.w < a.w ? b : a)); pon(p.x, p.z, 'estrecha', t.nombre, `Se estrecha de ${fmt(t.anchoMax, 1)} a ${fmt(t.anchoMin, 1)} m. ` + (t.anchoMin < JUEGO.anchoMinimo ? `${cap1(JUEGO.el)} no cabe.` : `${cap1(JUEGO.el)} pasa con ${fmt(t.anchoMin - JUEGO.anchoNecesario, 1)} m de holgura en total: centrado, despacio y sin mecer.`)); }
+    if (Math.abs(t.pendiente) > 0.012) { const f = Fr(t, L * 0.35); pon(f.x, f.z, 'cuesta', t.nombre, `Cuesta del ${fmt(Math.abs(t.pendiente) * 100, 1)} %, que sube hacia ${NODOS[t.pendiente > 0 ? t.b : t.a].nombre}. Cuesta arriba cansa mucho más; cuesta abajo hay que sujetar, que se embala.`); }
+    if (t.via) { const f = Fr(t, L * 0.62); pon(f.x, f.z, 'curva', t.nombre, 'Calle en curva: corrige de lado (Q / E) y girando, sin parar; si te pegas a una acera, la trasera barre la otra.'); }
+    for (const k of t.cosas || []) {
+      const f = Fr(t, (k.u !== undefined ? k.u : 0.5) * L), x = f.x + f.nx * (k.lado || 0) * f.w * 0.3, z = f.z + f.nz * (k.lado || 0) * f.w * 0.3;
+      const T2 = {
+        cable: `Cable de lado a lado a ${fmt(JUEGO.hCable, 2)} m. ` + (JUEGO.tipo === 'paso' ? 'El misterio llega a 3,35 m: agachaditos (C) para pasar.' : 'Cabe el palio, pero no subas a pulso debajo.'),
+        guirnalda: `Guirnalda de luces a ${fmt(JUEGO.hGuirnalda, 2)} m: cabe, pero no a pulso.`,
+        balcones: `Balcones a ${fmt(JUEGO.hBalcon, 1)} m que salen ${fmt(JUEGO.fondoBalcon, 1)} m de la fachada, ${lado(k)}.`,
+        arboles: JUEGO.tipo === 'paso' ? 'Naranjos junto a la acera, con la copa a 2,3 m: la candelería los roza. Apártate de lado del que tengas cerca.' : 'Árboles junto a la acera, con las ramas a 3,5 m: los arbotantes las rozan. Apártate de lado del que tengas cerca.',
+        terraza: 'Terraza de veladores en una acera: pásala por el otro lado.', quiosco: 'Quiosco en una acera: pásalo por el otro lado.', camion: 'Camión aparcado: pásalo por el otro lado.',
+        semaforo: JUEGO.tipo === 'paso' ? 'Farol de forja a 2,4 m metido en la calle: apártate.' : 'Semáforo con el brazo metido en la calle a 3 m: ve por el centro o por el otro lado.',
+        farol: JUEGO.tipo === 'paso' ? 'Farol de forja a 2,4 m metido en la calle: apártate.' : 'Farol de pared a 4,2 m que sale 1,5 m: apártate de esa acera.',
+        iglesia: 'Iglesia: si paras delante de la puerta, alguien canta una saeta desde un balcón.', convento: 'Convento: si paras delante en silencio, cantan las monjas.', pena: 'Peña cofrade: la mecida y la levantá a pulso lucen.',
+      };
+      const tipo = k.tipo === 'arbol' ? 'arboles' : k.tipo;
+      if (T2[tipo]) pon(x, z, tipo, t.nombre, T2[tipo]);
+    }
+  }
+  for (const n of Object.values(NODOS)) {
+    if (n.plaza) { pon(n.x, n.z, 'plaza', cap1(n.nombre), 'Plaza: aquí lucen la mecida y la levantá a pulso. Hay sitio para girar.'); continue; }
+    const ts = TRAMOS.filter((t) => t.a === n.id || t.b === n.id); if (ts.length < 2 || n.id === 'S') continue;
+    const dirs = ts.map((t) => { const p = t.a === n.id ? t.pts[Math.min(10, t.pts.length - 1)] : t.pts[Math.max(0, t.pts.length - 11)]; const dx = p.x - n.x, dz = p.z - n.z, l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l]; });
+    let minAng = 180; for (let i = 0; i < dirs.length; i++) for (let j = i + 1; j < dirs.length; j++) minAng = Math.min(minAng, Math.acos(clamp(dirs[i][0] * dirs[j][0] + dirs[i][1] * dirs[j][1], -1, 1)) / DEG);
+    if (!n.redondeo) pon(n.x, n.z, 'esquina', cap1(n.nombre), `Esquina viva, sin chaflán (las calles se cruzan a ${Math.round(minAng)}°). ${JUEGO.tipo === 'paso' ? 'Gira despacio' : 'El trono no cabe girando en el centro'}: empieza a girar antes de llegar, arrimado al lado de dentro.`);
+    else if (Math.abs(minAng - 90) > 15 && minAng < 165) pon(n.x, n.z, 'angulo', cap1(n.nombre), `Cruce en ángulo de ${Math.round(minAng)}°: el giro es ${minAng < 90 ? 'más cerrado' : 'más abierto'} que en una esquina normal.`);
+  }
+  if (NAVE) { const [x, z] = NIVEL.nave.loc(0, -0.3); pon(x, z, 'puerta', cap1(NIVEL.nave.nombre), `Puerta de ${fmt(NIVEL.nave.puerta, 1)} m de ancho y ${fmt(JUEGO.altoPuerta, 1)} m de alto: sal centrado.`); }
+  return out;
+})();
+const MG = { abierto: false, k: 1, kFit: 1, vert: false, ox: 0, oy: 0, sel: null, enJuego: false, punteros: new Map(), arrastre: null, movido: false };
+const mgc = $('#mg'), mgx = mgc.getContext('2d');
+const T_MG = (x, z) => (MG.vert ? [(PL.x1 - x) * MG.k + MG.ox, (PL.z1 - z) * MG.k + MG.oy] : [(z - PL.z0) * MG.k + MG.ox, (PL.x1 - x) * MG.k + MG.oy]);
+function ajustarMG() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = mgc.clientWidth || innerWidth, h = mgc.clientHeight || innerHeight;
+  mgc.width = Math.round(w * dpr); mgc.height = Math.round(h * dpr);
+  MG.vert = mgc.height > mgc.width;   // en vertical (móvil), el norte arriba
+  const arriba = (MG.vert ? 110 : 70) * dpr, ww = MG.vert ? PL.x1 - PL.x0 : PL.z1 - PL.z0, wh = MG.vert ? PL.z1 - PL.z0 : PL.x1 - PL.x0;
+  const k = Math.min(mgc.width / ww, (mgc.height - arriba) / wh) * 0.94;
+  MG.k = MG.kFit = k; MG.ox = (mgc.width - ww * k) / 2; MG.oy = arriba + (mgc.height - arriba - wh * k) / 2;
+}
+function dibujarMG() {
+  if (!MG.abierto) return;
+  const W = mgc.width, H = mgc.height, kw = MG.k;
+  dibujarPlanoEn(mgx, W, H, T_MG, kw);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), r = 13 * dpr;
+  mgx.textAlign = 'center'; mgx.textBaseline = 'middle'; mgx.font = `${Math.round(15 * dpr)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+  for (const m of MARCAS) {
+    const [a, b] = T_MG(m.x, m.z);
+    mgx.beginPath(); mgx.arc(a, b, r, 0, Math.PI * 2); mgx.fillStyle = m === MG.sel ? '#d9a441' : 'rgba(20,13,30,0.9)'; mgx.fill(); mgx.lineWidth = 2 * dpr; mgx.strokeStyle = '#d9a441'; mgx.stroke();
+    mgx.fillStyle = '#f1e6cc'; mgx.fillText(ICONOS[m.tipo][0], a, b + 1);
+  }
+  if (MG.enJuego) { const [a, b] = T_MG(G.pose.x, G.pose.z); mgx.beginPath(); mgx.arc(a, b, 9 * dpr, 0, Math.PI * 2); mgx.fillStyle = '#d2465c'; mgx.fill(); mgx.strokeStyle = '#fff'; mgx.stroke(); }
+}
+function abrirMG(enJuego) {
+  MG.abierto = true; MG.enJuego = !!enJuego; $('#mapa-grande').hidden = false; $('#mg-info').hidden = true; MG.sel = null;
+  if (enJuego) pausa = true;
+  $('#mg-titulo').textContent = `Mapa · ${NIVEL.titulo}`;
+  const tipos = [...new Set(MARCAS.map((m) => m.tipo))];
+  $('#mg-leyenda').innerHTML = tipos.map((t) => `${ICONOS[t][0]} ${ICONOS[t][1]}`).join('<br>');
+  ajustarMG(); dibujarMG();
+}
+function cerrarMG() { MG.abierto = false; $('#mapa-grande').hidden = true; if (MG.enJuego && $('#inicio').hidden && $('#ayuda').hidden && $('#final').hidden) pausa = false; dibujarPlano(); infoRuta(); }
+$('#b-mapa-grande').addEventListener('click', () => abrirMG(false));
+$('#b-mapa-juego').addEventListener('click', () => abrirMG(true));
+$('#mg-cerrar').addEventListener('click', cerrarMG);
+const zoomMG = (f, cx, cy) => { const k2 = clamp(MG.k * f, MG.kFit * 0.6, MG.kFit * 25); f = k2 / MG.k; MG.ox = cx - (cx - MG.ox) * f; MG.oy = cy - (cy - MG.oy) * f; MG.k = k2; dibujarMG(); };
+$('#mg-mas').addEventListener('click', () => zoomMG(1.4, mgc.width / 2, mgc.height / 2));
+$('#mg-menos').addEventListener('click', () => zoomMG(1 / 1.4, mgc.width / 2, mgc.height / 2));
+mgc.addEventListener('wheel', (e) => { e.preventDefault(); const dpr = mgc.width / mgc.clientWidth; zoomMG(e.deltaY > 0 ? 0.87 : 1.15, e.offsetX * dpr, e.offsetY * dpr); }, { passive: false });
+mgc.addEventListener('pointerdown', (e) => { mgc.setPointerCapture(e.pointerId); MG.punteros.set(e.pointerId, [e.offsetX, e.offsetY]); MG.movido = false; MG.arrastre = [e.offsetX, e.offsetY]; });
+mgc.addEventListener('pointermove', (e) => {
+  if (!MG.punteros.has(e.pointerId)) return;
+  const dpr = mgc.width / mgc.clientWidth, prev = MG.punteros.get(e.pointerId);
+  if (MG.punteros.size === 2) {
+    const [o] = [...MG.punteros.entries()].filter(([id]) => id !== e.pointerId).map(([, v]) => v);
+    const d0 = Math.hypot(prev[0] - o[0], prev[1] - o[1]), d1 = Math.hypot(e.offsetX - o[0], e.offsetY - o[1]);
+    if (d0 > 5) zoomMG(d1 / d0, (e.offsetX + o[0]) / 2 * dpr, (e.offsetY + o[1]) / 2 * dpr);
+  } else { MG.ox += (e.offsetX - prev[0]) * dpr; MG.oy += (e.offsetY - prev[1]) * dpr; dibujarMG(); }
+  if (Math.hypot(e.offsetX - MG.arrastre[0], e.offsetY - MG.arrastre[1]) > 6) MG.movido = true;
+  MG.punteros.set(e.pointerId, [e.offsetX, e.offsetY]);
+});
+mgc.addEventListener('pointerup', (e) => {
+  MG.punteros.delete(e.pointerId);
+  if (MG.movido) return;
+  const dpr = mgc.width / mgc.clientWidth, sx = e.offsetX * dpr, sy = e.offsetY * dpr;
+  let mejor = null, dm = 20 * dpr;
+  for (const m of MARCAS) { const [a, b] = T_MG(m.x, m.z), d = Math.hypot(a - sx, b - sy); if (d < dm) { dm = d; mejor = m; } }
+  if (mejor) { MG.sel = mejor; const i = $('#mg-info'); i.hidden = false; i.innerHTML = `<strong>${ICONOS[mejor.tipo][0]} ${mejor.titulo}</strong><br>${mejor.texto}`; dibujarMG(); return; }
+  if (!MG.enJuego) {
+    let nodo = null, dn = 24 * dpr;
+    for (const [id, n] of Object.entries(NODOS)) { const [a, b] = T_MG(n.x, n.z), d = Math.hypot(a - sx, b - sy); if (d < dn) { dn = d; nodo = id; } }
+    if (nodo) { tocarNodo(nodo); dibujarMG(); return; }
+  }
+  MG.sel = null; $('#mg-info').hidden = true; dibujarMG();
+});
+addEventListener('resize', () => { if (MG.abierto) { ajustarMG(); dibujarMG(); } });
 
 // ---------------------------------------------------------------- HUD
 const mapa = $('#mapa'), mx = mapa.getContext('2d');
@@ -1719,6 +1885,7 @@ function hud() {
   $('#st-estado').textContent = e;
   { const B = G.banda; $('#st-banda').textContent = G.t0 === null ? 'esperando a la levantá' : B.estado === 'marcha' ? `tocando la ${MARCHAS[B.marcha].nombre}` : B.estado === 'tambor' ? 'a tambor' : B.pedida ? 'preparando una marcha' : 'en silencio, descansando'; }
   $('#objetivo').innerHTML = objetivo();
+  { const sg = siguientePaso().trim(); $('#siguiente').innerHTML = sg || (G.fin ? '' : objetivo().split('</strong>')[0] + '</strong>'); }
   if (G.estado !== 'bajando') pintarToques();
   avisoProximo();
 }
@@ -1744,8 +1911,8 @@ function toast(txt, tipo) {
 }
 
 // ---------------------------------------------------------------- entrada
-const TECLAS = { Space: 'toque', KeyC: 'agachar', KeyX: 'relevo', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
-const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara']);
+const TECLAS = { Tab: 'mapaGrande', KeyI: 'info', Space: 'toque', KeyC: 'agachar', KeyX: 'relevo', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
+const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara', 'mapaGrande', 'info']);
 const pulsadas = new Set();
 function press(acc) {
   ac();
@@ -1779,7 +1946,7 @@ $('#b-mus').addEventListener('click', () => ACC.musica());
 $('#b-voz').addEventListener('click', () => ACC.voz());
 $('#b-ayu').addEventListener('click', () => ACC.ayuda());
 $('#b-son').addEventListener('click', probarSonido);
-$('#b-cerrar-ayuda').addEventListener('click', () => ACC.ayuda());
+$('#b-cerrar-ayuda').addEventListener('click', () => { if (!$('#inicio').hidden) $('#ayuda').hidden = true; else ACC.ayuda(); });
 $('#b-repetir').addEventListener('click', () => ACC.reiniciar());
 $('#b-siguiente').addEventListener('click', () => irANivel(NIVEL_I + 1));
 $('#b-mirar').addEventListener('click', () => { $('#final').hidden = true; });
@@ -1818,7 +1985,7 @@ trono.traverse((o) => { if (o.isMesh) o.castShadow = true; });
 // Halos de las farolas
 scene.add(halos(FAROLAS.map((f) => new THREE.Vector3(f.x, f.y + 0.3, f.z)), 1.8));
 prepararRuta(rutaSel); nuevaPartida(); resize(); aplicarCalidad();
-dibujarPlano(); infoRuta();
+dibujarPlano(); infoRuta(); irAPaso(1);
 { const d = leerGuardado(); if (d) { $('#b-continuar').hidden = false; const otro = d.nivel !== NIVEL_I; $('#guardado').textContent = `Tienes una partida guardada${otro ? ` del nivel «${NIVELES_J[d.nivel].titulo}»` : ''} en ${d.lugar}, a las ${hhmm(d.hora)} (${d.golpes} golpes).`;
   let cont = false; try { cont = sessionStorage.getItem(JUEGO.clave + '-continuar') === '1'; sessionStorage.removeItem(JUEGO.clave + '-continuar'); } catch (e) {}
   if (cont && !otro) setTimeout(() => $('#b-continuar').click(), 50); } }
