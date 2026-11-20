@@ -6,6 +6,18 @@ Prototipo jugable en el navegador de un juego de Semana Santa en el que mandas u
 - `trono.html` — **El trono** (etapa 2): trono de Málaga mandado con la campana, por un barrio de calles anchas.
 - `paso.html` — **La procesión** (etapa 3): paso de misterio mandado con el llamador, con relevos de costaleros, por un barrio de calles estrechas.
 
+## Niveles, permisos y calles (común a tronos y pasos)
+
+- `ciudad.js` — motor de calles común: cada calle es una línea con curvas, un ancho que puede cambiar (calles que se estrechan) y la altura de sus cruces (cuestas). De ahí salen el suelo, las fachadas, las colisiones (con la altura del suelo bajo cada parte del trono o del paso), las zonas y la evaluación de permisos.
+- `niveles.js` — los cuatro niveles, comunes a tronos y pasos (los pasos usan el mismo trazado a menor escala):
+  1. **Ensayo en el polígono**: cuadrícula ancha, de noche y sin público.
+  2. **Ensayo en las afueras**: curvas y contracurvas, y una calle que se estrecha en mitad de la curva.
+  3. **Ensayo de esquinas y cuestas**: cruces que no son de 90°, esquina viva, una calle que se queda en 7,6 m y alguna cuesta.
+  4. **La salida procesional**: la calle de la casa hermandad sube, se estrecha y gira; después, tres itinerarios hasta el recorrido oficial (o la carrera oficial).
+- **Permisos:** para ensayar, el Ayuntamiento solo autoriza calles de las afueras o del polígono, sin obras ni avenidas con tráfico, y el ensayo tiene que volver a la nave. Para la procesión, el Ayuntamiento (sin obras y con anchura suficiente) y la Agrupación de Cofradías o el Consejo de Hermandades (que acabe en el recorrido oficial, que no use una calle reservada para otra cofradía y que se llegue a la hora). Sin permiso no se puede salir.
+- **Cuestas por ciudad:** en Málaga casi no hay (alguna calle puntual), en Sevilla alguna más; Granada (Realejo, Albaicín) tendrá muchas y fuertes.
+- **Progreso:** cada nivel superado (nota de 5 o más) abre el siguiente. La partida se guarda en los puntos de guardado, al terminar ciertas calles.
+
 ## El trono (etapa 2)
 
 Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa hermandad hasta la entrada del recorrido oficial, antes de las 21:30, por un barrio de cuatro filas de calles (itinerarios de 600 a 800 m). Antes de salir eliges el itinerario en un plano.
