@@ -2,7 +2,8 @@
 
 Prototipo jugable en el navegador de un juego de Semana Santa en el que mandas un paso o un trono. El documento de diseño completo está en Claude Docs.
 
-- `index.html` — **La mudanza** (etapa 1): paso de costaleros.
+- `index.html` — **Portada**: elegir entre tronos (Málaga) y pasos (Sevilla).
+- `mudanza.html` — **La mudanza** (etapa 1, primer prototipo): paso de costaleros.
 - `trono.html` — **El trono** (etapa 2): trono de Málaga mandado con la campana, por un barrio de calles anchas.
 - `paso.html` — **La procesión** (etapa 3): paso de misterio mandado con el llamador, con relevos de costaleros, por un barrio de calles estrechas.
 
@@ -24,9 +25,9 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa h
 
 | Tecla | Orden |
 |---|---|
-| Espacio ×4-5 | Toques suaves y seguidos: los hombres de trono se colocan |
+| Espacio ×7 | Exactamente 7 toques suaves y seguidos: los hombres de trono se colocan (con 6 u 8 la levantá sale peor; con menos o más, desigual) |
 | F | Toque fuerte: meten el hombro |
-| G | Pong: ¡arriba! La calidad de la levantá depende de la preparación, el ritmo y el tiempo entre el toque fuerte y el pong |
+| G | Toque grande: ¡arriba! La calidad de la levantá depende de los 7 toques, el ritmo y el tiempo entre el toque fuerte y el toque grande |
 | Espacio | En marcha: parar. Parado: bajar a la mesa |
 | W / S | Adelante / atrás (con inercia: tarda en arrancar y en frenar). En marcha, W otra vez da más paso (0,75 y 1 m/s, cansa mucho más) y S lo afloja |
 | A / D (mantener) | Derecha adelante, izquierda atrás (y al revés): girar |
@@ -70,7 +71,7 @@ Es la fase 1 del plan: comprobar si la mecánica de mandar el paso es divertida 
 
 ## Cómo jugar
 
-Abre `index.html` en un navegador (necesita conexión para cargar Three.js y las fuentes).
+Abre `mudanza.html` en un navegador (necesita conexión para cargar Three.js y las fuentes).
 
 | Tecla | Orden |
 |---|---|

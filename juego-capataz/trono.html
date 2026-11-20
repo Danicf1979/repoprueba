@@ -206,7 +206,7 @@ section[data-panel] { display: grid; gap: 12px; }
       <button class="mini" id="b-ayu" type="button">Ayuda<kbd>H</kbd></button>
       <button class="mini" id="b-son" type="button">Probar sonido</button>
       <button class="mini" id="b-graf" type="button">Gráficos: altos</button>
-      <a class="mini" href="index.html">← La mudanza</a>
+      <a class="mini" href="index.html">← Portada</a>
     <button class="mini" id="b-mapa-juego" type="button">Mapa<kbd>Tab</kbd></button>
     </div></div>
   </div>
@@ -226,7 +226,7 @@ section[data-panel] { display: grid; gap: 12px; }
     <div class="grupo cam">
       <button class="pb bell" type="button" data-acc="toque"><span>Toque</span><kbd>Espacio</kbd></button>
       <button class="pb bell" type="button" data-acc="fuerte"><span>Toque fuerte</span><kbd>F</kbd></button>
-      <button class="pb bell clave" type="button" data-acc="pong"><span>¡Arriba!</span><kbd>G</kbd></button>
+      <button class="pb bell clave" type="button" data-acc="pong"><span>Toque grande</span><kbd>G</kbd></button>
       <button class="pb" type="button" data-acc="mecida" id="b-mecida"><span>Mecida</span><kbd>Z</kbd></button>
       <button class="pb" type="button" data-acc="pulso"><span>A pulso</span><kbd>P</kbd></button>
       <button class="pb" type="button" data-acc="camara"><span>Cámara</span><kbd>V</kbd></button>
@@ -262,7 +262,7 @@ section[data-panel] { display: grid; gap: 12px; }
         <div class="acciones"><button class="btn sec" type="button" data-ir="2">← Itinerario</button><button class="btn" id="b-empezar" type="button">¡Salimos!</button><button class="btn sec" id="b-permiso" type="button" hidden>Pedir permisos</button></div>
         <p class="nota" id="record"></p>
       </section>
-      <div class="pie-inicio"><a class="btn sec" href="paso.html">Pasos</a><a class="btn sec" href="index.html">La mudanza</a></div>
+      <div class="pie-inicio"><a class="btn sec" href="index.html">← Portada</a><a class="btn sec" href="paso.html">Pasos</a><a class="btn sec" href="mudanza.html">La mudanza</a></div>
     </div>
   </div>
 
@@ -278,7 +278,7 @@ section[data-panel] { display: grid; gap: 12px; }
     <div class="carta">
       <h2>Mandar el trono</h2>
       <div class="teclas">
-        <kbd>Espacio</kbd><span>Toque de campana: en el suelo, toques suaves para colocarse; en marcha, parar; parado, bajar</span>
+        <kbd>Espacio ×7</kbd><span>Toque de campana: en el suelo, 7 toques suaves para colocarse; en marcha, un toque para parar; parado, otro para bajar</span>
         <kbd>F · G</kbd><span>Toque fuerte (meter el hombro) · pong (¡arriba!)</span>
         <kbd>W / S</kbd><span>Adelante · atrás. En marcha: W, más paso (cansa más); S, más despacio</span>
         <kbd>A / D</kbd><span>Girar (mantén pulsado)</span>
@@ -349,6 +349,7 @@ const CFG = {
   escalaReloj: 6,      // 1 s de juego = 6 s de reloj
 };
 const BEAT = 60 / CFG.bpm;
+const TOQUES_PREP = 7;   // la campana: 7 toques suaves, el toque fuerte (meter el hombro) y el toque grande (¡arriba!)
 document.documentElement.style.setProperty('--retardo', CFG.retardoVoz + 's');
 
 // El trono como tres cuerpos apilados: hombres de trono y varales, mesa y candelería, palio
@@ -376,7 +377,7 @@ const JUEGO = {
   anchoNecesario: 5.1,
   publicoPlaza: 1.7,
   mediaLargo: 6, altSuelo: -0.4, el: 'el trono',
-  ayudaLevantar: 'Levanta el trono con la campana: 4 o 5 toques suaves y seguidos (Espacio), un toque fuerte (F) y ¡arriba! (G).',
+  ayudaLevantar: 'Levanta el trono con la campana: 7 toques suaves y seguidos (Espacio), el toque fuerte para meter el hombro (F) y el toque grande para levantar (G).',
   ayudaCruce: 'Para en el centro del cruce y gira sobre ti mismo: los varales no caben si giras pegado. En las esquinas vivas, arrímate un poco al lado de dentro antes de girar.',
   dentroNave: (p) => { const nv = NIVEL.nave, ca = Math.cos(nv.a), sa = Math.sin(nv.a), dx = p.x - nv.x, dz = p.z - nv.z, lz = dx * sa + dz * ca; return lz < -nv.fondo / 2 + 1; },
 };
@@ -1429,7 +1430,7 @@ function voz(texto, fn, opts = {}) {
   G.cola.push({ t: now + CFG.retardoVoz + extra, fn });
 }
 function arriba() { return G.estado === 'arriba' || G.estado === 'pulso'; }
-function enSuelo() { if (!arriba()) { toast('El trono está en el suelo. Levántalo con la campana: toques suaves, toque fuerte y ¡arriba!', true); return true; } return false; }
+function enSuelo() { if (!arriba()) { toast('El trono está en el suelo. Levántalo con la campana: 7 toques suaves, el toque fuerte y el toque grande', true); return true; } return false; }
 
 const ACC = {
   toque() {
@@ -1522,24 +1523,24 @@ function finLado(s) { if (!arriba()) return; voz('¡Ahí!', () => { if (G.latObj
 
 function levantar() {
   const n = G.toques.length;
-  const prep = clamp((n - 1) / 4, 0, 1);
+  const prep = n === TOQUES_PREP ? 1 : Math.abs(n - TOQUES_PREP) === 1 ? 0.55 : 0;
   let ritmo = 0.5;
   if (n >= 3) { const iv = []; for (let i = 1; i < n; i++) iv.push(G.toques[i] - G.toques[i - 1]); const m = iv.reduce((a, b) => a + b, 0) / iv.length; const sd = Math.sqrt(iv.reduce((a, b) => a + (b - m) ** 2, 0) / iv.length); ritmo = clamp(1 - (sd / m) * 2, 0, 1); }
   let fu = 0;
   if (G.fuerteT !== null) { const gap = now - G.fuerteT; fu = gap < 0.35 ? 0.4 : gap <= 2 ? 1 : clamp(1 - (gap - 2) / 2, 0, 1); }
   const frio = G.sueloT > 35 ? clamp(1 - (G.sueloT - 35) / 40, 0.4, 1) : 1;
   const fat = G.cans > 80 ? 0.6 : 1;
-  const q = (0.35 * prep + 0.2 * ritmo + 0.45 * fu) * frio * fat;
+  const q = (0.5 * prep + 0.15 * ritmo + 0.35 * fu) * frio * fat;
   const h = colisiona(G.pose, 0, 0);
   G.toques = []; G.fuerteT = null; G.sec = [];
   if (h) { golpe(h, 0.6); return; }
   if (G.t0 === null) G.t0 = now;
   G.estado = 'levantando'; G.liftT = 0; G.altObj = 0; G.ultQ = q; sacudirPalio(q < 0.55 ? 1.5 : 0.5);
   if (q >= 0.8) { G.lev.perfectas++; G.luci += 15; toast('¡Levantá perfecta! Todos a una. +15', 'bien'); }
-  else if (q >= 0.55) { G.lev.buenas++; G.luci += 5; toast('Buena levantá. +5', 'bien'); }
+  else if (q >= 0.55) { G.lev.buenas++; G.luci += 5; toast(n !== TOQUES_PREP ? `Buena levantá, aunque diste ${n} toques y son 7. +5` : 'Buena levantá. +5', 'bien'); }
   else {
     G.lev.desiguales++; G.inclin = 0.07; G.danio += 4;
-    const motivo = n < 3 ? 'pocos toques de preparación' : G.fuerteT === null && fu === 0 ? 'faltó el toque fuerte' : frio < 1 ? 'la cuadrilla se ha enfriado' : fat < 1 ? 'la cuadrilla está agotada' : 'sin ritmo en la campana';
+    const motivo = n < TOQUES_PREP ? `solo ${n} ${n === 1 ? 'toque' : 'toques'} de preparación, y son 7` : n > TOQUES_PREP ? `${n} toques de preparación, y son 7` : G.fuerteT === null && fu === 0 ? 'faltó el toque fuerte' : frio < 1 ? 'la cuadrilla se ha enfriado' : fat < 1 ? 'la cuadrilla está agotada' : 'sin ritmo en la campana';
     toast(`Levantá desigual: ${motivo}. El trono se ha ladeado.`);
   }
   if (G.sueloT > 0) G.descansos++;
@@ -2126,7 +2127,7 @@ function pintarToques(txt) {
   (G ? G.sec : []).slice(-8).forEach((k) => { const i = document.createElement('i'); i.className = k; el.appendChild(i); });
   let t = txt || '';
   if (!txt && G && arriba()) t = enMarcha() ? 'un toque: parar' : 'un toque: bajar a la mesa';
-  if (!txt && G && G.estado === 'suelo') { const n = G.toques.length; t = G.fuerteT !== null ? 'hombro metido: ¡pong!' : n === 0 ? 'toques suaves para colocarse' : n < 4 ? `colocándose (${n})` : `colocados (${n}): toque fuerte`; }
+  if (!txt && G && G.estado === 'suelo') { const n = G.toques.length; t = G.fuerteT !== null ? 'hombro metido: ¡toque grande!' : n === 0 ? '7 toques suaves para colocarse' : n < TOQUES_PREP ? `colocándose (${n} de 7)` : n > TOQUES_PREP ? `te has pasado (${n} de 7)` : `colocados (7 de 7): toque fuerte`; }
   $('#campana-txt').textContent = t;
 }
 function actualizarMecidaBtn() { const b = $('#b-mecida'); if (!b) return; b.classList.toggle('on', !!(G && G.mecidaOrden)); b.querySelector('span').textContent = G && G.mecidaOrden ? 'Sin mecer' : 'Mecida'; }
@@ -2187,7 +2188,7 @@ canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = clamp(zoom 
 function empezar() {
   if (!(PERMISO.ok && PERMISO.ruta === rutaSel.join())) { infoRuta(); toast('Antes de salir hace falta el permiso: «Pedir permisos».', true); return; }
   desbloquearAudio(); prepararRuta(rutaSel); nuevaPartida(); borrarGuardado();
-  $('#inicio').hidden = true; pausa = false; toast('Prepara la levantá: toques suaves y seguidos con Espacio.', true);
+  $('#inicio').hidden = true; pausa = false; toast('Prepara la levantá: 7 toques suaves, el toque fuerte y el toque grande.', true);
 }
 $('#b-empezar').addEventListener('click', empezar);
 $('#b-continuar').addEventListener('click', () => { const d = leerGuardado(); if (!d) return; if (d.nivel !== NIVEL_I) { irANivel(d.nivel, true); return; } desbloquearAudio(); cargarPartida(d); $('#inicio').hidden = true; pausa = false; toast(`Seguimos en ${d.lugar}, a las ${hhmm(d.hora)}. El trono está en el suelo: levántalo con la campana.`, true); });
