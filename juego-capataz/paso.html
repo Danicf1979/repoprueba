@@ -128,6 +128,10 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
 #panel .extra { display: none; }
 #panel.info .extra { display: block; }
 #panel.info #banda-fila { display: flex; }
+.marcha { display: inline-flex; gap: 2px; flex: none; }
+.marcha i { width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid rgba(241,230,204,0.2); }
+.marcha i.on { border-left-color: var(--oro); }
+.marcha.atras { transform: scaleX(-1); }
 #siguiente { margin: 0; font-size: 0.86rem; line-height: 1.35; color: var(--cera); }
 #siguiente strong { color: var(--oro); font-weight: 500; }
 #b-info { padding: 1px 9px; font-family: var(--font-d); }
@@ -191,7 +195,7 @@ section[data-panel] { display: grid; gap: 12px; }
       <div><b id="st-luci">0</b><small>Lucimiento</small></div>
     </div>
     <div class="barra"><span class="t">Cansancio</span><span class="fondo"><i id="st-cans"></i></span><b id="st-cans-n">0</b></div>
-    <div class="estado-fila"><i id="compas" aria-hidden="true"></i><span id="st-estado">En el suelo, sobre la mesa</span></div>
+    <div class="estado-fila"><i id="compas" aria-hidden="true"></i><span id="st-marcha" class="marcha" aria-label="Marcha"><i></i><i></i><i></i></span><span id="st-estado">En el suelo, sobre la mesa</span></div>
     <div id="banda-fila" class="estado-fila extra" style="font-size:0.82rem;color:var(--cera-2)">Banda: <span id="st-banda">esperando a la levantá</span></div>
     <div id="campana-fila"><span>Llamador:</span><span class="toques" id="toques"></span><span id="campana-txt"></span></div>
     <p id="siguiente"></p>
@@ -231,8 +235,8 @@ section[data-panel] { display: grid; gap: 12px; }
       <button class="pb bell" type="button" data-acc="toque"><span>Llamador</span><kbd>Espacio</kbd></button>
       <button class="pb" type="button" data-acc="agachar" id="b-agachar"><span>Agachaditos</span><kbd>C</kbd></button>
       <button class="pb bell" type="button" data-acc="relevo"><span>Relevo</span><kbd>X</kbd></button>
-      <button class="pb" type="button" data-acc="mecida" id="b-mecida"><span>Mecida</span><kbd>Z</kbd></button>
-      <button class="pb" type="button" data-acc="pulso"><span>A pulso</span><kbd>P</kbd></button>
+      <button class="pb" type="button" data-acc="musicaBanda"><span>¡Música!</span><kbd>B</kbd></button>
+      <button class="pb" type="button" data-acc="mapaGrande"><span>Mapa</span><kbd>Tab</kbd></button>
       <button class="pb" type="button" data-acc="camara"><span>Cámara</span><kbd>V</kbd></button>
     </div>
   </div>
@@ -288,7 +292,6 @@ section[data-panel] { display: grid; gap: 12px; }
         <kbd>Q / E</kbd><span>Costero a costero</span>
         <kbd>C</kbd><span>Agachaditos: baja 35 cm para cables y balcones</span>
         <kbd>X</kbd><span>Relevo (en tierra): cansancio a cero, a cambio de tiempo</span>
-        <kbd>Z · P</kbd><span>Mecida · a pulso</span>
         <kbd>V · rueda</kbd><span>Cámara · acercar o alejar</span>
         <kbd>B · M · N · R</kbd><span>¡Música! · banda · voz · volver a empezar</span>
       </div>
@@ -370,6 +373,7 @@ const JUEGO = {
   publico: (w) => (w >= 6 ? 0.9 : w >= 5 ? 0.6 : 0),
   coches: (w) => (w >= 6.5 ? [-1] : []),
   anchoNecesario: 2.4,
+  marchas: [0.8, 1.8, 3.0],   // paso corto, paso normal y ligero: × velocidad base
   publicoPlaza: 1.2,
   mediaLargo: 2, altSuelo: -0.25, el: 'el paso',
   ayudaLevantar: 'Levanta el paso con el llamador (Espacio): un golpe, «¡preparados!»; otro, «¡a esta es!».',
@@ -432,7 +436,7 @@ function descDe(t) {
     if (k.tipo === 'camion') d.push('Un camión aparcado: pásalo por el otro lado.');
     if (k.tipo === 'iglesia') d.push('Una iglesia: si paras delante de la puerta, alguien canta una saeta.');
     if (k.tipo === 'convento') d.push('Un convento: si paras delante en silencio, cantan las monjas.');
-    if (k.tipo === 'pena') d.push('Una peña cofrade: la mecida y la levantá a pulso lucen.');
+    if (k.tipo === 'pena') d.push('Una peña cofrade: pasa despacio, con la banda tocando, y luce.');
   }
   return d.join(' ') || 'Ve centrado.';
 }
@@ -1524,7 +1528,7 @@ function update(dt) {
   if (arriba() || G.estado === 'bajando') {
     const sube = G.v >= 0 ? G.cuesta : -G.cuesta;
     const vmax = (G.cans > 70 ? 0.7 : 1) * (G.mecida ? 0.85 : 1) * clamp(1 - 3 * Math.max(0, sube) + 2 * Math.max(0, -sube), 0.45, 1.4);
-    const vT = G.vObj > 0 ? CFG.vMax * vmax * [1, 1.5, 2][G.paso - 1] : G.vObj < 0 ? -CFG.vAtras : 0;
+    const vT = G.vObj > 0 ? CFG.vMax * vmax * JUEGO.marchas[G.paso - 1] : G.vObj < 0 ? -CFG.vAtras : 0;
     const a = Math.abs(vT) > Math.abs(G.v) && Math.sign(vT || 1) === Math.sign(G.v || vT || 1) ? CFG.acel : CFG.frena;
     G.v += clamp(vT - G.v, -a * dt, a * dt);
     const wT = G.wObj * CFG.wMax;
@@ -1540,6 +1544,7 @@ function update(dt) {
     else G.pose = np;
   }
   // Lucimiento por mecida
+  if (arriba() && G.v > 0.05 && G.paso === 1 && G.banda.estado === 'marcha' && (enPlaza(G.pose.x, G.pose.z) || Math.hypot(G.pose.x - PENA.x, G.pose.z - PENA.z) < 10)) G.luci += dt * 0.5;
   if (G.mecida && arriba()) G.luci += dt * (enPlaza(G.pose.x, G.pose.z) || Math.hypot(G.pose.x - PENA.x, G.pose.z - PENA.z) < 12 ? 0.6 : 0.12);
   // Fuera del itinerario autorizado: la Agrupación lo apunta
   if (G.t0 !== null && !G.fin) {
@@ -1806,14 +1811,14 @@ const MARCAS = (() => {
         farol: JUEGO.tipo === 'paso' ? 'Farol de forja a 2,4 m metido en la calle: apártate.' : 'Farol de pared a 4,2 m que sale 1,5 m: apártate de esa acera.',
         contenedores: 'Contenedores de basura en la acera: apártate al otro lado.', coche: 'Coche mal aparcado en el corte: pásalo por el otro lado.', furgoneta: 'Furgoneta mal aparcada: pásala por el otro lado.',
         senal: `Señal de tráfico con la placa a ${JUEGO.tipo === 'paso' ? '1,9' : '2,1'} m, metida en la calle: la candelería la roza si vas pegado.`, rama: `Rama baja de un árbol a ${JUEGO.tipo === 'paso' ? '2,75' : '3,9'} m: ${JUEGO.tipo === 'paso' ? 'el misterio' : 'los arbotantes y el palio'} la rozan. Apártate o, ${JUEGO.tipo === 'paso' ? 'agachaditos' : 'si cabe, pasa por el centro'}.`, bolardos: 'Bolardos a los dos lados que estrechan la calle: centrado.',
-        iglesia: 'Iglesia: si paras delante de la puerta, alguien canta una saeta desde un balcón.', convento: 'Convento: si paras delante en silencio, cantan las monjas.', pena: 'Peña cofrade: la mecida y la levantá a pulso lucen.',
+        iglesia: 'Iglesia: si paras delante de la puerta, alguien canta una saeta desde un balcón.', convento: 'Convento: si paras delante en silencio, cantan las monjas.', pena: 'Peña cofrade: pasa despacio, al paso corto y con la banda tocando, que luce.',
       };
       const tipo = k.tipo === 'arbol' ? 'arboles' : k.tipo;
       if (T2[tipo]) pon(x, z, tipo, t.nombre, T2[tipo]);
     }
   }
   for (const n of Object.values(NODOS)) {
-    if (n.plaza) { pon(n.x, n.z, 'plaza', cap1(n.nombre), 'Plaza: aquí lucen la mecida y la levantá a pulso. Hay sitio para girar.'); continue; }
+    if (n.plaza) { pon(n.x, n.z, 'plaza', cap1(n.nombre), 'Plaza: pasa despacio, al paso corto y con la banda tocando, que luce. Hay sitio para girar.'); continue; }
     const ts = TRAMOS.filter((t) => t.a === n.id || t.b === n.id); if (ts.length < 2 || n.id === 'S') continue;
     const dirs = ts.map((t) => { const p = t.a === n.id ? t.pts[Math.min(10, t.pts.length - 1)] : t.pts[Math.max(0, t.pts.length - 11)]; const dx = p.x - n.x, dz = p.z - n.z, l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l]; });
     let minAng = 180; for (let i = 0; i < dirs.length; i++) for (let j = i + 1; j < dirs.length; j++) minAng = Math.min(minAng, Math.acos(clamp(dirs[i][0] * dirs[j][0] + dirs[i][1] * dirs[j][1], -1, 1)) / DEG);
@@ -1934,7 +1939,7 @@ function objetivo() {
   if (zn && zn.tipo === 'nave') return (G.estado === 'suelo' && G.t0 === null ? `<strong>En ${NIVEL.nave.nombre}.</strong> ${JUEGO.ayudaLevantar}` : `<strong>En ${NIVEL.nave.nombre}.</strong> Pasa la puerta con ${JUEGO.el} centrado.`) + sig;
   if (!zn) return '<strong>Fuera de las calles del barrio.</strong> Vuelve al itinerario.';
   if (zn.tipo === 'tramo') { const t = TR[zn.id]; return `<strong>${cap1(t.nombre)}.</strong> ${t.desc}` + (RUTA.tramos.has(t.id) ? sig : ' <strong>Fuera del itinerario:</strong> vuelve en cuanto puedas.'); }
-  if (NODOS[zn.id].plaza) return `<strong>${cap1(NODOS[zn.id].nombre)}.</strong> Aquí luce: mecida (Z) y levantá a pulso (P).` + sig;
+  if (NODOS[zn.id].plaza) return `<strong>${cap1(NODOS[zn.id].nombre)}.</strong> Pasa despacio, al paso corto y con la banda tocando: luce.` + sig;
   return `<strong>${cap1(NODOS[zn.id].nombre)}.</strong> ${JUEGO.ayudaCruce}` + sig;
 }
 function avisoProximo() {
@@ -2009,6 +2014,7 @@ function hud() {
   if (G.mecida) e += ' · meciendo';
   if (Math.abs(G.cuesta || 0) > 0.02) e += ` · ${(G.v >= 0 ? G.cuesta : -G.cuesta) > 0 ? 'cuesta arriba' : 'cuesta abajo'} ${Math.round(Math.abs(G.cuesta) * 100)} %`;
   $('#st-estado').textContent = e;
+  { const n = arriba() && Math.abs(G.v) > 0.03 ? (G.v > 0 ? G.paso : 1) : 0, el = $('#st-marcha'); el.classList.toggle('atras', G.v < -0.03); el.querySelectorAll('i').forEach((t, i) => t.classList.toggle('on', i < n)); el.title = n ? ['Paso corto', 'Paso normal', 'Ligero'][n - 1] : 'Parado'; }
   { const B = G.banda; $('#st-banda').textContent = G.t0 === null ? 'esperando a la levantá' : B.estado === 'marcha' ? `tocando la ${MARCHAS[B.marcha].nombre}` : B.estado === 'tambor' ? 'a tambor' : B.pedida ? 'preparando una marcha' : 'en silencio, descansando'; }
   $('#objetivo').innerHTML = objetivo();
   { const sg = siguientePaso().trim(); $('#siguiente').innerHTML = sg || (G.fin ? '' : objetivo().split('</strong>')[0] + '</strong>'); }
@@ -2037,7 +2043,7 @@ function toast(txt, tipo) {
 }
 
 // ---------------------------------------------------------------- entrada
-const TECLAS = { KeyT: 'rapido', Tab: 'mapaGrande', KeyI: 'info', Space: 'toque', KeyC: 'agachar', KeyX: 'relevo', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
+const TECLAS = { KeyT: 'rapido', Tab: 'mapaGrande', KeyI: 'info', Space: 'toque', KeyC: 'agachar', KeyX: 'relevo', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
 const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara', 'mapaGrande', 'info']);
 const pulsadas = new Set();
 function press(acc) {

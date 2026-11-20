@@ -71,7 +71,7 @@
     },
     {
       id: 'salida', titulo: 'La salida procesional', modo: 'procesion', estilo: 'centro',
-      resumen: 'El día grande, por el centro. La salida es lo más difícil: la calle de la casa hermandad sube, se estrecha y gira, y acaba en una esquina viva. Después eliges itinerario hasta la entrada en el recorrido oficial, y tienen que aprobarlo el Ayuntamiento y la Agrupación (o el Consejo).',
+      resumen: 'El día grande, por el centro. La salida es lo más difícil: la calle de la casa hermandad sube, se estrecha y gira, y acaba en una esquina viva. Después eliges itinerario hasta la entrada en el recorrido oficial, y tienen que aprobarlo el Ayuntamiento y la Agrupación.',
       horaInicio: 18 * 60 + 30, horaLimite: 21 * 60 + 15,
       nave: { x: 0, z: 0, a: 0, ancho: 12, fondo: 18, puerta: 6.6, nombre: 'la casa hermandad' },
       nodos: {
@@ -98,12 +98,27 @@
       puntos: ['B', 'C', 'E', 'G', 'F', 'H', 'D'],
     },
   ];
+  // Nombres de calles de Sevilla para la salida de los pasos (los de arriba son de Málaga, para los tronos)
+  const NOMBRES_SEVILLA = {
+    salida: {
+      nave: 'el templo', plazas: { B: 'la plaza de la Encarnación' },
+      calles: { cofradia: 'calle Feria', postigo: 'calle Alcázares', granada: 'calle Cuna', nueva: 'calle Sierpes', larga: 'La Campana', carreteria: 'calle San Luis', alamos: 'calle Santiago', cister: 'calle Laraña', compania: 'calle Orfila', alcazabilla: 'calle Regina', santamaria: 'calle Castellar', angel: 'calle Imagen', mosquera: 'calle Dueñas' },
+      reservada: 'la Hermandad de la Macarena',
+    },
+  };
   // Versión para pasos: mismo trazado, más pequeño y con calles más estrechas
   function adaptar(n, k, kw, kh) {
     const o = JSON.parse(JSON.stringify(n));
     for (const [id, v] of Object.entries(o.nodos)) { v[0] *= k; v[1] *= k; v[2] = (v[2] || 0) * kh; if (v[3]) { if (v[3].redondeo) v[3].redondeo *= kw * 1.1; if (v[3].plaza) { v[3].plaza.hx *= k; v[3].plaza.hz *= k; } } }
     for (const c of o.calles) { c.w = typeof c.w === 'number' ? c.w * kw : c.w.map(([f, w]) => [f, w * kw]); if (c.via) c.via = c.via.map(([x, z]) => [x * k, z * k]); }
     o.nave = { ...o.nave, ancho: 6, fondo: 9, puerta: 3.6 };
+    const ns = NOMBRES_SEVILLA[o.id];
+    if (ns) {
+      o.nave.nombre = ns.nave;
+      for (const c of o.calles) { if (ns.calles[c.id]) c.nombre = ns.calles[c.id]; if (c.reservada) c.reservada = ns.reservada; }
+      for (const [id, nombre] of Object.entries(ns.plazas)) if (o.nodos[id][3]) o.nodos[id][3].nombre = nombre;
+      o.resumen = o.resumen.replace('la calle de la casa hermandad', 'la calle del templo').replace(' (o el Consejo)', '').replace('y de la Agrupación', 'y del Consejo').replace('la Agrupación', 'el Consejo').replace('en el recorrido oficial', 'en la carrera oficial');
+    }
     if (o.meta) o.meta.u *= k;
     if (o.largoMax) o.largoMax *= k;
     return o;
