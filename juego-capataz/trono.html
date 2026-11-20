@@ -299,6 +299,8 @@ const TIERS = [
   { nombre: 'un arbotante', arb: 1, hx: 0.6, hz: 0.55, ox: -1.95, oz: 2.95, y0: 3.15, y1: 4.75 },
   { nombre: 'un arbotante', arb: 2, hx: 0.6, hz: 0.55, ox: 1.95, oz: -2.95, y0: 3.15, y1: 4.75 },
   { nombre: 'un arbotante', arb: 0, hx: 0.6, hz: 0.55, ox: -1.95, oz: -2.95, y0: 3.15, y1: 4.75 },
+  // La cola del manto: sale por detrás del cajillo y cae casi hasta el final de los varales traseros
+  { nombre: 'el manto', hx: 1.3, hz: 1.6, oz: -4.3, y0: 1.95, y1: 2.95 },
 ];
 const ALTO = TIERS[2].y1;
 
@@ -592,7 +594,8 @@ const matCajillo = new THREE.MeshStandardMaterial({ color: 0xc99a3a, map: texRel
 const texAla = texCanvas(64, 96, (x, w, h) => { x.fillStyle = '#d8b04a'; for (let k = 0; k < 6; k++) { x.beginPath(); x.ellipse(w / 2, 14 + k * 14, w / 2 - k * 3, 10, 0, 0, Math.PI * 2); x.fill(); x.fillStyle = k % 2 ? '#d8b04a' : '#f0d37a'; } });
 const trono = new THREE.Group(); trono.rotation.order = 'YXZ'; scene.add(trono);
 const cuerpo = new THREE.Group(); trono.add(cuerpo);   // todo lo que sube y baja con los varales
-const VARALES_X = [-2.0, -1.2, -0.6, -0.2, 0.2, 0.6, 1.2, 2.0];
+// Ocho varales equidistantes de lado a lado (en un trono de seis sería igual, con otra separación)
+const N_VARALES = 8, VARALES_X = Array.from({ length: N_VARALES }, (_, i) => -2 + (4 * i) / (N_VARALES - 1));
 { for (const x of VARALES_X) { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 13, 8), matMadera); v.rotation.x = Math.PI / 2; v.position.set(x, 1.5, 0); cuerpo.add(v);
     for (const z of [-6.5, 6.5]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.3, 10), matOro); c.rotation.x = Math.PI / 2; c.position.set(x, 1.5, z + Math.sign(z) * 0.1); cuerpo.add(c); } }
   const mesa = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.35, 5.3), matMadera); mesa.position.y = 1.75; cuerpo.add(mesa);
@@ -747,8 +750,41 @@ const palio = new THREE.Group(); palio.rotation.order = 'YXZ';
 const BAMBALINAS = [];
 const PAL = { rx: 0, vx: 0, rz: 0, vz: 0, lado: 0, ladoV: 0, v: 0, y: 0, yV: 0 };
 function sacudirPalio(f) { PAL.vz += (Math.random() - 0.5) * f; PAL.vx += (Math.random() - 0.5) * f; BAMBALINAS.forEach((b) => { b.v += (Math.random() - 0.3) * f * 2; }); }
-{ const manto = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.5, 20, 1, true), M(0x163a2a, { side: THREE.DoubleSide, roughness: 0.7 })); manto.position.set(0, 3.2, -0.8); cuerpo.add(manto);
-  const cola = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 1.3), M(0x163a2a)); cola.position.set(0, 2.93, -1.6); cola.rotation.x = 0.05; cuerpo.add(cola);
+// Bordado en oro sobre terciopelo: roleos, hojas y flores, simétrico respecto al eje (procedural)
+function bordar(x, w, h, fondo, motivos, cenefa) {
+  x.fillStyle = fondo; x.fillRect(0, 0, w, h);
+  for (let k = 0; k < 2500; k++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; x.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  const oro = (a) => `rgba(${226 + a * 20},${184 + a * 30},${84 + a * 40},1)`;
+  const roleo = (cx, cy, r, sx, rot) => {
+    x.save(); x.translate(cx, cy); x.rotate(rot); x.scale(sx, 1);
+    x.strokeStyle = '#7a5a1a'; x.lineWidth = r * 0.2; x.beginPath(); x.moveTo(0, 0); x.bezierCurveTo(r * 0.6, -r, r * 1.6, -r * 0.6, r * 1.3, r * 0.2); x.arc(r * 1.05, r * 0.15, r * 0.25, 0, Math.PI * 1.7); x.stroke();
+    x.strokeStyle = oro(0.3); x.lineWidth = r * 0.12; x.stroke();
+    for (let j = 0; j < 4; j++) { const t = 0.2 + j * 0.2; x.fillStyle = oro(j % 2 ? 0 : 0.5); x.beginPath(); x.ellipse(r * 1.5 * t, -r * 0.75 * Math.sin(t * Math.PI) - r * 0.18, r * 0.28, r * 0.1, -0.6 + j * 0.3, 0, Math.PI * 2); x.fill(); }
+    x.restore();
+  };
+  const flor = (cx, cy, r) => { for (let j = 0; j < 6; j++) { const a = (j / 6) * Math.PI * 2; x.fillStyle = oro(j % 2 ? 0.2 : 0.6); x.beginPath(); x.ellipse(cx + Math.cos(a) * r * 0.55, cy + Math.sin(a) * r * 0.55, r * 0.42, r * 0.2, a, 0, Math.PI * 2); x.fill(); } x.fillStyle = '#fff0b0'; x.beginPath(); x.arc(cx, cy, r * 0.25, 0, Math.PI * 2); x.fill(); };
+  for (const [cx, cy, r] of motivos) { roleo(cx, cy, r, 1, 0); roleo(cx, cy, r, -1, 0); roleo(cx, cy + r * 0.2, r * 0.8, 1, Math.PI); roleo(cx, cy + r * 0.2, r * 0.8, -1, Math.PI); flor(cx, cy - r * 0.1, r * 0.45); }
+  if (cenefa) { const c = cenefa; x.strokeStyle = oro(0.4); x.lineWidth = 5; x.strokeRect(c, c, w - 2 * c, h - 2 * c); x.lineWidth = 2; x.strokeRect(c + 10, c + 10, w - 2 * c - 20, h - 2 * c - 20);
+    for (let t = c + 24; t < w - c - 10; t += 34) { flor(t, c / 2 + 4, 10); flor(t, h - c / 2 - 4, 10); }
+    for (let t = c + 24; t < h - c - 10; t += 34) { flor(c / 2 + 4, t, 10); flor(w - c / 2 - 4, t, 10); } }
+}
+// Manto: en Málaga son muy largos. Cae de los hombros de la Virgen, cubre la trasera del cajillo y llega casi al
+// final de los varales traseros, bordado entero en oro.
+const texManto = texCanvas(512, 1024, (x, w, h) => {
+  const mot = []; for (let fy = 0; fy < 6; fy++) for (let fx = 0; fx < 3; fx++) mot.push([w * (0.2 + fx * 0.3) + (fy % 2 ? 40 : 0) - 20, 120 + fy * 150, fy === 2 && fx === 1 ? 90 : 58]);
+  bordar(x, w, h, '#123224', mot, 46);
+});
+{ const perfil = new THREE.CatmullRomCurve3([[3.78, -0.84], [3.45, -1.05], [3.1, -1.6], [2.96, -2.3], [2.93, -2.7], [2.8, -3.5], [2.62, -4.6], [2.5, -5.4], [2.3, -5.85], [2.0, -5.95]].map(([y, z]) => new THREE.Vector3(0, y, z)));
+  const anchoM = (t) => t < 0.08 ? 0.32 + t * 6 : Math.min(1.28, 0.8 + t * 1.4);
+  const NU = 24, NV = 60, pos = [], uv = [], idx = [];
+  for (let j = 0; j <= NV; j++) { const t = j / NV, P = perfil.getPoint(t);
+    for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, cae = t > 0.25 ? Math.pow(Math.abs(u), 3) * 0.28 : 0;
+      pos.push(u * anchoM(t), P.y - cae + Math.sin(u * 9 + t * 4) * 0.012, P.z); uv.push(i / NU, 1 - t); } }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, b = a + NU + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  const manto = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: texManto, side: THREE.DoubleSide, roughness: 0.75, metalness: 0.15 })); cuerpo.add(manto);
+  // hombros y caída alrededor de la imagen
+  const capa = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1.0, 20, 1, true, Math.PI * 0.5, Math.PI), new THREE.MeshStandardMaterial({ map: texManto, side: THREE.DoubleSide, roughness: 0.75, metalness: 0.15 })); capa.position.set(0, 3.42, -0.86); cuerpo.add(capa);
   const saya = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 16), M(0xe8dcc0)); saya.position.set(0, 3.1, -0.62); cuerpo.add(saya);
   const cara = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), M(0xd9b08a)); cara.position.set(0, 3.98, -0.72); cuerpo.add(cara);
   const toca = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10, 0, Math.PI * 2, 0, Math.PI / 1.6), M(0xf4efe4)); toca.position.set(0, 4.0, -0.76); cuerpo.add(toca);
@@ -756,9 +792,24 @@ function sacudirPalio(f) { PAL.vz += (Math.random() - 0.5) * f; PAL.vx += (Math.
   const rafaga = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.02, 6, 24), matOro); rafaga.position.set(0, 4.17, -0.8); cuerpo.add(rafaga);
   // varales de palio y techo: van en su propio grupo, con su base sobre el cajillo, para que oscilen con retraso
   palio.position.y = PALIO_Y; cuerpo.add(palio);
-  for (const x of [-1.25, 1.25]) for (let i = 0; i < 6; i++) { const z = -1.85 + i * 0.74; const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.65, 8), matPlata); v.position.set(x, 3.7 - PALIO_Y, z); palio.add(v); }
-  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), M(0x163a2a)); techo.position.y = 4.55 - PALIO_Y; palio.add(techo);
-  const glo = new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M(0xd8b04a, { metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide })); glo.rotation.x = Math.PI / 2; glo.position.y = 4.5 - PALIO_Y; palio.add(glo);
+  // Varales de palio cincelados: jarra en la base, nudos a lo largo de la caña y capitel arriba
+  { const P = [[0, 0], [0.075, 0], [0.085, 0.04], [0.06, 0.08], [0.095, 0.16], [0.05, 0.25], [0.032, 0.28]];
+    for (const yn of [0.62, 1.02]) P.push([0.032, yn - 0.06], [0.062, yn - 0.02], [0.07, yn], [0.062, yn + 0.02], [0.032, yn + 0.06]);
+    P.push([0.032, 1.48], [0.07, 1.53], [0.09, 1.58], [0.06, 1.62], [0.1, 1.65], [0, 1.66]);
+    const gVP = new THREE.LatheGeometry(P.map(([r, y]) => new THREE.Vector2(r, y)), 12);
+    for (const x of [-1.25, 1.25]) for (let i = 0; i < 6; i++) { const z = -1.85 + i * 0.74; const v = new THREE.Mesh(gVP, matPlata); v.position.set(x, 3.7 - PALIO_Y - 0.83, z); palio.add(v); } }
+  // Techo de palio bordado, con la gloria en el centro (vista desde abajo y desde arriba)
+  const texTecho = texCanvas(512, 768, (x, w, h) => {
+    const mot = []; for (const [fx, fy] of [[0.22, 0.15], [0.78, 0.15], [0.22, 0.85], [0.78, 0.85], [0.18, 0.5], [0.82, 0.5], [0.5, 0.12], [0.5, 0.88]]) mot.push([w * fx, h * fy, 52]);
+    bordar(x, w, h, '#123224', mot, 40);
+    const g = x.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, 150); g.addColorStop(0, '#f4e6b8'); g.addColorStop(0.5, '#8fb0d8'); g.addColorStop(1, '#2a4a7a');
+    x.fillStyle = g; x.beginPath(); x.ellipse(w / 2, h / 2, 120, 160, 0, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = '#e8c45a'; x.lineWidth = 12; x.stroke(); x.lineWidth = 3; x.beginPath(); x.ellipse(w / 2, h / 2, 136, 176, 0, 0, Math.PI * 2); x.stroke();
+    for (let k = 0; k < 32; k++) { const a = (k / 32) * Math.PI * 2; x.beginPath(); x.moveTo(w / 2 + Math.cos(a) * 140, h / 2 + Math.sin(a) * 182); x.lineTo(w / 2 + Math.cos(a) * (k % 2 ? 160 : 180), h / 2 + Math.sin(a) * (k % 2 ? 205 : 225)); x.stroke(); }
+    x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(w / 2, h / 2, 34, 14, 0, 0, Math.PI * 2); x.fill(); x.beginPath(); x.moveTo(w / 2 - 70, h / 2 - 20); x.quadraticCurveTo(w / 2 - 20, h / 2 + 10, w / 2, h / 2); x.quadraticCurveTo(w / 2 + 20, h / 2 + 10, w / 2 + 70, h / 2 - 20); x.quadraticCurveTo(w / 2, h / 2 + 30, w / 2 - 70, h / 2 - 20); x.fill();
+  });
+  const mTecho = new THREE.MeshStandardMaterial({ map: texTecho, roughness: 0.75, metalness: 0.1 });
+  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), [matPlata, matPlata, mTecho, mTecho, matPlata, matPlata]); techo.position.y = 4.55 - PALIO_Y; palio.add(techo);
   const texBamb = texCanvas(512, 128, (x, w, h) => {
     x.clearRect(0, 0, w, h);
     x.fillStyle = '#123224'; x.beginPath(); x.moveTo(0, 0); x.lineTo(w, 0); x.lineTo(w, 86);
@@ -786,8 +837,8 @@ function sacudirPalio(f) { PAL.vz += (Math.random() - 0.5) * f; PAL.vx += (Math.
 // Túnica de la hermandad hasta los pies, cíngulo a la cintura, cara descubierta y una mano en el varal.
 const PORTADORES = [];
 { for (const x of VARALES_X) {
-    const ext = Math.abs(x) > 1.9;
-    for (let z = -6.2; z <= 6.21; z += 0.55) { if (!ext && Math.abs(z) < 2.7) continue; PORTADORES.push({ x: ext ? x + Math.sign(x) * 0.16 : x + 0.12, z, vx: x }); } } }
+    const ext = Math.abs(x) > 1.9;   // los de los varales de fuera van todo a lo largo; los de dentro, delante y detrás del cajillo
+    for (let z = -6.2; z <= 6.21; z += 0.55) { if (!ext && Math.abs(z) < 2.7) continue; PORTADORES.push({ x: x + Math.sign(x) * 0.17, z, vx: x }); } } }
 const HT = (() => {
   const n = PORTADORES.length;
   const gTun = new THREE.LatheGeometry([[0, 0], [0.27, 0], [0.25, 0.25], [0.21, 0.8], [0.2, 1.15], [0.15, 1.33], [0.06, 1.4], [0, 1.41]].map(([r, y]) => new THREE.Vector2(r, y)), 12);
