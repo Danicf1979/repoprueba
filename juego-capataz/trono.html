@@ -165,6 +165,7 @@ a { color: var(--oro); }
       <button class="mini" id="b-mus" type="button">Banda: sí<kbd>M</kbd></button>
       <button class="mini" id="b-voz" type="button">Voz: sí<kbd>N</kbd></button>
       <button class="mini" id="b-ayu" type="button">Ayuda<kbd>H</kbd></button>
+      <button class="mini" id="b-son" type="button">Probar sonido</button>
       <a class="mini" href="index.html">← La mudanza</a>
     </div>
   </div>
@@ -572,7 +573,7 @@ const mtx = new THREE.Matrix4();
 function colocarHombres(t, alt, bajos) {
   PORTADORES.forEach(([x, z], i) => {
     const fase = ((i * 7) % 2) ? 1 : -1;
-    const bob = REDUCIDO ? 0 : Math.max(0, Math.sin(t * Math.PI * 2 / (BEAT * 2) + fase)) * 0.05 * alt;
+    const bob = REDUCIDO ? 0 : Math.max(0, Math.sin(t * Math.PI * 2 / (BEAT * 2) + fase)) * 0.02 * alt;
     const y = bajos ? 0.58 : 0.66 + bob;
     mtx.makeTranslation(x, y, z); hombresC.setMatrixAt(i, mtx);
     mtx.makeTranslation(x, y + 0.75, z); hombresH.setMatrixAt(i, mtx);
@@ -617,6 +618,27 @@ const MELODIA = [220, 247, 262, 247, 220, 196, 220, 0, 196, 220, 247, 262, 294, 
 let vozES = null;
 function buscarVoz() { try { const vs = speechSynthesis.getVoices(); vozES = vs.find((v) => /es[-_]ES/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null; } catch (e) {} }
 if ('speechSynthesis' in window) { buscarVoz(); try { speechSynthesis.onvoiceschanged = buscarVoz; } catch (e) {} }
+
+// Desbloqueo del sonido: algunos navegadores (sobre todo iPhone en modo silencio) no dejan sonar Web Audio
+// hasta que se toca la pantalla y suena un elemento de audio normal.
+let silencio = null;
+function desbloquearAudio() {
+  const c = ac(); if (!c) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+  try { if (!silencio) { silencio = new Audio('data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=='); silencio.loop = true; silencio.volume = 0.01; } silencio.play().catch(() => {}); } catch (e) {}
+}
+addEventListener('pointerdown', desbloquearAudio, true);
+addEventListener('keydown', desbloquearAudio, true);
+function probarSonido() {
+  desbloquearAudio();
+  const c = ac();
+  setTimeout(() => {
+    const st = c ? c.state : 'sin audio';
+    if (st === 'running') { campana('fuerte'); toast('Sonido activado. Si no oyes nada, sube el volumen y, en iPhone, quita el modo silencio.', true); }
+    else toast('El navegador no deja sonar el audio (estado: ' + st + '). Toca la pantalla otra vez; en iPhone, quita el modo silencio.');
+  }, 150);
+}
 function decir(txt) {
   if (!AU.voz || !('speechSynthesis' in window)) return;
   try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt.replace(/[¡!¿?]/g, '')); u.lang = 'es-ES'; u.rate = 1.1; u.pitch = 0.75; if (vozES) u.voice = vozES; speechSynthesis.speak(u); } catch (e) {}
@@ -631,7 +653,7 @@ function nuevaPartida() {
     estado: 'suelo', liftT: 0, alt: 0, altObj: 0,           // alt: 0 = en hombros; -0.4 = sobre la mesa
     v: 0, w: 0, lat: 0, vObj: 0, wObj: 0, latObj: 0,
     giroHeld: 0, latHeld: 0, paso: 1,
-    mecida: false, mecidaOrden: false, mecFase: 0,
+    mecida: false, mecidaOrden: false, mecFase: 0, mecAmp: 0, andarAmp: 0,
     pulsoT: 0, pulsoDy: 0,
     cans: 0, sueloT: 0, enfriado: false,
     toques: [], fuerteT: null, sec: [],
@@ -685,7 +707,7 @@ const ACC = {
     if (G.vObj > 0) {
       if (G.paso >= 3) { toast('Ya va todo lo ligero que puede.', true); return; }
       const n = G.paso + 1; G.paso = n;
-      voz(n === 2 ? '¡Más paso, valientes!' : '¡Ligero, ligero, que nos mojamos!', () => {});
+      voz(n === 2 ? '¡Más paso!' : '¡Más ligero!', () => {});
       return;
     }
     G.paso = 1; voz('¡Vamos, adelante!', () => { if (arriba()) G.vObj = 1; });
@@ -702,7 +724,7 @@ const ACC = {
   mecida() {
     if (enSuelo()) return;
     const q = !G.mecidaOrden; G.mecidaOrden = q; actualizarMecidaBtn();
-    voz(q ? '¡A mecerlo, valientes!' : '¡Sin mecer, derecho!', () => {
+    voz(q ? '¡A mecerlo!' : '¡Sin mecer, derecho!', () => {
       if (!q) { G.mecida = false; return; }
       const h = colisiona(G.pose, G.alt + G.pulsoDy, 0.25);
       if (h) { golpe(h, 0.3); G.mecidaOrden = false; actualizarMecidaBtn(); return; }
@@ -713,7 +735,7 @@ const ACC = {
     if (enSuelo()) return;
     if (G.estado === 'pulso') return;
     if (Math.abs(G.v) > 0.05) { toast('A pulso solo con el trono parado.', true); return; }
-    voz('¡A pulso! ¡Al cielo con ella!', () => {
+    voz('¡A pulso!', () => {
       if (G.estado !== 'arriba' || Math.abs(G.v) > 0.05) return;
       if (G.cans > 65) { toast('La cuadrilla no puede: está demasiado cansada para subirlo a pulso.'); G.lev.desiguales++; G.inclin = 0.05; return; }
       const h = colisiona(G.pose, CFG.pulso, G.mecida ? 0.25 : 0);
@@ -798,7 +820,7 @@ function terminar() {
 function onBeat() {
   G.beatN++;
   const cp = $('#compas'); cp.classList.add('on'); setTimeout(() => cp.classList.remove('on'), 90);
-  if (AU.musica && AU.ctx && arriba() && Math.abs(G.v) > 0.05) {
+  if (AU.musica && AU.ctx && G.t0 !== null) {
     const t = AU.ctx.currentTime + 0.01, k = G.beatN % 16;
     bombo(t); caja(t + BEAT / 2, 0.12);
     const f = MELODIA[k]; if (f) { metal(t, f, 0.05); metal(t, f * 1.5, 0.025); }
@@ -863,13 +885,16 @@ function update(dt) {
   // Visual
   G.inclin *= Math.max(0, 1 - dt * 0.6);
   G.mecFase += dt * (Math.PI * 2) / (BEAT * 2);
-  const mec = G.mecida && !REDUCIDO ? Math.sin(G.mecFase) : 0;
-  trono.position.set(G.pose.x + Math.cos(G.pose.a) * mec * 0.12, 0, G.pose.z - Math.sin(G.pose.a) * mec * 0.12);
+  // Andando: un balanceo suave de lado a lado con los pasos, sin botes.
+  // Mecida: el trono se menea de lado a lado, entero y a la misma altura (sin ladearse).
+  G.andarAmp += ((arriba() && Math.abs(G.v) > 0.05 && !REDUCIDO ? 1 : 0) - G.andarAmp) * Math.min(1, dt * 2);
+  G.mecAmp += ((G.mecida && !REDUCIDO ? 1 : 0) - G.mecAmp) * Math.min(1, dt * 1.5);
+  const lado = Math.sin(now * Math.PI / BEAT) * 0.04 * G.andarAmp + Math.sin(G.mecFase) * 0.22 * G.mecAmp;
+  trono.position.set(G.pose.x + Math.cos(G.pose.a) * lado, 0, G.pose.z - Math.sin(G.pose.a) * lado);
   trono.rotation.y = G.pose.a;
-  trono.rotation.z = (REDUCIDO ? 0 : mec * 0.03) + G.inclin;
-  const bob = REDUCIDO || !arriba() || Math.abs(G.v) < 0.05 ? 0 : Math.abs(Math.sin(now * Math.PI / BEAT)) * 0.025;
-  cuerpo.position.y = G.alt + G.pulsoDy + bob;
-  colocarHombres(now, Math.abs(G.v) > 0.05 ? 1 : 0, G.estado === 'suelo');
+  trono.rotation.z = G.inclin;
+  cuerpo.position.y = G.alt + G.pulsoDy;
+  colocarHombres(now, G.andarAmp, G.estado === 'suelo');
   llamas.forEach((l, i) => { l.scale.y = 2 + Math.sin(now * 17 + i * 1.3) * 0.35; });
   const fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a);
   mayordomo.position.set(G.pose.x + fx * 7.9, 0, G.pose.z + fz * 7.9);
@@ -1032,11 +1057,12 @@ $('#b-cam').addEventListener('click', () => ACC.camara());
 $('#b-mus').addEventListener('click', () => ACC.musica());
 $('#b-voz').addEventListener('click', () => ACC.voz());
 $('#b-ayu').addEventListener('click', () => ACC.ayuda());
+$('#b-son').addEventListener('click', probarSonido);
 $('#b-cerrar-ayuda').addEventListener('click', () => ACC.ayuda());
 $('#b-repetir').addEventListener('click', () => ACC.reiniciar());
 $('#b-mirar').addEventListener('click', () => { $('#final').hidden = true; });
 canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.5, 1.9); }, { passive: false });
-function empezar() { ac(); $('#inicio').hidden = true; pausa = false; toast('Prepara la levantá: toques suaves y seguidos con Espacio.', true); }
+function empezar() { desbloquearAudio(); $('#inicio').hidden = true; pausa = false; toast('Prepara la levantá: toques suaves y seguidos con Espacio.', true); }
 $('#b-empezar').addEventListener('click', empezar);
 try { const rec = JSON.parse(localStorage.getItem('capataz-trono') || 'null'); if (rec) $('#record').textContent = `Tu récord: ${fmt(rec.nota, 1)} sobre 10, entrando a las ${hhmm(rec.llegada)}.`; } catch (e) {}
 

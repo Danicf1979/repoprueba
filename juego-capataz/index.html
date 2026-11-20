@@ -154,6 +154,7 @@ button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
     <button class="mini" id="b-mus" type="button">Banda: sí<kbd>M</kbd></button>
     <button class="mini" id="b-voz" type="button">Voz: sí<kbd>N</kbd></button>
     <button class="mini" id="b-ayu" type="button">Ayuda<kbd>H</kbd></button>
+    <button class="mini" id="b-son" type="button">Probar sonido</button>
     </div>
   </div>
 
@@ -616,6 +617,27 @@ function sGolpe() { const c = ac(); if (!c) return; const t = c.currentTime; con
 let vozES = null;
 function buscarVoz() { try { const vs = speechSynthesis.getVoices(); vozES = vs.find((v) => /es[-_]ES/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null; } catch (e) {} }
 if ('speechSynthesis' in window) { buscarVoz(); try { speechSynthesis.onvoiceschanged = buscarVoz; } catch (e) {} }
+
+// Desbloqueo del sonido: algunos navegadores (sobre todo iPhone en modo silencio) no dejan sonar Web Audio
+// hasta que se toca la pantalla y suena un elemento de audio normal.
+let silencio = null;
+function desbloquearAudio() {
+  const c = ac(); if (!c) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+  try { if (!silencio) { silencio = new Audio('data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=='); silencio.loop = true; silencio.volume = 0.01; } silencio.play().catch(() => {}); } catch (e) {}
+}
+addEventListener('pointerdown', desbloquearAudio, true);
+addEventListener('keydown', desbloquearAudio, true);
+function probarSonido() {
+  desbloquearAudio();
+  const c = ac();
+  setTimeout(() => {
+    const st = c ? c.state : 'sin audio';
+    if (st === 'running') { llamador(); toast('Sonido activado. Si no oyes nada, sube el volumen y, en iPhone, quita el modo silencio.', true); }
+    else toast('El navegador no deja sonar el audio (estado: ' + st + '). Toca la pantalla otra vez; en iPhone, quita el modo silencio.');
+  }, 150);
+}
 function decir(txt) {
   if (!AU.voz || !('speechSynthesis' in window)) return;
   try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt.replace(/[¡!¿?]/g, '')); u.lang = 'es-ES'; u.rate = 1.15; u.pitch = 0.75; if (vozES) u.voice = vozES; speechSynthesis.speak(u); } catch (e) {}
@@ -941,11 +963,12 @@ $('#b-cam').addEventListener('click', () => ACC.camara());
 $('#b-mus').addEventListener('click', () => ACC.musica());
 $('#b-voz').addEventListener('click', () => ACC.voz());
 $('#b-ayu').addEventListener('click', () => ACC.ayuda());
+$('#b-son').addEventListener('click', probarSonido);
 $('#b-cerrar-ayuda').addEventListener('click', () => ACC.ayuda());
 $('#b-repetir').addEventListener('click', () => { ACC.reiniciar(); });
 $('#b-mirar').addEventListener('click', () => { $('#final').hidden = true; });
 canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = Math.max(0.55, Math.min(1.9, zoom * (e.deltaY > 0 ? 1.08 : 0.93))); }, { passive: false });
-function empezar() { ac(); $('#inicio').hidden = true; pausa = false; toast('Levanta el paso: «¡A esta es!» (Espacio)', true); }
+function empezar() { desbloquearAudio(); $('#inicio').hidden = true; pausa = false; toast('Levanta el paso: «¡A esta es!» (Espacio)', true); }
 $('#b-empezar').addEventListener('click', empezar);
 try { const rec = JSON.parse(localStorage.getItem('capataz-mudanza') || 'null'); if (rec) $('#record').textContent = `Tu récord: ${fmt(rec.nota, 1)} sobre 10, en ${reloj(rec.tiempo)}.`; } catch (e) {}
 
