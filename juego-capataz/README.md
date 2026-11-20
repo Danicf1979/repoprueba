@@ -15,14 +15,14 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave hasta la ent
 | F | Toque fuerte: meten el hombro |
 | G | Pong: ¡arriba! La calidad de la levantá depende de la preparación, el ritmo y el tiempo entre el toque fuerte y el pong |
 | Espacio | En marcha: parar. Parado: bajar a la mesa |
-| W / S | Adelante / atrás (con inercia: tarda en arrancar y en frenar) |
+| W / S | Adelante / atrás (con inercia: tarda en arrancar y en frenar). En marcha, W otra vez da más paso (0,75 y 1 m/s, cansa mucho más) y S lo afloja |
 | A / D (mantener) | Derecha adelante, izquierda atrás (y al revés): girar |
 | Q / E (mantener) | De lado |
 | Z | Mecida: lucimiento, pero el trono ocupa más y cansa más |
 | P | A pulso: sube 45 cm; luce mucho ante la tribuna |
 | V · M · N · H · R | Cámara · banda · voz · ayuda · reiniciar |
 
-- **Cuerpos del trono:** varales y hombres de trono (4,4 × 10 m, hasta 1,9 m), mesa y candelería (hasta 3,1 m) y palio (hasta 4,6 m).
+- **Cuerpos del trono:** varales y hombres de trono (4,4 × 13 m, hasta 1,9 m), mesa y candelería (hasta 3,1 m) y palio (hasta 4,6 m).
 - **Cansancio sin relevos:** solo baja con el trono en el suelo. Si se descansa más de 35 s, la cuadrilla se enfría y la levantá sale peor.
 - **Retardo:** las voces tardan 0,7 s en cumplirse (los capataces de las esquinas las repiten); la campana es inmediata.
 - **Recorrido:** nave → calle Ancha (ficus, terraza, quiosco) → plaza de la Tribuna (fuente, público) → calle del Ángel → esquina estrecha → calle Real (semáforo, farol, guirnalda a 4,75 m, balcón) → recorrido oficial.
