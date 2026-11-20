@@ -112,6 +112,8 @@ a { color: var(--oro); }
 .acciones { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .btn { background: var(--oro); color: #1b1006; border: 0; border-radius: 9px; padding: 11px 20px; font-family: var(--font-d); font-size: 1.05rem; cursor: pointer; text-decoration: none; }
 .btn.sec { background: transparent; color: var(--cera); border: 1px solid var(--borde); }
+.btn.orfe { padding: 7px 14px; font-size: 0.95rem; }
+.btn.orfe.on { background: var(--oro-suave); border-color: var(--oro); }
 .nota { font-size: 0.82rem; color: var(--cera-2); }
 .res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .res div { border-top: 1px solid var(--borde); padding-top: 8px; display: grid; gap: 2px; }
@@ -212,7 +214,8 @@ a { color: var(--oro); }
         <kbd>Q / E</kbd><span>Desplazarse de lado</span>
         <kbd>Z · P</kbd><span><em>Mecida</em> (más ancho y más cansancio) · levantá <em>a pulso</em> (más alto)</span>
       </div>
-      <p class="nota">El cansancio solo baja con el trono en el suelo. Si descansas demasiado, la cuadrilla se enfría y la siguiente levantá sale peor. Los varales sobresalen casi 4 m por delante y por detrás del cajillo, y los cuatro arbotantes de las esquinas sobresalen por los lados: en la esquina, para en el centro del cruce y gira sobre ti mismo.</p>
+      <p class="nota">El cansancio solo baja con el trono en el suelo. Si descansas demasiado, la cuadrilla se enfría y la siguiente levantá sale peor. Los varales sobresalen casi 4 m por delante y por detrás del cajillo, y los cuatro arbotantes sobresalen en las esquinas del cajillo: en la esquina, para en el centro del cruce y gira sobre ti mismo.</p>
+      <div class="acciones"><span class="nota">Orfebrería del trono:</span><button class="btn sec orfe" data-orfe="oro" type="button">Dorada</button><button class="btn sec orfe" data-orfe="plata" type="button">De plata</button></div>
       <div class="acciones"><button class="btn" id="b-empezar" type="button">Empezar la salida</button><a class="btn sec" href="index.html">Jugar la mudanza</a></div>
       <p class="nota" id="record"></p>
     </div>
@@ -233,7 +236,7 @@ a { color: var(--oro); }
         <kbd>B</kbd><span><em>¡Música!</em>: pedir a la banda que toque una marcha si está a tambor o en silencio. Su repertorio son 5 marchas; si bajas el trono, la banda corta la que esté tocando</span>
         <kbd>M · N · R</kbd><span>Quitar o poner el sonido de la banda · voz · volver a empezar</span>
       </div>
-      <p>El trono mide 4,4 m de ancho con los hombres de trono, 13 m de largo con varales y 4,6 m de alto con el palio. Los cuatro arbotantes de las esquinas sobresalen por fuera: a esa altura (de 2,9 a 4,1 m) el trono llega a 5,1 m de ancho. El mapa marca con línea discontinua lo que está en alto.</p>
+      <p>El trono mide 4,4 m de ancho con los hombres de trono, 13 m de largo con varales y 4,6 m de alto con el palio. Los cuatro arbotantes de hojarasca dorada nacen en las esquinas del cajillo y se abren en diagonal hacia fuera: entre 3,15 y 4,75 m de alto, donde el palio solo mide 2,6 m, el trono llega a 5,1 m de ancho. Si un arbotante choca, se rompen y se apagan las tulipas que dan al golpe, y quedan apuntadas para reponer. El mapa marca con línea discontinua lo que está en alto.</p>
       <div class="acciones"><button class="btn" id="b-cerrar-ayuda" type="button">Seguir</button></div>
     </div>
   </div>
@@ -291,11 +294,11 @@ const TIERS = [
   { nombre: 'los varales', hx: 2.2, hz: 6.5, y0: 0.0, y1: 1.9 },
   { nombre: 'la candelería', hx: 1.6, hz: 2.6, y0: 1.9, y1: 3.1 },
   { nombre: 'el palio', hx: 1.3, hz: 1.9, y0: 3.1, y1: 4.6 },
-  // Los cuatro arbotantes de las esquinas: sobresalen por fuera de los varales a la altura de la candelería
-  { nombre: 'un arbotante', hx: 0.55, hz: 0.55, ox: 2.0, oz: 2.95, y0: 2.9, y1: 4.1 },
-  { nombre: 'un arbotante', hx: 0.55, hz: 0.55, ox: -2.0, oz: 2.95, y0: 2.9, y1: 4.1 },
-  { nombre: 'un arbotante', hx: 0.55, hz: 0.55, ox: 2.0, oz: -2.95, y0: 2.9, y1: 4.1 },
-  { nombre: 'un arbotante', hx: 0.55, hz: 0.55, ox: -2.0, oz: -2.95, y0: 2.9, y1: 4.1 },
+  // Los cuatro arbotantes de las esquinas: arriba, donde el palio solo mide 2,6 m, abren el trono hasta 5,1 m
+  { nombre: 'un arbotante', arb: 3, hx: 0.6, hz: 0.55, ox: 1.95, oz: 2.95, y0: 3.15, y1: 4.75 },
+  { nombre: 'un arbotante', arb: 1, hx: 0.6, hz: 0.55, ox: -1.95, oz: 2.95, y0: 3.15, y1: 4.75 },
+  { nombre: 'un arbotante', arb: 2, hx: 0.6, hz: 0.55, ox: 1.95, oz: -2.95, y0: 3.15, y1: 4.75 },
+  { nombre: 'un arbotante', arb: 0, hx: 0.6, hz: 0.55, ox: -1.95, oz: -2.95, y0: 3.15, y1: 4.75 },
 ];
 const ALTO = TIERS[2].y1;
 
@@ -536,32 +539,131 @@ const trono = new THREE.Group(); trono.rotation.order = 'YXZ'; scene.add(trono);
 const cuerpo = new THREE.Group(); trono.add(cuerpo);   // todo lo que sube y baja con los varales
 const VARALES_X = [-2.0, -1.2, -0.6, -0.2, 0.2, 0.6, 1.2, 2.0];
 { for (const x of VARALES_X) { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 13, 8), matMadera); v.rotation.x = Math.PI / 2; v.position.set(x, 1.5, 0); cuerpo.add(v);
-    for (const z of [-6.5, 6.5]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.14, 10), matPlata); c.rotation.x = Math.PI / 2; c.position.set(x, 1.5, z); cuerpo.add(c); } }
+    for (const z of [-6.5, 6.5]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.3, 10), matOro); c.rotation.x = Math.PI / 2; c.position.set(x, 1.5, z + Math.sign(z) * 0.1); cuerpo.add(c); } }
   const mesa = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.35, 5.3), matMadera); mesa.position.y = 1.75; cuerpo.add(mesa);
   const cajillo = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.9, 5.2), matOro); cajillo.position.y = 2.38; cuerpo.add(cajillo);
   for (let i = -4; i <= 4; i++) for (const s of [-1, 1]) { const cap = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.45, 0.32), M(0x3b2a12, { emissive: 0x100800 })); cap.position.set(s * 1.61, 2.4, i * 0.55); cuerpo.add(cap); }
   const moldura = new THREE.Mesh(new THREE.BoxGeometry(3.35, 0.08, 5.35), matOro); moldura.position.y = 2.86; cuerpo.add(moldura); }
 // Candelería: filas de cera delante de la imagen
 const llamas = [];
-{ const gv = new THREE.CylinderGeometry(0.022, 0.022, 1, 6), mv = M(0xf5ecd6), gl = new THREE.SphereGeometry(0.028, 6, 5), ml = new THREE.MeshBasicMaterial({ color: 0xffd27a });
-  const filas = [[0.9, 0.5], [1.2, 0.4], [1.5, 0.3], [1.8, 0.22]];
-  filas.forEach(([z, h], fi) => { for (let k = 0; k < 9 - fi; k++) { const x = -1.2 + (k + fi * 0.5) * (2.4 / 8);
+{ const gv = new THREE.CylinderGeometry(0.026, 0.026, 1, 6), mv = M(0xf2e6c6, { emissive: 0x2a2010 }), gl = new THREE.SphereGeometry(0.028, 6, 5), ml = new THREE.MeshBasicMaterial({ color: 0xffd27a });
+  // Gradas de cera que suben hacia la Virgen, como en los tronos de palio de Málaga
+  const filas = [[2.25, 0.35], [1.95, 0.5], [1.65, 0.65], [1.35, 0.8], [1.05, 0.92], [0.75, 1.02]];
+  filas.forEach(([z, h], fi) => { for (let k = 0; k < 11; k++) { const x = -1.15 + (k + (fi % 2) * 0.5) * (2.3 / 10.5);
     const v = new THREE.Mesh(gv, mv); v.scale.y = h; v.position.set(x, 2.9 + h / 2, z); cuerpo.add(v);
     const l = new THREE.Mesh(gl, ml); l.scale.set(1, 2, 1); l.position.set(x, 2.95 + h, z); cuerpo.add(l); llamas.push(l); } }); }
-// Arbotantes: cuatro grandes candelabros en las esquinas del cajillo, inclinados hacia fuera
-{ const matArb = M(0xc8c8d0, { metalness: 0.6, roughness: 0.3, emissive: 0x15151a });
-  const gl = new THREE.SphereGeometry(0.06, 8, 6), ml = new THREE.MeshBasicMaterial({ color: 0xfff0c8 });
+// Arbotantes, como los de la Virgen de la Paloma: cuatro grandes árboles de hojarasca (dorada o de plata) que nacen
+// en las esquinas del cajillo y se abren en diagonal hacia fuera, con velas dentro de tulipas de cristal.
+// Las tulipas son instancias: cuando un arbotante choca, las que dan al golpe se rompen y se apagan.
+const TULIPAS = [];   // { arb, pos (espacio del trono), rota }
+// Orfebrería del trono: dorada o de plata (cajillo, cabezas de varal y arbotantes)
+const MAT_ARB = M(0xd9a536, { metalness: 0.6, roughness: 0.3, emissive: 0x3a2400 });
+const ORFEBRERIA = {
+  oro: { color: 0xc99a3a, emissive: 0x2a1800, arb: 0xd9a536, arbE: 0x3a2400 },
+  plata: { color: 0xcfd0d8, emissive: 0x16161c, arb: 0xd7d8e0, arbE: 0x1a1a20 },
+};
+function aplicarOrfebreria(tipo) {
+  const o = ORFEBRERIA[tipo];
+  matOro.color.setHex(o.color); matOro.emissive.setHex(o.emissive);
+  MAT_ARB.color.setHex(o.arb); MAT_ARB.emissive.setHex(o.arbE);
+  document.querySelectorAll('[data-orfe]').forEach((b) => b.classList.toggle('on', b.dataset.orfe === tipo));
+  try { localStorage.setItem('capataz-orfebreria', tipo); } catch (e) {}
+}
+let mTulipas, mVelasArb, mLlamasArb;
+function unirGeos(geos) {
+  const lista = geos.map((g) => (g.index ? g.toNonIndexed() : g));
+  let n = 0; lista.forEach((g) => { n += g.attributes.position.count; });
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let o = 0;
+  lista.forEach((g) => { pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3); o += g.attributes.position.count; });
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); return out;
+}
+{ const rr2 = rng(1945);
+  const ramas = [], hojas = [], puntas = [];
+  const matOroArb = MAT_ARB;
+  const NIV = [[0.42, 0.7, 8], [0.78, 0.78, 8], [1.12, 0.62, 7], [1.42, 0.4, 5]];
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const base = new THREE.Vector3(sx * 1.55, 2.9, sz * 2.55), top = new THREE.Vector3(sx * 2.05, 3.65, sz * 3.0);
-    const dir = top.clone().sub(base), len = dir.length();
-    const fuste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, len, 10), matArb);
-    fuste.position.copy(base).addScaledVector(dir, 0.5); fuste.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize()); cuerpo.add(fuste);
-    const copa = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.12, 0.18, 14), matArb); copa.position.set(top.x, top.y, top.z); cuerpo.add(copa);
-    for (let k = 0; k < 12; k++) { const ang = (k / 12) * Math.PI * 2, r = k % 2 ? 0.38 : 0.24, h = k % 2 ? 0.12 : 0.32;
-      const brazo = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, h + 0.1, 5), matArb); brazo.position.set(top.x + Math.cos(ang) * r, top.y + 0.1 + h / 2, top.z + Math.sin(ang) * r); cuerpo.add(brazo);
-      const luz = new THREE.Mesh(gl, ml); luz.scale.set(1, 1.6, 1); luz.position.set(top.x + Math.cos(ang) * r, top.y + 0.2 + h, top.z + Math.sin(ang) * r); cuerpo.add(luz); }
-    const remate = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), matOro); remate.position.set(top.x, top.y + 0.42, top.z); cuerpo.add(remate);
-  } }
+    const arb = (sx > 0 ? 2 : 0) + (sz > 0 ? 1 : 0);
+    const c = new THREE.Vector3(sx * 1.6, 2.86, sz * 2.6);
+    const d = new THREE.Vector3(sx, 0, sz * 0.75).normalize(), q = new THREE.Vector3(-d.z, 0, d.x);
+    const P = (u, y, v) => c.clone().addScaledVector(d, u).addScaledVector(q, v).add(new THREE.Vector3(0, y, 0));
+    // tronco con su peana, inclinado un poco hacia fuera
+    const tronco = new THREE.CatmullRomCurve3([P(0, 0, 0), P(0.06, 0.6, 0), P(0.14, 1.2, 0), P(0.2, 1.72, 0)]);
+    ramas.push(new THREE.TubeGeometry(tronco, 16, 0.06, 8, false));
+    for (const [t, rad] of [[0.08, 0.16], [0.45, 0.1], [0.75, 0.09]]) { const g = new THREE.SphereGeometry(rad, 10, 8); const pp = tronco.getPoint(t); g.scale(1, 0.6, 1); g.translate(pp.x, pp.y, pp.z); ramas.push(g); }
+    NIV.forEach(([h, r, nb], nv) => {
+      const eje = tronco.getPoint(h / 1.72);
+      for (let k = 0; k < nb; k++) {
+        const th = -Math.PI + (2 * Math.PI * (k + 0.5)) / nb + nv * 0.25;
+        const fuera = 0.55 + 0.45 * Math.cos(th);           // más largas hacia fuera, cortas hacia el palio
+        const R = r * fuera + 0.12;
+        const cu = Math.cos(th), cv = Math.sin(th);
+        const base = eje.clone(), pt = (f, y, rizo) => base.clone().addScaledVector(d, cu * R * f).addScaledVector(q, cv * R * f).add(new THREE.Vector3(0, y, 0)).addScaledVector(d, rizo * cu).addScaledVector(q, rizo * cv);
+        const curva = new THREE.CatmullRomCurve3([pt(0, 0, 0), pt(0.35, -0.08, 0), pt(0.7, 0.02, 0), pt(1, 0.16, 0), pt(0.92, 0.24, -0.03)]);
+        ramas.push(new THREE.TubeGeometry(curva, 14, 0.022, 6, false));
+        // voluta: un rizo al principio de la rama
+        const vol = new THREE.TorusGeometry(0.05, 0.012, 6, 12, Math.PI * 1.5); const vp = curva.getPoint(0.3);
+        vol.rotateY(-Math.atan2(cv, cu) + Math.atan2(d.z, d.x)); vol.translate(vp.x, vp.y - 0.05, vp.z); ramas.push(vol);
+        for (const t of [0.12, 0.28, 0.44, 0.6, 0.76, 0.9]) hojas.push({ p: curva.getPoint(t), rot: rr2() * Math.PI * 2, s: 1.0 + rr2() * 0.8 });
+        const tip = curva.getPoint(1);
+        puntas.push({ arb, p: new THREE.Vector3(tip.x, tip.y + 0.03, tip.z) });
+      }
+    });
+    for (let t = 0.05; t < 0.95; t += 0.06) { const pp = tronco.getPoint(t); for (let k = 0; k < 3; k++) hojas.push({ p: pp.clone().add(new THREE.Vector3((rr2() - 0.5) * 0.14, 0, (rr2() - 0.5) * 0.14)), rot: rr2() * Math.PI * 2, s: 1.1 + rr2() * 0.7 }); }
+    // remate con la tulipa más alta
+    const cima = tronco.getPoint(1); puntas.push({ arb, p: new THREE.Vector3(cima.x, cima.y + 0.05, cima.z) });
+  }
+  const mRamas = new THREE.Mesh(unirGeos(ramas), matOroArb); cuerpo.add(mRamas);
+  // hojas de acanto: hojas doradas aplastadas
+  const gH = new THREE.SphereGeometry(0.06, 8, 6); gH.scale(1, 0.35, 1.9);
+  const mH = new THREE.InstancedMesh(gH, matOroArb, hojas.length); const dm = new THREE.Object3D();
+  hojas.forEach((h, i) => { dm.position.copy(h.p); dm.rotation.set(rr2() * 0.8, h.rot, rr2() * 0.8); dm.scale.setScalar(h.s); dm.updateMatrix(); mH.setMatrixAt(i, dm.matrix); });
+  cuerpo.add(mH);
+  // cazoletas, velas, tulipas de cristal y llamas
+  const n = puntas.length;
+  const mCaz = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.05, 0.03, 0.04, 10), matOroArb, n);
+  mVelasArb = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16, 8), M(0xf2e6c6, { emissive: 0x2a2010 }), n);
+  mTulipas = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055, 0.045, 0.26, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, roughness: 0.05, metalness: 0.1, side: THREE.DoubleSide, emissive: 0x332a1a }), n);
+  mLlamasArb = new THREE.InstancedMesh(new THREE.SphereGeometry(0.022, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffd27a }), n);
+  puntas.forEach((pt, i) => {
+    dm.rotation.set(0, 0, 0); dm.scale.set(1, 1, 1);
+    dm.position.copy(pt.p); dm.updateMatrix(); mCaz.setMatrixAt(i, dm.matrix);
+    dm.position.set(pt.p.x, pt.p.y + 0.1, pt.p.z); dm.updateMatrix(); mVelasArb.setMatrixAt(i, dm.matrix);
+    dm.position.set(pt.p.x, pt.p.y + 0.15, pt.p.z); dm.updateMatrix(); mTulipas.setMatrixAt(i, dm.matrix);
+    dm.position.set(pt.p.x, pt.p.y + 0.21, pt.p.z); dm.scale.set(1, 2, 1); dm.updateMatrix(); mLlamasArb.setMatrixAt(i, dm.matrix);
+    TULIPAS.push({ arb: pt.arb, pos: pt.p.clone(), rota: false });
+  });
+  mTulipas.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mLlamasArb.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mVelasArb.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  cuerpo.add(mCaz); cuerpo.add(mVelasArb); cuerpo.add(mTulipas); cuerpo.add(mLlamasArb);
+  const lz = new THREE.PointLight(0xffc27a, 1.1, 9, 2); lz.position.set(0, 3.8, 2.9); cuerpo.add(lz);
+  const lz2 = new THREE.PointLight(0xffc27a, 0.8, 9, 2); lz2.position.set(0, 3.8, -2.9); cuerpo.add(lz2);
+}
+const NOMBRE_ARB = ['trasero derecho', 'delantero derecho', 'trasero izquierdo', 'delantero izquierdo'];
+// Rompe las tulipas del arbotante que ha chocado: primero las que más sobresalen
+function romperTulipas(arb, fuerza) {
+  const sanas = TULIPAS.map((t, i) => [t, i]).filter(([t]) => t.arb === arb && !t.rota);
+  sanas.sort((a, b) => Math.hypot(b[0].pos.x, b[0].pos.z * 0.6) - Math.hypot(a[0].pos.x, a[0].pos.z * 0.6));
+  const n = Math.min(sanas.length, 1 + Math.round(fuerza * 3));
+  const dm = new THREE.Object3D();
+  for (let k = 0; k < n; k++) {
+    const [t, i] = sanas[k]; t.rota = true;
+    dm.position.set(t.pos.x, t.pos.y + 0.06, t.pos.z); dm.rotation.set(0.5, 0, 0.3); dm.scale.set(1, 0.3, 1); dm.updateMatrix(); mTulipas.setMatrixAt(i, dm.matrix);
+    dm.rotation.set(0, 0, 0); dm.scale.set(0, 0, 0); dm.updateMatrix(); mLlamasArb.setMatrixAt(i, dm.matrix);
+    dm.position.set(t.pos.x, t.pos.y + 0.05, t.pos.z); dm.scale.set(1, 0.4, 1); dm.updateMatrix(); mVelasArb.setMatrixAt(i, dm.matrix);
+  }
+  mTulipas.instanceMatrix.needsUpdate = true; mLlamasArb.instanceMatrix.needsUpdate = true; mVelasArb.instanceMatrix.needsUpdate = true;
+  G.rotas[arb] = (G.rotas[arb] || 0) + n;
+  return n;
+}
+function repararTulipas() {
+  const dm = new THREE.Object3D();
+  TULIPAS.forEach((t, i) => {
+    t.rota = false; dm.rotation.set(0, 0, 0); dm.scale.set(1, 1, 1);
+    dm.position.set(t.pos.x, t.pos.y + 0.15, t.pos.z); dm.updateMatrix(); mTulipas.setMatrixAt(i, dm.matrix);
+    dm.position.set(t.pos.x, t.pos.y + 0.1, t.pos.z); dm.updateMatrix(); mVelasArb.setMatrixAt(i, dm.matrix);
+    dm.position.set(t.pos.x, t.pos.y + 0.21, t.pos.z); dm.scale.set(1, 2, 1); dm.updateMatrix(); mLlamasArb.setMatrixAt(i, dm.matrix);
+  });
+  mTulipas.instanceMatrix.needsUpdate = true; mLlamasArb.instanceMatrix.needsUpdate = true; mVelasArb.instanceMatrix.needsUpdate = true;
+}
 // Imagen bajo palio. El palio (barras, techo y bambalinas) va aparte: se mueve con retraso respecto a los hombres de trono.
 const PALIO_Y = 2.88;
 const palio = new THREE.Group(); palio.rotation.order = 'YXZ';
@@ -693,7 +795,7 @@ function nuevaPartida() {
     pose: { ...SALIDA }, prev: { ...SALIDA },
     estado: 'suelo', liftT: 0, alt: 0, altObj: 0,           // alt: 0 = en hombros; -0.4 = sobre la mesa
     v: 0, w: 0, lat: 0, vObj: 0, wObj: 0, latObj: 0,
-    giroHeld: 0, latHeld: 0, paso: 1,
+    giroHeld: 0, latHeld: 0, paso: 1, rotas: [0, 0, 0, 0],
     mecida: false, mecidaOrden: false, mecFase: 0, mecAmp: 0, andarAmp: 0,
     pulsoT: 0, pulsoDy: 0,
     cans: 0, sueloT: 0, enfriado: false,
@@ -706,6 +808,7 @@ function nuevaPartida() {
   G.alt = -0.4; G.altObj = -0.4;
   camSnap = true;
   actualizarMecidaBtn(); pintarToques();
+  if (typeof repararTulipas === 'function' && mTulipas) repararTulipas();
 }
 const reloj = () => CFG.horaInicio + (G.t0 === null ? 0 : G.tiempo) * CFG.escalaReloj;
 const hhmm = (s) => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
@@ -835,14 +938,22 @@ function levantar() {
 }
 
 function golpe(h, fuerza) {
-  if (now - G.ultimoGolpe > 1.2) { G.golpes++; G.danio += 3 + 10 * fuerza; }
+  const nuevoGolpe = now - G.ultimoGolpe > 1.2;
+  if (nuevoGolpe) { G.golpes++; G.danio += 3 + 10 * fuerza; }
+  let rotas = 0; if (nuevoGolpe && h.tier.arb !== undefined) rotas = romperTulipas(h.tier.arb, fuerza);
   G.ultimoGolpe = now; G.shake = 0.35 + fuerza; sGolpe(fuerza); sacudirPalio(1.2 + fuerza * 2);
   G.v = 0; G.w = 0; G.lat = 0; G.vObj = 0; G.wObj = 0; G.latObj = 0; G.giroHeld = 0; G.latHeld = 0;
   const quien = h.ob.pared ? '' : ` (${h.tier.nombre})`;
-  toast(`¡Golpe! El trono ha dado con ${h.ob.label}${quien}.`);
+  toast(`¡Golpe! El trono ha dado con ${h.ob.label}${quien}.` + (rotas ? ` Se ${rotas === 1 ? 'ha roto 1 tulipa' : `han roto ${rotas} tulipas`} del arbotante ${NOMBRE_ARB[h.tier.arb]}.` : ''));
   $('#st-golpes').classList.add('malo');
 }
 
+function desperfectos() {
+  const total = G.rotas.reduce((x, y) => x + y, 0);
+  if (!total) return ' Los arbotantes vuelven sin una tulipa rota.';
+  const det = G.rotas.map((n, i) => (n ? `${n} en el ${NOMBRE_ARB[i]}` : '')).filter(Boolean).join(', ');
+  return ` Desperfectos: ${total} ${total === 1 ? 'tulipa rota' : 'tulipas rotas'} en los arbotantes (${det}). Habrá que reponerlas con cargo al presupuesto de la hermandad.`;
+}
 function terminar() {
   G.fin = true;
   G.vObj = 0; G.wObj = 0; G.latObj = 0; G.paso = 1; G.giroHeld = 0; G.latHeld = 0;
@@ -859,7 +970,7 @@ function terminar() {
   $('#fin-golpes').textContent = G.golpes;
   $('#fin-levantas').textContent = `${G.lev.perfectas + G.lev.buenas}/${G.lev.perfectas + G.lev.buenas + G.lev.desiguales}`;
   $('#fin-luci').textContent = Math.round(G.luci);
-  $('#fin-texto').textContent = (retrasoMin > 0 ? `Entrada con ${Math.round(retrasoMin)} min de retraso sobre las ${hhmm(CFG.horaLimite)}: la Agrupación lo anotará. ` : `En hora: el recorrido oficial te esperaba a las ${hhmm(CFG.horaLimite)}. `) + `${G.lev.perfectas} levantás perfectas, ${G.lev.desiguales} desiguales, ${G.descansos} descansos. ` + (G.golpes === 0 ? 'Ni un roce en los varales.' : `${G.golpes} ${G.golpes === 1 ? 'golpe' : 'golpes'}.`) + (nuevo ? ' Nuevo récord.' : '');
+  $('#fin-texto').textContent = (retrasoMin > 0 ? `Entrada con ${Math.round(retrasoMin)} min de retraso sobre las ${hhmm(CFG.horaLimite)}: la Agrupación lo anotará. ` : `En hora: el recorrido oficial te esperaba a las ${hhmm(CFG.horaLimite)}. `) + `${G.lev.perfectas} levantás perfectas, ${G.lev.desiguales} desiguales, ${G.descansos} descansos. ` + (G.golpes === 0 ? 'Ni un roce en los varales.' : `${G.golpes} ${G.golpes === 1 ? 'golpe' : 'golpes'}.`) + desperfectos() + (nuevo ? ' Nuevo récord.' : '');
   setTimeout(() => { $('#final').hidden = false; }, 1500);
 }
 
@@ -1043,7 +1154,7 @@ function objetivo() {
   const { x, z } = G.pose;
   if (G.fin) return '<strong>¡En el recorrido oficial!</strong>';
   if (z < -1) return G.estado === 'suelo' ? '<strong>En la nave.</strong> Levanta el trono con la campana: 4 o 5 toques suaves y seguidos (Espacio), un toque fuerte (F) y ¡arriba! (G).' : '<strong>En la nave.</strong> Sal por el portón con el trono centrado.';
-  if (z < 55) return '<strong>Calle Ancha.</strong> Ramas de ficus a 3,5 m a los lados, una terraza de veladores y un quiosco. Ve por el centro: los arbotantes pasan a un palmo de las ramas, así que aquí nada de mecer.';
+  if (z < 55) return '<strong>Calle Ancha.</strong> Ramas de ficus a 3,5 m a los lados, una terraza de veladores y un quiosco. Ve por el centro: a la altura de las ramas, los arbotantes dorados de las esquinas abren el trono más que los propios varales. Si chocan, se rompen tulipas.';
   if (x < 16 && enPlaza(x, z)) return '<strong>Plaza de la Tribuna.</strong> Aquí luce: mecida (Z) y levantá a pulso (P) ante la tribuna. Gira hacia la calle del Ángel, a la izquierda.';
   if (x < 50) return '<strong>Calle del Ángel.</strong> Al fondo, la esquina: los varales no caben si giras pegado. Para en el centro del cruce y gira sobre ti mismo.';
   if (z < 82) return '<strong>La esquina.</strong> Gira a la derecha hacia la calle Real sin que la punta de los varales toque las fachadas.';
@@ -1152,6 +1263,8 @@ $('#b-mirar').addEventListener('click', () => { $('#final').hidden = true; });
 canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.5, 1.9); }, { passive: false });
 function empezar() { desbloquearAudio(); $('#inicio').hidden = true; pausa = false; toast('Prepara la levantá: toques suaves y seguidos con Espacio.', true); }
 $('#b-empezar').addEventListener('click', empezar);
+document.querySelectorAll('[data-orfe]').forEach((b) => b.addEventListener('click', () => aplicarOrfebreria(b.dataset.orfe)));
+{ let o = 'oro'; try { o = localStorage.getItem('capataz-orfebreria') || 'oro'; } catch (e) {} aplicarOrfebreria(ORFEBRERIA[o] ? o : 'oro'); }
 try { const rec = JSON.parse(localStorage.getItem('capataz-trono') || 'null'); if (rec) $('#record').textContent = `Tu récord: ${fmt(rec.nota, 1)} sobre 10, entrando a las ${hhmm(rec.llegada)}.`; } catch (e) {}
 
 function resize() {
