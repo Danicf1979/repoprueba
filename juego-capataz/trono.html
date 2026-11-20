@@ -153,6 +153,7 @@ a { color: var(--oro); }
     </div>
     <div class="barra"><span class="t">Cansancio</span><span class="fondo"><i id="st-cans"></i></span><b id="st-cans-n">0</b></div>
     <div class="estado-fila"><i id="compas" aria-hidden="true"></i><span id="st-estado">En el suelo, sobre la mesa</span></div>
+    <div id="banda-fila" class="estado-fila" style="font-size:0.82rem;color:var(--cera-2)">Banda: <span id="st-banda">esperando a la levantá</span></div>
     <div id="campana-fila"><span>Campana:</span><span class="toques" id="toques"></span><span id="campana-txt"></span></div>
     <p id="objetivo"></p>
   </div>
@@ -229,7 +230,8 @@ a { color: var(--oro); }
         <kbd>Z</kbd><span>Mecida: luce en la plaza, pero ensancha el trono y cansa</span>
         <kbd>P</kbd><span>A pulso: sube el trono 45 cm unos segundos; luce mucho ante la tribuna</span>
         <kbd>V · rueda</kbd><span>Cámara: detrás, mayordomo, desde arriba, capataz de la esquina · acercar o alejar</span>
-        <kbd>M · N · R</kbd><span>Banda · voz · volver a empezar</span>
+        <kbd>B</kbd><span><em>¡Música!</em>: pedir a la banda que toque una marcha si está a tambor o en silencio</span>
+        <kbd>M · N · R</kbd><span>Quitar o poner el sonido de la banda · voz · volver a empezar</span>
       </div>
       <p>El trono mide 4,4 m de ancho con los hombres de trono, 13 m de largo con varales y 4,6 m de alto con el palio. El mapa marca con línea discontinua lo que está en alto.</p>
       <div class="acciones"><button class="btn" id="b-cerrar-ayuda" type="button">Seguir</button></div>
@@ -614,7 +616,12 @@ function bombo(t) { const c = ac(); if (!c) return; const o = c.createOscillator
 function caja(t, v) { const c = ac(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'highpass'; f.frequency.value = 1700; env(g, t, v, 0.11); s.connect(f); f.connect(g); g.connect(AU.master); s.start(t); s.stop(t + 0.15); }
 function metal(t, f0, v) { const c = ac(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'sawtooth'; o.frequency.value = f0; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; env(g, t, v, BEAT * 0.9); o.connect(lp); lp.connect(g); g.connect(AU.master); o.start(t); o.stop(t + BEAT); }
 function sGolpe(fuerza) { const c = ac(); if (!c) return; const t = c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(80, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.3); env(g, t, 0.6 + 0.4 * fuerza, 0.4); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.45); const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'lowpass'; f.frequency.value = 900; env(g2, t, 0.5, 0.3); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.35); }
-const MELODIA = [220, 247, 262, 247, 220, 196, 220, 0, 196, 220, 247, 262, 294, 262, 247, 0];
+// Dos marchas inventadas (16 compases de melodía que se repiten) y el toque de tambor
+const MARCHAS = [
+  { nombre: 'Marcha procesional nº 1', notas: [220, 247, 262, 247, 220, 196, 220, 0, 196, 220, 247, 262, 294, 262, 247, 0] },
+  { nombre: 'Marcha procesional nº 2', notas: [196, 0, 220, 233, 262, 0, 233, 220, 196, 175, 196, 0, 220, 196, 175, 0] },
+];
+const BEATS_MARCHA = 64, BEATS_TAMBOR = 24;
 let vozES = null;
 function buscarVoz() { try { const vs = speechSynthesis.getVoices(); vozES = vs.find((v) => /es[-_]ES/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null; } catch (e) {} }
 if ('speechSynthesis' in window) { buscarVoz(); try { speechSynthesis.onvoiceschanged = buscarVoz; } catch (e) {} }
@@ -660,6 +667,7 @@ function nuevaPartida() {
     golpes: 0, ultimoGolpe: -9, shake: 0, inclin: 0, danio: 0,
     luci: 0, lev: { perfectas: 0, buenas: 0, desiguales: 0 }, descansos: 0,
     t0: null, tiempo: 0, fin: false, cola: [], beatAcc: 0, beatN: 0,
+    banda: { estado: 'silencio', beats: 0, marcha: 0, pedida: false },
   };
   G.alt = -0.4; G.altObj = -0.4;
   camSnap = true;
@@ -746,6 +754,11 @@ const ACC = {
       toast(zona ? `¡A pulso ante la tribuna! +${pts} de lucimiento` : `A pulso. +${pts} de lucimiento`, 'bien');
     });
   },
+  musicaBanda() {
+    if (G.t0 === null) { toast('La banda empieza con la primera levantá.', true); return; }
+    if (G.banda.estado === 'marcha') { toast('La banda ya está tocando.', true); return; }
+    G.banda.pedida = true; mostrarOrden('¡Música!', 'El mayordomo pide a la banda');
+  },
   camara() { camModo = (camModo + 1) % CAMS.length; camSnap = true; toast('Cámara: ' + CAMS[camModo].toLowerCase(), true); },
   musica() { AU.musica = !AU.musica; $('#b-mus').firstChild.textContent = 'Banda: ' + (AU.musica ? 'sí' : 'no'); },
   voz() { AU.voz = !AU.voz; $('#b-voz').firstChild.textContent = 'Voz: ' + (AU.voz ? 'sí' : 'no'); if (!AU.voz) try { speechSynthesis.cancel(); } catch (e) {} },
@@ -784,7 +797,7 @@ function levantar() {
   }
   if (G.sueloT > 0) G.descansos++;
   G.sueloT = 0;
-  const c = ac(); if (c && AU.musica) { const t0 = c.currentTime + 0.3; for (let k = 0; k < 6; k++) caja(t0 + k * 0.06, 0.06 + k * 0.025); bombo(t0 + 0.4); }
+  if (G.banda.estado !== 'marcha') G.banda.pedida = true;
 }
 
 function golpe(h, fuerza) {
@@ -817,13 +830,28 @@ function terminar() {
 }
 
 // ---------------------------------------------------------------- bucle
+// La banda va a lo suyo: toca la marcha entera aunque el trono se pare o se baje;
+// al acabar descansa: a tambor si el trono anda, en silencio si está parado o en el suelo.
+function empezarMarcha() { const B = G.banda; B.estado = 'marcha'; B.beats = 0; B.marcha = (B.marcha + 1) % MARCHAS.length; B.pedida = false; }
 function onBeat() {
   G.beatN++;
   const cp = $('#compas'); cp.classList.add('on'); setTimeout(() => cp.classList.remove('on'), 90);
-  if (AU.musica && AU.ctx && G.t0 !== null) {
-    const t = AU.ctx.currentTime + 0.01, k = G.beatN % 16;
+  if (G.t0 === null) return;
+  const B = G.banda, anda = arriba() && Math.abs(G.v) > 0.05;
+  B.beats++;
+  if (B.estado === 'marcha' && B.beats > BEATS_MARCHA) { B.estado = anda ? 'tambor' : 'silencio'; B.beats = 0; }
+  else if (B.estado === 'tambor' && (!anda || B.beats > BEATS_TAMBOR)) { if (anda) empezarMarcha(); else { B.estado = 'silencio'; B.beats = 0; } }
+  else if (B.estado === 'silencio' && B.pedida && arriba()) empezarMarcha();
+  else if (B.estado === 'silencio' && anda && B.beats > 8) { B.estado = 'tambor'; B.beats = 0; }
+  if (!AU.musica || !AU.ctx) return;
+  const t = AU.ctx.currentTime + 0.01;
+  if (B.estado === 'marcha') {
+    const k = (B.beats - 1) % 16, f = MARCHAS[B.marcha].notas[k];
     bombo(t); caja(t + BEAT / 2, 0.12);
-    const f = MELODIA[k]; if (f) { metal(t, f, 0.05); metal(t, f * 1.5, 0.025); }
+    if (f) { metal(t, f, 0.05); metal(t, f * 1.5, 0.025); }
+  } else if (B.estado === 'tambor') {
+    caja(t, 0.2); if (B.beats % 2 === 0) bombo(t);
+    if (B.beats % 4 === 3) for (let k = 0; k < 5; k++) caja(t + BEAT / 2 + k * 0.05, 0.05 + k * 0.02);
   }
 }
 
@@ -996,6 +1024,7 @@ function hud() {
   if (arriba() && Math.abs(G.w) > 0.003 && Math.abs(G.v) > 0.03) e += ', girando';
   if (G.mecida) e += ' · meciendo';
   $('#st-estado').textContent = e;
+  { const B = G.banda; $('#st-banda').textContent = G.t0 === null ? 'esperando a la levantá' : B.estado === 'marcha' ? `tocando la ${MARCHAS[B.marcha].nombre}` : B.estado === 'tambor' ? 'a tambor' : B.pedida ? 'preparando una marcha' : 'en silencio, descansando'; }
   $('#objetivo').innerHTML = objetivo();
   if (G.estado !== 'bajando') pintarToques();
   avisoProximo();
@@ -1023,7 +1052,7 @@ function toast(txt, tipo) {
 }
 
 // ---------------------------------------------------------------- entrada
-const TECLAS = { Space: 'toque', KeyF: 'fuerte', KeyG: 'pong', Enter: 'pong', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
+const TECLAS = { Space: 'toque', KeyF: 'fuerte', KeyG: 'pong', Enter: 'pong', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
 const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara']);
 const pulsadas = new Set();
 function press(acc) {

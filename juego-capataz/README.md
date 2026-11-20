@@ -20,7 +20,8 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave hasta la ent
 | Q / E (mantener) | De lado |
 | Z | Mecida: lucimiento, pero el trono ocupa más y cansa más |
 | P | A pulso: sube 45 cm; luce mucho ante la tribuna |
-| V · M · N · H · R | Cámara · banda · voz · ayuda · reiniciar |
+| B | ¡Música!: pedir una marcha a la banda |
+| V · M · N · H · R | Cámara · sonido de la banda · voz · ayuda · reiniciar |
 
 - **Cuerpos del trono:** varales y hombres de trono (4,4 × 13 m, hasta 1,9 m), mesa y candelería (hasta 3,1 m) y palio (hasta 4,6 m).
 - **Cansancio sin relevos:** solo baja con el trono en el suelo. Si se descansa más de 35 s, la cuadrilla se enfría y la levantá sale peor.
