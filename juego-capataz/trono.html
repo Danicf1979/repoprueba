@@ -300,7 +300,7 @@ const TIERS = [
   { nombre: 'un arbotante', arb: 2, hx: 0.6, hz: 0.55, ox: 1.95, oz: -2.95, y0: 3.15, y1: 4.75 },
   { nombre: 'un arbotante', arb: 0, hx: 0.6, hz: 0.55, ox: -1.95, oz: -2.95, y0: 3.15, y1: 4.75 },
   // La cola del manto: sale por detrás del cajillo y cae casi hasta el final de los varales traseros
-  { nombre: 'el manto', hx: 1.3, hz: 1.6, oz: -4.3, y0: 1.95, y1: 2.95 },
+  { nombre: 'el manto', hx: 1.15, hz: 1.6, oz: -4.3, y0: 1.95, y1: 3.1 },
 ];
 const ALTO = TIERS[2].y1;
 
@@ -774,8 +774,8 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
   const mot = []; for (let fy = 0; fy < 6; fy++) for (let fx = 0; fx < 3; fx++) mot.push([w * (0.2 + fx * 0.3) + (fy % 2 ? 40 : 0) - 20, 120 + fy * 150, fy === 2 && fx === 1 ? 90 : 58]);
   bordar(x, w, h, '#123224', mot, 46);
 });
-{ const perfil = new THREE.CatmullRomCurve3([[3.78, -0.84], [3.45, -1.05], [3.1, -1.6], [2.96, -2.3], [2.93, -2.7], [2.8, -3.5], [2.62, -4.6], [2.5, -5.4], [2.3, -5.85], [2.0, -5.95]].map(([y, z]) => new THREE.Vector3(0, y, z)));
-  const anchoM = (t) => t < 0.08 ? 0.32 + t * 6 : Math.min(1.28, 0.8 + t * 1.4);
+{ const perfil = new THREE.CatmullRomCurve3([[3.78, -0.84], [3.45, -1.05], [3.18, -1.6], [3.1, -2.3], [3.08, -2.75], [2.95, -3.5], [2.72, -4.6], [2.55, -5.4], [2.32, -5.85], [2.05, -5.95]].map(([y, z]) => new THREE.Vector3(0, y, z)));
+  const anchoM = (t) => t < 0.08 ? 0.32 + t * 6 : Math.min(1.12, 0.8 + t * 1.2);   // pasa entre los arbotantes traseros sin tocarlos
   const NU = 24, NV = 60, pos = [], uv = [], idx = [];
   for (let j = 0; j <= NV; j++) { const t = j / NV, P = perfil.getPoint(t);
     for (let i = 0; i <= NU; i++) { const u = i / NU * 2 - 1, cae = t > 0.25 ? Math.pow(Math.abs(u), 3) * 0.28 : 0;
@@ -1237,7 +1237,7 @@ function update(dt) {
 
   // Visual
   G.inclin *= Math.max(0, 1 - dt * 0.6);
-  G.mecFase += dt * (Math.PI * 2) / (BEAT * 2);
+  G.mecFase += dt * (Math.PI * 2) / (BEAT * 8);   // mecida malagueña: lenta, cuatro compases a cada lado
   // Andando: un balanceo suave de lado a lado con los pasos, sin botes.
   // Mecida: el trono se menea de lado a lado, entero y a la misma altura (sin ladearse).
   G.andarAmp += ((arriba() && Math.abs(G.v) > 0.05 && !REDUCIDO ? 1 : 0) - G.andarAmp) * Math.min(1, dt * 2);
