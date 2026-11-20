@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capataz · El trono</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Marcellus+SC&display=swap">
+<style>
+/* Calle de noche a pantalla completa; HUD en paneles de terciopelo morado y oro. */
+:root {
+  color-scheme: dark;
+  --noche: #0c0d1b;
+  --panel: rgba(20, 13, 30, 0.84);
+  --panel-solido: #1a1126;
+  --borde: rgba(217, 164, 65, 0.38);
+  --oro: #d9a441;
+  --oro-suave: rgba(217, 164, 65, 0.18);
+  --cera: #f1e6cc;
+  --cera-2: #b8ab92;
+  --sangre: #d2465c;
+  --verde: #8fc79a;
+  --font-d: "Marcellus SC", "Book Antiqua", "Times New Roman", serif;
+  --font-b: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; background: var(--noche); color: var(--cera); font-family: var(--font-b); font-size: 14px; overflow: hidden; }
+#app { position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; background: var(--noche); }
+#c { display: block; width: 100%; height: 100%; }
+button { font: inherit; color: inherit; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+a { color: var(--oro); }
+
+.hud { position: absolute; pointer-events: none; }
+#panel { top: calc(12px + var(--st)); left: calc(12px + var(--sl)); width: min(340px, calc(100% - 24px - var(--sl) - var(--sr))); background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; backdrop-filter: blur(6px); }
+.marca { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.marca h1 { margin: 0; font-family: var(--font-d); font-weight: 400; font-size: 1.35rem; letter-spacing: 0.06em; color: var(--oro); }
+.marca span { font-size: 0.82rem; color: var(--cera-2); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.stats div { display: grid; gap: 1px; }
+.stats b { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats small { font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cera-2); }
+.malo { color: var(--sangre); }
+.barra { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 0.8rem; }
+.barra .t { color: var(--cera-2); }
+.barra .fondo { height: 8px; border-radius: 4px; background: rgba(241, 230, 204, 0.12); overflow: hidden; }
+.barra .fondo i { display: block; height: 100%; width: 0; background: var(--verde); transition: width 0.2s, background 0.2s; }
+.barra b { font-variant-numeric: tabular-nums; font-weight: 500; min-width: 3ch; text-align: right; }
+.estado-fila { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+#compas { width: 10px; height: 10px; border-radius: 50%; background: var(--oro-suave); border: 1px solid var(--oro); flex: none; transition: background 0.25s; }
+#compas.on { background: var(--oro); transition: none; }
+#campana-fila { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--cera-2); min-height: 18px; }
+#campana-fila .toques { display: flex; gap: 4px; align-items: center; }
+#campana-fila .toques i { display: block; border-radius: 50%; background: var(--oro); }
+#campana-fila .toques i.s { width: 6px; height: 6px; opacity: 0.7; }
+#campana-fila .toques i.f { width: 10px; height: 10px; }
+#campana-fila .toques i.p { width: 14px; height: 14px; background: var(--cera); }
+#objetivo { margin: 0; font-size: 0.86rem; line-height: 1.35; color: var(--cera-2); }
+#objetivo strong { color: var(--cera); font-weight: 500; }
+
+#mapa-wrap { top: calc(12px + var(--st)); right: calc(12px + var(--sr)); display: grid; gap: 6px; justify-items: end; }
+#mapa { width: 170px; height: 170px; border-radius: 50%; border: 1px solid var(--borde); background: rgba(10, 8, 18, 0.85); }
+#aviso { max-width: 220px; font-size: 0.8rem; line-height: 1.3; text-align: right; background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 9px; }
+#aviso.peligro { border-color: var(--sangre); }
+#aviso .t { display: block; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cera-2); }
+#aviso.peligro .v { color: #ffb3bf; }
+#herr { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 230px; }
+.mini { pointer-events: auto; background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 5px 9px; font-size: 0.78rem; cursor: pointer; text-decoration: none; color: var(--cera); }
+.mini kbd { font-family: var(--font-b); font-size: 0.64rem; color: var(--cera-2); margin-left: 4px; }
+
+#orden { left: 50%; top: calc(14px + var(--st)); transform: translateX(-50%); text-align: center; min-width: 220px; max-width: min(480px, 46vw); background: var(--panel-solido); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 16px 10px; opacity: 0; transition: opacity 0.3s; }
+#orden.vis { opacity: 1; }
+#orden small { display: block; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cera-2); }
+#orden-txt { font-family: var(--font-d); font-size: 1.3rem; color: var(--cera); text-wrap: balance; }
+#orden-barra { height: 2px; background: var(--oro-suave); margin-top: 6px; overflow: hidden; border-radius: 2px; }
+#orden-barra i { display: block; height: 100%; width: 100%; background: var(--oro); transform-origin: left; }
+#orden.esperando #orden-barra i { animation: llena var(--retardo, 0.7s) linear forwards; }
+#orden.campana #orden-barra { visibility: hidden; }
+@keyframes llena { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+#toast { left: 50%; top: 36%; transform: translate(-50%, -50%); background: rgba(60, 10, 22, 0.92); border: 1px solid var(--sangre); color: #ffe3e8; border-radius: 10px; padding: 10px 16px; font-size: 1rem; text-align: center; max-width: min(440px, calc(100% - 40px)); opacity: 0; transition: opacity 0.25s; }
+#toast.info { background: var(--panel-solido); border-color: var(--borde); color: var(--cera); }
+#toast.bien { background: rgba(20, 50, 30, 0.92); border-color: var(--verde); color: #e2f6e5; }
+#toast.vis { opacity: 1; }
+
+#pad { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 calc(12px + var(--sr)) calc(12px + var(--sb)) calc(12px + var(--sl)); display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; pointer-events: none; }
+.grupo { display: grid; gap: 6px; pointer-events: auto; }
+.grupo.dir { grid-template-columns: repeat(3, minmax(64px, 84px)); }
+.grupo.cam { grid-template-columns: repeat(3, minmax(72px, 98px)); }
+.pb { position: relative; min-height: 50px; padding: 6px 4px 5px; background: var(--panel); border: 1px solid var(--borde); border-radius: 9px; cursor: pointer; display: grid; place-items: center; gap: 1px; line-height: 1.05; touch-action: none; }
+.pb span { font-family: var(--font-d); font-size: 0.8rem; text-align: center; }
+.pb kbd { font-family: var(--font-b); font-size: 0.64rem; color: var(--cera-2); border: 1px solid rgba(241, 230, 204, 0.25); border-radius: 4px; padding: 0 4px; }
+.pb.on, .pb:active { background: rgba(217, 164, 65, 0.32); }
+.pb.clave { border-color: var(--oro); }
+.pb.bell { background: rgba(80, 55, 15, 0.7); }
+
+.pantalla { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 6, 16, 0.8); backdrop-filter: blur(3px); padding: calc(16px + var(--st)) max(16px, var(--sr)) calc(16px + var(--sb)) max(16px, var(--sl)); overflow-y: auto; }
+.carta { width: min(680px, 100%); background: var(--panel-solido); border: 1px solid var(--borde); border-radius: 14px; padding: 26px 26px 22px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); }
+.carta h2 { margin: 0; font-family: var(--font-d); font-weight: 400; font-size: clamp(2rem, 6vw, 3rem); color: var(--oro); letter-spacing: 0.05em; line-height: 1; text-wrap: balance; }
+.carta h3 { margin: 4px 0 0; font-family: var(--font-d); font-weight: 400; font-size: 1.1rem; color: var(--oro); }
+.carta .sub { margin: 0; font-size: 1.05rem; color: var(--cera-2); }
+.carta p { margin: 0; line-height: 1.5; max-width: 64ch; }
+.teclas { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 0.92rem; align-items: baseline; }
+.teclas kbd { font-family: var(--font-b); font-size: 0.78rem; border: 1px solid var(--borde); border-radius: 5px; padding: 1px 6px; white-space: nowrap; justify-self: start; }
+.teclas em { font-style: normal; color: var(--oro); font-family: var(--font-d); }
+.acciones { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.btn { background: var(--oro); color: #1b1006; border: 0; border-radius: 9px; padding: 11px 20px; font-family: var(--font-d); font-size: 1.05rem; cursor: pointer; text-decoration: none; }
+.btn.sec { background: transparent; color: var(--cera); border: 1px solid var(--borde); }
+.nota { font-size: 0.82rem; color: var(--cera-2); }
+.res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.res div { border-top: 1px solid var(--borde); padding-top: 8px; display: grid; gap: 2px; }
+.res b { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.res small { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cera-2); }
+#fin-titulo { font-family: var(--font-d); font-size: 1.5rem; color: var(--cera); margin: 0; }
+
+@media (max-width: 760px) {
+  #panel { width: min(250px, calc(100% - 160px)); padding: 9px 10px; gap: 6px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  #objetivo { display: none; }
+  .marca span { display: none; }
+  #mapa { width: 118px; height: 118px; }
+  #aviso { max-width: 150px; font-size: 0.72rem; }
+  #herr { max-width: 150px; }
+  #orden { top: auto; bottom: calc(150px + var(--sb)); max-width: calc(100% - 32px); min-width: 0; }
+  #orden-txt { font-size: 1.05rem; }
+  .grupo.dir { grid-template-columns: repeat(3, 52px); }
+  .grupo.cam { grid-template-columns: repeat(3, 60px); }
+  .pb { min-height: 44px; }
+  .pb span { font-size: 0.66rem; }
+  .pb kbd { display: none; }
+  .res { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { #orden, #toast, .barra .fondo i { transition: none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c" aria-label="Escena 3D: un trono de Málaga con sus hombres de trono, de noche"></canvas>
+
+  <div id="panel" class="hud">
+    <div class="marca"><h1>Capataz</h1><span>El trono · etapa 2</span></div>
+    <div class="stats">
+      <div><b id="st-hora">18:20</b><small>Hora</small></div>
+      <div><b id="st-golpes">0</b><small>Golpes</small></div>
+      <div><b id="st-luci">0</b><small>Lucimiento</small></div>
+      <div><b id="st-vel">0,00</b><small>m/s</small></div>
+    </div>
+    <div class="barra"><span class="t">Cansancio</span><span class="fondo"><i id="st-cans"></i></span><b id="st-cans-n">0</b></div>
+    <div class="estado-fila"><i id="compas" aria-hidden="true"></i><span id="st-estado">En el suelo, sobre la mesa</span></div>
+    <div id="campana-fila"><span>Campana:</span><span class="toques" id="toques"></span><span id="campana-txt"></span></div>
+    <p id="objetivo"></p>
+  </div>
+
+  <div id="mapa-wrap" class="hud">
+    <canvas id="mapa" width="340" height="340" aria-label="Mapa de la calle alrededor del trono"></canvas>
+    <div id="aviso" hidden><span class="t">Por delante</span><span class="v" id="aviso-txt"></span></div>
+    <div id="herr">
+      <button class="mini" id="b-cam" type="button">Cámara<kbd>V</kbd></button>
+      <button class="mini" id="b-mus" type="button">Banda: sí<kbd>M</kbd></button>
+      <button class="mini" id="b-voz" type="button">Voz: sí<kbd>N</kbd></button>
+      <button class="mini" id="b-ayu" type="button">Ayuda<kbd>H</kbd></button>
+      <a class="mini" href="index.html">← La mudanza</a>
+    </div>
+  </div>
+
+  <div id="orden" class="hud"><small id="orden-quien">El mayordomo manda</small><div id="orden-txt"></div><div id="orden-barra"><i></i></div></div>
+  <div id="toast" class="hud"></div>
+
+  <div id="pad">
+    <div class="grupo dir">
+      <button class="pb" type="button" data-acc="giroIzq"><span>⟲ Gira</span><kbd>A</kbd></button>
+      <button class="pb clave" type="button" data-acc="frente"><span>Adelante</span><kbd>W</kbd></button>
+      <button class="pb" type="button" data-acc="giroDer"><span>Gira ⟳</span><kbd>D</kbd></button>
+      <button class="pb" type="button" data-acc="ladoIzq"><span>◂ De lado</span><kbd>Q</kbd></button>
+      <button class="pb" type="button" data-acc="atras"><span>Atrás</span><kbd>S</kbd></button>
+      <button class="pb" type="button" data-acc="ladoDer"><span>De lado ▸</span><kbd>E</kbd></button>
+    </div>
+    <div class="grupo cam">
+      <button class="pb bell" type="button" data-acc="toque"><span>Toque</span><kbd>Espacio</kbd></button>
+      <button class="pb bell" type="button" data-acc="fuerte"><span>Toque fuerte</span><kbd>F</kbd></button>
+      <button class="pb bell clave" type="button" data-acc="pong"><span>¡Arriba!</span><kbd>G</kbd></button>
+      <button class="pb" type="button" data-acc="mecida" id="b-mecida"><span>Mecida</span><kbd>Z</kbd></button>
+      <button class="pb" type="button" data-acc="pulso"><span>A pulso</span><kbd>P</kbd></button>
+      <button class="pb" type="button" data-acc="camara"><span>Cámara</span><kbd>V</kbd></button>
+    </div>
+  </div>
+
+  <div id="inicio" class="pantalla">
+    <div class="carta">
+      <h2>El trono</h2>
+      <p class="sub">Desde la nave hasta la entrada del recorrido oficial</p>
+      <p>Eres el mayordomo de trono. El trono pesa casi cinco toneladas y lo llevan 84 hombres de trono que no se relevan: los que salen son los que llegan. Lo diriges con la campana; en marcha, los capataces de las esquinas repiten tus órdenes. Tienes que entrar en el recorrido oficial antes de las 19:40.</p>
+      <h3>La campana</h3>
+      <div class="teclas">
+        <kbd>Espacio ×4-5</kbd><span>Toques suaves y seguidos: los hombres de trono se colocan y meten el hombro</span>
+        <kbd>F</kbd><span><em>Toque fuerte</em>: todos con el hombro metido</span>
+        <kbd>G</kbd><span><em>Pong</em>, el toque más fuerte: ¡arriba! Cuanto mejor la preparación, mejor la levantá</span>
+        <kbd>Espacio</kbd><span>En marcha, un toque para <em>parar</em>. Parado, otro toque para <em>bajar</em> a la mesa</span>
+      </div>
+      <h3>A voces, para orientar</h3>
+      <div class="teclas">
+        <kbd>W / S</kbd><span><em>Adelante</em> o <em>atrás</em>. Tarda en arrancar y en frenar: es una mole</span>
+        <kbd>A / D</kbd><span><em>Derecha adelante, izquierda atrás</em> (y al revés): girar. Mantén pulsado</span>
+        <kbd>Q / E</kbd><span>Desplazarse de lado</span>
+        <kbd>Z · P</kbd><span><em>Mecida</em> (más ancho y más cansancio) · levantá <em>a pulso</em> (más alto)</span>
+      </div>
+      <p class="nota">El cansancio solo baja con el trono en el suelo. Si descansas demasiado, la cuadrilla se enfría y la siguiente levantá sale peor. Los varales sobresalen 2,5 m por delante y por detrás: en la esquina, ábrete antes de girar.</p>
+      <div class="acciones"><button class="btn" id="b-empezar" type="button">Empezar la salida</button><a class="btn sec" href="index.html">Jugar la mudanza</a></div>
+      <p class="nota" id="record"></p>
+    </div>
+  </div>
+
+  <div id="ayuda" class="pantalla" hidden>
+    <div class="carta">
+      <h2>Mandar el trono</h2>
+      <div class="teclas">
+        <kbd>Espacio</kbd><span>Toque de campana: en el suelo, toques suaves para colocarse; en marcha, parar; parado, bajar</span>
+        <kbd>F · G</kbd><span>Toque fuerte (meter el hombro) · pong (¡arriba!)</span>
+        <kbd>W / S</kbd><span>Adelante · atrás</span>
+        <kbd>A / D</kbd><span>Girar (mantén pulsado)</span>
+        <kbd>Q / E</kbd><span>De lado</span>
+        <kbd>Z</kbd><span>Mecida: luce en la plaza, pero ensancha el trono y cansa</span>
+        <kbd>P</kbd><span>A pulso: sube el trono 45 cm unos segundos; luce mucho ante la tribuna</span>
+        <kbd>V · rueda</kbd><span>Cámara: detrás, mayordomo, desde arriba, capataz de la esquina · acercar o alejar</span>
+        <kbd>M · N · R</kbd><span>Banda · voz · volver a empezar</span>
+      </div>
+      <p>El trono mide 4,4 m de ancho con los hombres de trono, 10 m de largo con varales y 4,6 m de alto con el palio. El mapa marca con línea discontinua lo que está en alto.</p>
+      <div class="acciones"><button class="btn" id="b-cerrar-ayuda" type="button">Seguir</button></div>
+    </div>
+  </div>
+
+  <div id="final" class="pantalla" hidden>
+    <div class="carta">
+      <h2 id="fin-nota">9,2</h2>
+      <p id="fin-titulo"></p>
+      <div class="res">
+        <div><b id="fin-hora">—</b><small>Entrada</small></div>
+        <div><b id="fin-golpes">0</b><small>Golpes</small></div>
+        <div><b id="fin-levantas">—</b><small>Levantás</small></div>
+        <div><b id="fin-luci">0</b><small>Lucimiento</small></div>
+      </div>
+      <p id="fin-texto"></p>
+      <div class="acciones"><button class="btn" id="b-repetir" type="button">Repetir la salida</button><button class="btn sec" id="b-mirar" type="button">Ver el trono</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+(function () {
+const $ = (s) => document.querySelector(s);
+const DEG = Math.PI / 180;
+const fmt = (n, d = 2) => n.toFixed(d).replace('.', ',');
+const easeIO = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const REDUCIDO = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rng(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const rnd = rng(2027);
+
+// ---------------------------------------------------------------- configuración
+const CFG = {
+  retardoVoz: 0.7,     // los capataces de las esquinas repiten la orden
+  vMax: 0.5,           // m/s en marcha
+  vAtras: 0.22,
+  acel: 0.1,           // m/s² al arrancar: es una mole
+  frena: 0.16,         // m/s² al frenar
+  wMax: 3.4 * DEG,     // giro máximo (rad/s)
+  wAcel: 1.4 * DEG,    // rad/s²
+  lado: 0.12,          // m/s de lado
+  pulso: 0.45,         // m que sube a pulso
+  bpm: 76,
+  horaInicio: 18 * 3600 + 20 * 60,
+  horaLimite: 19 * 3600 + 40 * 60,
+  escalaReloj: 6,      // 1 s de juego = 6 s de reloj
+};
+const BEAT = 60 / CFG.bpm;
+document.documentElement.style.setProperty('--retardo', CFG.retardoVoz + 's');
+
+// El trono como tres cuerpos apilados: hombres de trono y varales, mesa y candelería, palio
+const TIERS = [
+  { nombre: 'los varales', hx: 2.2, hz: 5.0, y0: 0.0, y1: 1.9 },
+  { nombre: 'la candelería', hx: 1.6, hz: 2.6, y0: 1.9, y1: 3.1 },
+  { nombre: 'el palio', hx: 1.3, hz: 1.9, y0: 3.1, y1: 4.6 },
+];
+const ALTO = TIERS[2].y1;
+
+// ---------------------------------------------------------------- nivel
+// nave → calle Ancha → plaza de la Tribuna → calle del Ángel → esquina → calle Real → recorrido oficial
+const POLY = [[-6, -17], [6, -17], [6, -1.4], [3.2, -1.4], [3.2, -1], [7, -1], [7, 55], [16, 55], [16, 68.5], [72, 68.5], [72, 80], [66, 80], [66, 150], [56, 150], [56, 80], [16, 80], [16, 85], [-16, 85], [-16, 55], [-7, 55], [-7, -1], [-3.2, -1], [-3.2, -1.4], [-6, -1.4]];
+const SALIDA = { x: 0, z: -9.5, a: 0 };
+const META_Z = 135;
+const TRIBUNA = { x: -11, z: 70 };
+function enPlaza(x, z) { return x > -16 && x < 16 && z > 57 && z < 84; }
+
+function dentroPoly(x, z) {
+  let d = false;
+  for (let i = 0, j = POLY.length - 1; i < POLY.length; j = i++) {
+    const [xi, zi] = POLY[i], [xj, zj] = POLY[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) d = !d;
+  }
+  return d;
+}
+const OBS = [];
+const add = (o) => (OBS.push(o), o);
+for (let i = 0; i < POLY.length; i++) {
+  const a = POLY[i], b = POLY[(i + 1) % POLY.length];
+  add({ kind: 'seg', a, b, minH: 0, maxH: 99, label: Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.6 ? 'la jamba del portón' : 'la fachada', pared: true });
+}
+const rect = (x0, z0, x1, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+
+// ---------------------------------------------------------------- colisiones (SAT en planta + franjas de altura)
+function obb(p, t, extra) {
+  const s = Math.sin(p.a), c = Math.cos(p.a);
+  return { cx: p.x, cz: p.z, ux: s, uz: c, vx: c, vz: -s, hz: t.hz, hx: t.hx + (extra || 0) };
+}
+function esquinas(o) {
+  const r = [];
+  for (const [i, j] of [[1, 1], [1, -1], [-1, -1], [-1, 1]]) r.push([o.cx + o.ux * o.hz * i + o.vx * o.hx * j, o.cz + o.uz * o.hz * i + o.vz * o.hx * j]);
+  return r;
+}
+function separa(o, pts, ax, az) {
+  const c = o.cx * ax + o.cz * az;
+  const r = o.hz * Math.abs(o.ux * ax + o.uz * az) + o.hx * Math.abs(o.vx * ax + o.vz * az);
+  let mn = Infinity, mx = -Infinity;
+  for (const p of pts) { const d = p[0] * ax + p[1] * az; if (d < mn) mn = d; if (d > mx) mx = d; }
+  return mx < c - r || mn > c + r;
+}
+function choca2D(o, ob) {
+  if (ob.kind === 'circle') {
+    const dx = ob.x - o.cx, dz = ob.z - o.cz;
+    let f = dx * o.ux + dz * o.uz, l = dx * o.vx + dz * o.vz;
+    f = clamp(f, -o.hz, o.hz); l = clamp(l, -o.hx, o.hx);
+    const px = o.cx + o.ux * f + o.vx * l, pz = o.cz + o.uz * f + o.vz * l;
+    return (ob.x - px) ** 2 + (ob.z - pz) ** 2 < ob.r * ob.r;
+  }
+  const pts = ob.kind === 'seg' ? [ob.a, ob.b] : ob.pts;
+  if (separa(o, pts, o.ux, o.uz) || separa(o, pts, o.vx, o.vz)) return false;
+  const n = pts.length === 2 ? 1 : pts.length;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    let nx = b[1] - a[1], nz = -(b[0] - a[0]);
+    const L = Math.hypot(nx, nz) || 1; nx /= L; nz /= L;
+    if (separa(o, pts, nx, nz)) return false;
+  }
+  return true;
+}
+function colisiona(p, dy, ancho) {
+  for (const t of TIERS) {
+    const y0 = t.y0 + (t === TIERS[0] ? 0 : dy), y1 = t.y1 + dy;
+    const o = obb(p, t, ancho);
+    for (const ob of OBS) {
+      if (!(y1 > ob.minH && y0 < ob.maxH)) continue;
+      if (choca2D(o, ob)) return { ob, tier: t };
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------- escena
+const canvas = $('#c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0c0f1f);
+scene.fog = new THREE.FogExp2(0x0c0f1f, 0.012);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
+scene.add(new THREE.HemisphereLight(0x3a4170, 0x2a1d12, 0.55));
+{ const l = new THREE.DirectionalLight(0x9fb2e0, 0.3); l.position.set(-40, 60, 90); scene.add(l); }
+
+function texCanvas(w, h, draw, repeat) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(cv);
+  t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  if (repeat) t.repeat.set(repeat[0], repeat[1]);
+  return t;
+}
+function rr(x, X, Y, W, H, R) { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W, Y, X + W, Y + H, R); x.arcTo(X + W, Y + H, X, Y + H, R); x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath(); }
+const M = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.85, metalness: 0 }, o));
+
+// Suelo: losas de piedra pulida, como el centro de Málaga
+const texSuelo = texCanvas(512, 512, (x, w, h) => {
+  x.fillStyle = '#4a443d'; x.fillRect(0, 0, w, h);
+  const n = 6, s = w / n;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    x.fillStyle = `hsl(${30 + rnd() * 10}, ${8 + rnd() * 6}%, ${44 + rnd() * 10}%)`;
+    x.fillRect(i * s + 2, j * s + 2, s - 4, s - 4);
+    for (let k = 0; k < 40; k++) { x.fillStyle = `rgba(0,0,0,${rnd() * 0.08})`; x.fillRect(i * s + rnd() * s, j * s + rnd() * s, 3, 3); }
+  }
+}, [40, 40]);
+const suelo = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), M(0xffffff, { map: texSuelo, roughness: 0.55, metalness: 0.05 }));
+suelo.rotation.x = -Math.PI / 2; suelo.position.set(28, 0, 66); scene.add(suelo);
+// Cera en el suelo de la plaza
+const texCera = texCanvas(256, 256, (x, w, h) => { x.clearRect(0, 0, w, h); for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(250,240,215,${0.15 + rnd() * 0.25})`; x.beginPath(); x.arc(rnd() * w, rnd() * h, 1 + rnd() * 3, 0, Math.PI * 2); x.fill(); } }, [8, 8]);
+{ const m = new THREE.Mesh(new THREE.PlaneGeometry(32, 30), new THREE.MeshBasicMaterial({ map: texCera, transparent: true, opacity: 0.5 })); m.rotation.x = -Math.PI / 2; m.position.set(0, 0.01, 70); scene.add(m); }
+// Nave
+const texNave = texCanvas(256, 256, (x, w, h) => { x.fillStyle = '#5a5550'; x.fillRect(0, 0, w, h); for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(0,0,0,${rnd() * 0.15})`; x.fillRect(rnd() * w, rnd() * h, 2, 2); } }, [4, 4]);
+{ const m = new THREE.Mesh(new THREE.PlaneGeometry(12, 15.6), M(0xffffff, { map: texNave })); m.rotation.x = -Math.PI / 2; m.position.set(0, 0.012, -9.2); scene.add(m); }
+
+function texFachada(base, banda, piedra) {
+  return texCanvas(512, 512, (x, w, h) => {
+    x.fillStyle = base; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2500; i++) { x.fillStyle = `rgba(0,0,0,${rnd() * 0.05})`; x.fillRect(rnd() * w, rnd() * h, 3, 3); }
+    if (piedra) { x.strokeStyle = 'rgba(70,55,40,0.3)'; for (let y = 0; y < h; y += 40) { x.beginPath(); x.moveTo(0, y); x.lineTo(w, y); x.stroke(); } return; }
+    x.fillStyle = banda; x.fillRect(0, h * 0.9, w, h * 0.1);
+    for (let fl = 0; fl < 4; fl++) {
+      const y = h * (0.08 + fl * 0.2);
+      x.fillStyle = banda; x.fillRect(0, y + h * 0.15, w, 4);
+      for (const cx of [w * 0.18, w * 0.5, w * 0.82]) {
+        const ww = w * 0.13, hh = h * 0.13;
+        x.fillStyle = '#18131d'; x.fillRect(cx - ww / 2, y, ww, hh);
+        if (rnd() < 0.3) { x.fillStyle = 'rgba(255,190,110,0.5)'; x.fillRect(cx - ww / 2 + 3, y + 3, ww - 6, hh - 6); }
+        x.strokeStyle = '#111'; x.lineWidth = 2; x.beginPath(); x.moveTo(cx - ww / 2 - 4, y + hh); x.lineTo(cx + ww / 2 + 4, y + hh); x.stroke();
+        x.fillStyle = '#e9e2d4'; x.fillRect(cx - ww / 2 - 5, y - 6, ww + 10, 5);
+      }
+    }
+  });
+}
+const FACHADAS = [texFachada('#e4c9a0', '#b9824c'), texFachada('#eadfcc', '#9c6e4a'), texFachada('#d9b98e', '#8b5a3c'), texFachada('#efe6d6', '#6f7f95')];
+const TEX_NAVE = texFachada('#bdb6aa', '#000', true);
+POLY.forEach((a, i) => {
+  const b = POLY[(i + 1) % POLY.length];
+  const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz);
+  let nx = dz / len, nz = -dx / len;
+  const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+  if (dentroPoly(mx + nx * 0.1, mz + nz * 0.1)) { nx = -nx; nz = -nz; }
+  const enNave = mz <= -1;
+  const hgt = enNave ? 8 : 13 + rnd() * 6;
+  const base = enNave ? TEX_NAVE : FACHADAS[i % FACHADAS.length];
+  const t = base.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, Math.round(len / 9)), 1);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(len + 0.4, hgt, 0.4), M(0xffffff, { map: t }));
+  m.position.set(mx + nx * 0.2, hgt / 2, mz + nz * 0.2); m.rotation.y = Math.atan2(-dz, dx); scene.add(m);
+});
+// Dintel del portón de la nave (alto: el trono cabe)
+add({ kind: 'poly', pts: rect(-3.2, -1.4, 3.2, -1), minH: 6.5, maxH: 8, label: 'el dintel del portón', alto: true, aviso: 'Dintel del portón' });
+{ const m = new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.5, 0.4), M(0xffffff, { map: TEX_NAVE })); m.position.set(0, 7.25, -1.2); scene.add(m); }
+
+const matHierro = M(0x16161a, { roughness: 0.6, metalness: 0.4 });
+const matLuz = new THREE.MeshBasicMaterial({ color: 0xffd08a });
+function farola(x, z, conLuz = true, h = 4.4) {
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.12, h, 8), matHierro); p.position.set(x, h / 2, z); scene.add(p);
+  const l = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.55, 0.4), matLuz); l.position.set(x, h + 0.3, z); scene.add(l);
+  if (conLuz) { const pl = new THREE.PointLight(0xffb066, 1.6, 22, 2); pl.position.set(x, h, z); scene.add(pl); }
+}
+function ficus(x, z, r = 2.8) {
+  add({ kind: 'circle', x, z, r: 0.5, minH: 0, maxH: 3.6, label: 'el tronco de un ficus' });
+  add({ kind: 'circle', x, z, r, minH: 3.5, maxH: 9, label: 'las ramas de un ficus', alto: true, aviso: 'Ramas de ficus' });
+  const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 3.8, 10), M(0x5b4a3a)); tr.position.set(x, 1.9, z); scene.add(tr);
+  const co = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), M(0x1f3d22)); co.scale.set(1, 0.55, 1); co.position.set(x, 5.0, z); scene.add(co);
+}
+function bloque(x0, z0, x1, z1, h0, h1, label, color, alto, aviso) {
+  add({ kind: 'poly', pts: rect(x0, z0, x1, z1), minH: h0, maxH: h1, label, alto, aviso });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, h1 - h0, z1 - z0), M(color)); m.position.set((x0 + x1) / 2, (h0 + h1) / 2, (z0 + z1) / 2); scene.add(m); return m;
+}
+// Calle Ancha
+ficus(5.5, 15); ficus(-5.5, 35);
+bloque(-7, 25, -4.2, 31, 0, 1.0, 'una terraza de veladores', 0x8a6a4a);
+for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.05, 10), M(0xd8d2c4)); s.position.set(-6.2 + (i % 2) * 1.3, 0.75, 26 + Math.floor(i / 2) * 2); scene.add(s); }
+bloque(4.5, 43, 7, 47, 0, 3.0, 'un quiosco', 0x2d4a3a);
+farola(-6.6, 8); farola(6.6, 25); farola(-6.6, 47);
+// Plaza de la Tribuna
+add({ kind: 'circle', x: -8, z: 72, r: 2.5, minH: 0, maxH: 1.2, label: 'la fuente' });
+{ const f = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.6, 0.8, 28), M(0xc2ad8c)); f.position.set(-8, 0.4, 72); scene.add(f);
+  const ag = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.05, 28), M(0x2b4a66, { roughness: 0.1, metalness: 0.3 })); ag.position.set(-8, 0.76, 72); scene.add(ag); }
+const tribuna = bloque(-16, 60, -12, 80, 0, 3.2, 'la tribuna', 0x3a1f44);
+add({ kind: 'poly', pts: rect(-14, 83.5, 14, 85), minH: 0, maxH: 1.8, label: 'el público' });
+farola(-14, 57); farola(14, 57); farola(14, 83);
+// Calle del Ángel y esquina
+farola(30, 68.9); farola(50, 79.6);
+// Calle Real
+add({ kind: 'poly', pts: rect(56, 82, 56.8, 132), minH: 0, maxH: 1.8, label: 'el público' });
+add({ kind: 'poly', pts: rect(65.2, 82, 66, 132), minH: 0, maxH: 1.8, label: 'el público' });
+add({ kind: 'circle', x: 57, z: 100, r: 0.15, minH: 0, maxH: 3.5, label: 'un semáforo' });
+bloque(57, 99.9, 59, 100.1, 3.0, 3.3, 'el brazo de un semáforo', 0x1d1d1d, true, 'Brazo de semáforo');
+{ const p = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.4, 8), matHierro); p.position.set(57, 1.7, 100); scene.add(p);
+  const sm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 0.3), M(0x111111)); sm.position.set(58.9, 3.0, 100); scene.add(sm);
+  const lr = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff8a2a })); lr.position.set(58.9, 3.2, 99.84); scene.add(lr); }
+bloque(64.5, 94.8, 66, 95.2, 4.2, 4.6, 'el farol de pared', 0x16161a, true, 'Farol de pared');
+{ const l = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), matLuz); l.position.set(64.7, 4.15, 95); scene.add(l); const pl = new THREE.PointLight(0xffb066, 1.4, 20, 2); pl.position.set(64.5, 4, 95); scene.add(pl); }
+add({ kind: 'seg', a: [56, 110], b: [66, 110], minH: 4.75, maxH: 4.85, label: 'la guirnalda de luces', alto: true, aviso: 'Guirnalda de luces' });
+{ const g = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 10, 5), M(0x111111)); g.rotation.z = Math.PI / 2; g.position.set(61, 4.8, 110); scene.add(g);
+  for (let i = 0; i <= 20; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), new THREE.MeshBasicMaterial({ color: i % 2 ? 0xfff0c0 : 0xffd27a })); b.position.set(56 + i * 0.5, 4.74, 110); scene.add(b); } }
+bloque(56, 119, 57.2, 122, 3.6, 4.6, 'un balcón', 0x8d8578, true, 'Balcón');
+farola(65.6, 118, true, 4.0);
+// Meta: entrada al recorrido oficial
+{ const arco = new THREE.Group();
+  const matArco = M(0x3a1f44, { roughness: 0.6 });
+  for (const x of [56.5, 65.5]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.6, 7, 0.6), matArco); c.position.set(x, 3.5, META_Z); arco.add(c); }
+  const tx = texCanvas(512, 96, (x, w, h) => { x.fillStyle = '#3a1f44'; x.fillRect(0, 0, w, h); x.fillStyle = '#d9a441'; x.textAlign = 'center'; x.font = '600 40px serif'; x.fillText('RECORRIDO OFICIAL', w / 2, 62); });
+  const pa = new THREE.Mesh(new THREE.BoxGeometry(9.6, 1.2, 0.3), M(0xffffff, { map: tx })); pa.position.set(61, 7.2, META_Z); arco.add(pa);
+  scene.add(arco);
+  for (let i = 0; i < 4; i++) { const t = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.2 + i * 0.5, 14), M(0x2a1830)); t.position.set(i < 2 ? 57.3 + i * 0.01 : 64.7, 0.6 + i * 0.25, 143); scene.add(t); } }
+// Público (decoración instanciada sobre las franjas de obstáculo)
+{ const pts = [];
+  for (let x = -13.5; x <= 13.5; x += 0.7) pts.push([x + (rnd() - 0.5) * 0.2, 84.2 + (rnd() - 0.5) * 0.5]);
+  for (let z = 83; z <= 131; z += 0.8) { pts.push([56.4 + (rnd() - 0.5) * 0.3, z]); pts.push([65.6 + (rnd() - 0.5) * 0.3, z]); }
+  for (let z = 61; z <= 79; z += 0.8) pts.push([-12.6, z + (rnd() - 0.5) * 0.3]);
+  const cuerpo = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.2, 0.24, 1.35, 7), M(0xffffff), pts.length);
+  const cabeza = new THREE.InstancedMesh(new THREE.SphereGeometry(0.12, 8, 6), M(0xc6976f), pts.length);
+  const mt = new THREE.Matrix4(), col = new THREE.Color();
+  const tonos = [0x2b2f3f, 0x4a2f2f, 0x2f3f2f, 0x5a4a3a, 0x1f1f25, 0x3b2a4a, 0x6b5a4a];
+  pts.forEach(([x, z], i) => {
+    const h = 0.9 + rnd() * 0.2;
+    mt.makeScale(1, h, 1); mt.setPosition(x, 0.675 * h, z); cuerpo.setMatrixAt(i, mt); cuerpo.setColorAt(i, col.setHex(tonos[i % tonos.length]));
+    mt.makeTranslation(x, 1.35 * h + 0.12, z); cabeza.setMatrixAt(i, mt);
+  });
+  scene.add(cuerpo); scene.add(cabeza); }
+// Luna y estrellas
+{ const l = new THREE.Mesh(new THREE.SphereGeometry(8, 24, 16), new THREE.MeshBasicMaterial({ color: 0xf3ead2, fog: false })); l.position.set(-90, 80, 220); scene.add(l);
+  const g = new THREE.BufferGeometry(), pos = [];
+  for (let i = 0; i < 500; i++) { const th = rnd() * Math.PI * 2, ph = rnd() * Math.PI * 0.42; pos.push(Math.cos(th) * Math.sin(ph) * 300, Math.cos(ph) * 300, Math.sin(th) * Math.sin(ph) * 300); }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xe8e2ff, size: 1.4, sizeAttenuation: false, fog: false }))); }
+
+// ---------------------------------------------------------------- el trono
+const matOro = M(0xc99a3a, { metalness: 0.55, roughness: 0.35, emissive: 0x2a1800 });
+const matPlata = M(0xc8c8d0, { metalness: 0.6, roughness: 0.3, emissive: 0x15151a });
+const matMadera = M(0x2a1a10, { roughness: 0.7 });
+const trono = new THREE.Group(); trono.rotation.order = 'YXZ'; scene.add(trono);
+const cuerpo = new THREE.Group(); trono.add(cuerpo);   // todo lo que sube y baja con los varales
+const VARALES_X = [-2.0, -1.2, -0.6, -0.2, 0.2, 0.6, 1.2, 2.0];
+{ for (const x of VARALES_X) { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 10, 8), matMadera); v.rotation.x = Math.PI / 2; v.position.set(x, 1.5, 0); cuerpo.add(v);
+    for (const z of [-5, 5]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.14, 10), matPlata); c.rotation.x = Math.PI / 2; c.position.set(x, 1.5, z); cuerpo.add(c); } }
+  const mesa = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.35, 5.3), matMadera); mesa.position.y = 1.75; cuerpo.add(mesa);
+  const cajillo = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.9, 5.2), matOro); cajillo.position.y = 2.38; cuerpo.add(cajillo);
+  for (let i = -4; i <= 4; i++) for (const s of [-1, 1]) { const cap = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.45, 0.32), M(0x3b2a12, { emissive: 0x100800 })); cap.position.set(s * 1.61, 2.4, i * 0.55); cuerpo.add(cap); }
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(3.35, 0.08, 5.35), matOro); moldura.position.y = 2.86; cuerpo.add(moldura); }
+// Candelería: filas de cera delante de la imagen
+const llamas = [];
+{ const gv = new THREE.CylinderGeometry(0.022, 0.022, 1, 6), mv = M(0xf5ecd6), gl = new THREE.SphereGeometry(0.028, 6, 5), ml = new THREE.MeshBasicMaterial({ color: 0xffd27a });
+  const filas = [[0.9, 0.5], [1.2, 0.4], [1.5, 0.3], [1.8, 0.22]];
+  filas.forEach(([z, h], fi) => { for (let k = 0; k < 9 - fi; k++) { const x = -1.2 + (k + fi * 0.5) * (2.4 / 8);
+    const v = new THREE.Mesh(gv, mv); v.scale.y = h; v.position.set(x, 2.9 + h / 2, z); cuerpo.add(v);
+    const l = new THREE.Mesh(gl, ml); l.scale.set(1, 2, 1); l.position.set(x, 2.95 + h, z); cuerpo.add(l); llamas.push(l); } }); }
+// Imagen bajo palio
+{ const manto = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.5, 20, 1, true), M(0x163a2a, { side: THREE.DoubleSide, roughness: 0.7 })); manto.position.set(0, 3.65, -0.8); cuerpo.add(manto);
+  const cola = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 1.3), M(0x163a2a)); cola.position.set(0, 2.93, -1.6); cola.rotation.x = 0.05; cuerpo.add(cola);
+  const saya = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 16), M(0xe8dcc0)); saya.position.set(0, 3.55, -0.62); cuerpo.add(saya);
+  const cara = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), M(0xd9b08a)); cara.position.set(0, 4.43, -0.72); cuerpo.add(cara);
+  const toca = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10, 0, Math.PI * 2, 0, Math.PI / 1.6), M(0xf4efe4)); toca.position.set(0, 4.45, -0.76); cuerpo.add(toca);
+  const corona = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.13, 0.2, 14, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide })); corona.position.set(0, 4.62, -0.76); cuerpo.add(corona);
+  const rafaga = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.02, 6, 24), matOro); rafaga.position.set(0, 4.62, -0.8); cuerpo.add(rafaga);
+  // varales de palio y techo
+  for (const x of [-1.25, 1.25]) for (let i = 0; i < 6; i++) { const z = -1.85 + i * 0.74; const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.65, 8), matPlata); v.position.set(x, 3.7, z); cuerpo.add(v); }
+  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), M(0x163a2a)); techo.position.y = 4.55; cuerpo.add(techo);
+  const glo = new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M(0xd8b04a, { metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide })); glo.rotation.x = Math.PI / 2; glo.position.y = 4.5; cuerpo.add(glo);
+  const texBamb = texCanvas(256, 64, (x, w, h) => { x.fillStyle = '#163a2a'; x.fillRect(0, 0, w, h); x.strokeStyle = '#d4a845'; x.lineWidth = 3; for (let i = 0; i < 8; i++) { x.beginPath(); x.arc(i * 32 + 16, 20, 10, 0, Math.PI * 2); x.stroke(); } x.fillStyle = '#d4a845'; for (let i = 0; i < w; i += 6) x.fillRect(i, h - 12, 3, 12); }, [3, 1]);
+  const mb = M(0xffffff, { map: texBamb, side: THREE.DoubleSide });
+  for (const [w, x, z, ry] of [[2.6, 0, 1.9, 0], [2.6, 0, -1.9, 0], [3.8, 1.3, 0, Math.PI / 2], [3.8, -1.3, 0, Math.PI / 2]]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.45), mb); b.position.set(x, 4.3, z); b.rotation.y = ry; cuerpo.add(b); }
+  const campana = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.11, 0.16, 12, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.3, side: THREE.DoubleSide })); campana.position.set(0, 2.55, 2.68); cuerpo.add(campana);
+  const pl = new THREE.PointLight(0xffc27a, 2.2, 16, 2); pl.position.set(0, 3.6, 1.2); cuerpo.add(pl); }
+// Hombres de trono: por fuera en los varales exteriores; en los interiores, delante y detrás del cajillo
+const PORTADORES = [];
+{ for (const x of VARALES_X) {
+    const ext = Math.abs(x) > 1.9;
+    for (let z = -4.7; z <= 4.71; z += 0.55) { if (!ext && Math.abs(z) < 2.7) continue; PORTADORES.push([ext ? x + Math.sign(x) * 0.18 : x, z]); } }
+  const n = PORTADORES.length;
+  const geoC = new THREE.CylinderGeometry(0.2, 0.22, 1.25, 7), geoH = new THREE.SphereGeometry(0.115, 8, 6);
+  var hombresC = new THREE.InstancedMesh(geoC, M(0x3b1f4f, { roughness: 0.9 }), n);
+  var hombresH = new THREE.InstancedMesh(geoH, M(0xc6976f), n);
+  hombresC.instanceMatrix.setUsage(THREE.DynamicDrawUsage); hombresH.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  trono.add(hombresC); trono.add(hombresH); }
+const mtx = new THREE.Matrix4();
+function colocarHombres(t, alt, bajos) {
+  PORTADORES.forEach(([x, z], i) => {
+    const fase = ((i * 7) % 2) ? 1 : -1;
+    const bob = REDUCIDO ? 0 : Math.max(0, Math.sin(t * Math.PI * 2 / (BEAT * 2) + fase)) * 0.05 * alt;
+    const y = bajos ? 0.58 : 0.66 + bob;
+    mtx.makeTranslation(x, y, z); hombresC.setMatrixAt(i, mtx);
+    mtx.makeTranslation(x, y + 0.75, z); hombresH.setMatrixAt(i, mtx);
+  });
+  hombresC.instanceMatrix.needsUpdate = true; hombresH.instanceMatrix.needsUpdate = true;
+}
+// Mayordomo con la campana, delante del trono
+const mayordomo = new THREE.Group(); scene.add(mayordomo);
+{ const traje = M(0x18181f, { roughness: 0.6 });
+  for (const s of [-0.1, 0.1]) { const pi = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.85, 8), traje); pi.position.set(s, 0.43, 0); mayordomo.add(pi); }
+  const cu = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.62, 0.24), traje); cu.position.y = 1.18; mayordomo.add(cu);
+  const me = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.015, 6, 16), matOro); me.position.set(0, 1.3, 0.13); mayordomo.add(me);
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), M(0xc6976f)); cab.position.y = 1.62; mayordomo.add(cab); }
+
+// ---------------------------------------------------------------- audio: campana, banda y voz
+const AU = { ctx: null, master: null, musica: true, voz: true, ruido: null };
+function ac() {
+  if (!AU.ctx) {
+    try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); const c = AU.ctx.createDynamicsCompressor(); c.connect(AU.ctx.destination); AU.master = AU.ctx.createGain(); AU.master.gain.value = 0.8; AU.master.connect(c); } catch (e) { AU.ctx = null; }
+  }
+  if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume().catch(() => {});
+  return AU.ctx;
+}
+function ruido(c) {
+  if (!AU.ruido) { AU.ruido = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate); const d = AU.ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = c.createBufferSource(); s.buffer = AU.ruido; return s;
+}
+function env(g, t, pico, dur) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(pico, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); }
+// Campana: parciales inarmónicos de bronce
+function campana(tipo) {
+  const c = ac(); if (!c) return; const t = c.currentTime;
+  const cfg = tipo === 'pong' ? { f: 520, g: 0.8, d: 4.2 } : tipo === 'fuerte' ? { f: 980, g: 0.45, d: 2.2 } : { f: 980, g: 0.14, d: 1.2 };
+  [[1, 1], [2.0, 0.55], [2.74, 0.4], [5.4, 0.22], [8.9, 0.12]].forEach(([r, a]) => {
+    const o = c.createOscillator(), g = c.createGain(); o.frequency.value = cfg.f * r; env(g, t, cfg.g * a, cfg.d / Math.sqrt(r)); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + cfg.d + 0.1); });
+  const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'bandpass'; f.frequency.value = cfg.f * 3; env(g2, t, cfg.g * 0.3, 0.04); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.06);
+}
+function bombo(t) { const c = ac(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.2); env(g, t, 0.85, 0.5); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.55); }
+function caja(t, v) { const c = ac(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'highpass'; f.frequency.value = 1700; env(g, t, v, 0.11); s.connect(f); f.connect(g); g.connect(AU.master); s.start(t); s.stop(t + 0.15); }
+function metal(t, f0, v) { const c = ac(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'sawtooth'; o.frequency.value = f0; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; env(g, t, v, BEAT * 0.9); o.connect(lp); lp.connect(g); g.connect(AU.master); o.start(t); o.stop(t + BEAT); }
+function sGolpe(fuerza) { const c = ac(); if (!c) return; const t = c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(80, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.3); env(g, t, 0.6 + 0.4 * fuerza, 0.4); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.45); const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'lowpass'; f.frequency.value = 900; env(g2, t, 0.5, 0.3); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.35); }
+const MELODIA = [220, 247, 262, 247, 220, 196, 220, 0, 196, 220, 247, 262, 294, 262, 247, 0];
+let vozES = null;
+function buscarVoz() { try { const vs = speechSynthesis.getVoices(); vozES = vs.find((v) => /es[-_]ES/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null; } catch (e) {} }
+if ('speechSynthesis' in window) { buscarVoz(); try { speechSynthesis.onvoiceschanged = buscarVoz; } catch (e) {} }
+function decir(txt) {
+  if (!AU.voz || !('speechSynthesis' in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt.replace(/[¡!¿?]/g, '')); u.lang = 'es-ES'; u.rate = 1.1; u.pitch = 0.75; if (vozES) u.voice = vozES; speechSynthesis.speak(u); } catch (e) {}
+}
+
+// ---------------------------------------------------------------- estado
+let G, now = 0, pausa = true, camModo = 0, zoom = 1, camSnap = true;
+const CAMS = ['Detrás del trono', 'Delante, con el mayordomo', 'Desde arriba', 'Capataz de la esquina'];
+function nuevaPartida() {
+  G = {
+    pose: { ...SALIDA }, prev: { ...SALIDA },
+    estado: 'suelo', liftT: 0, alt: 0, altObj: 0,           // alt: 0 = en hombros; -0.4 = sobre la mesa
+    v: 0, w: 0, lat: 0, vObj: 0, wObj: 0, latObj: 0,
+    giroHeld: 0, latHeld: 0,
+    mecida: false, mecidaOrden: false, mecFase: 0,
+    pulsoT: 0, pulsoDy: 0,
+    cans: 0, sueloT: 0, enfriado: false,
+    toques: [], fuerteT: null, sec: [],
+    golpes: 0, ultimoGolpe: -9, shake: 0, inclin: 0, danio: 0,
+    luci: 0, lev: { perfectas: 0, buenas: 0, desiguales: 0 }, descansos: 0,
+    t0: null, tiempo: 0, fin: false, cola: [], beatAcc: 0, beatN: 0,
+  };
+  G.alt = -0.4; G.altObj = -0.4;
+  camSnap = true;
+  actualizarMecidaBtn(); pintarToques();
+}
+const reloj = () => CFG.horaInicio + (G.t0 === null ? 0 : G.tiempo) * CFG.escalaReloj;
+const hhmm = (s) => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
+const enMarcha = () => Math.abs(G.v) > 0.02 || Math.abs(G.w) > 0.002 || Math.abs(G.lat) > 0.01 || G.vObj || G.wObj || G.latObj;
+
+function voz(texto, fn, opts = {}) {
+  if (G.fin) return;
+  if (opts.hablar !== false) decir(texto);
+  mostrarOrden(texto, 'El mayordomo manda · los capataces repiten');
+  const extra = G.cans > 70 ? 0.3 : 0;
+  G.cola.push({ t: now + CFG.retardoVoz + extra, fn });
+}
+function arriba() { return G.estado === 'arriba' || G.estado === 'pulso'; }
+function enSuelo() { if (!arriba()) { toast('El trono está en el suelo. Levántalo con la campana: toques suaves, toque fuerte y ¡arriba!', true); return true; } return false; }
+
+const ACC = {
+  toque() {
+    if (G.fin) return;
+    campana('suave'); mostrarOrden('Toque', 'Campana', true);
+    if (G.estado === 'suelo') {
+      if (G.toques.length && now - G.toques[G.toques.length - 1] > 2.2) { G.toques = []; G.fuerteT = null; G.sec = []; }
+      if (G.fuerteT !== null) { G.toques = []; G.fuerteT = null; G.sec = []; toast('Se ha cortado la secuencia: vuelve a empezar con toques suaves.', true); }
+      G.toques.push(now); G.sec.push('s'); pintarToques();
+    } else if (arriba()) {
+      if (enMarcha()) { G.vObj = 0; G.wObj = 0; G.latObj = 0; G.giroHeld = 0; G.latHeld = 0; G.sec = ['s']; pintarToques('Parar'); }
+      else if (G.estado === 'arriba') { G.estado = 'bajando'; G.liftT = 0; G.sec = ['s', 's']; pintarToques('Abajo'); }
+    }
+  },
+  fuerte() {
+    if (G.fin || G.estado !== 'suelo') return;
+    campana('fuerte'); mostrarOrden('Toque fuerte', 'Campana', true);
+    if (!G.toques.length) toast('Nadie se ha colocado todavía: primero, toques suaves.', true);
+    G.fuerteT = now; G.sec.push('f'); pintarToques();
+  },
+  pong() {
+    if (G.fin || G.estado !== 'suelo') return;
+    campana('pong'); mostrarOrden('¡Arriba!', 'Campana', true);
+    G.sec.push('p'); pintarToques();
+    levantar();
+  },
+  frente() { if (enSuelo()) return; voz('¡Vamos, adelante!', () => { if (arriba()) G.vObj = 1; }); },
+  atras() { if (enSuelo()) return; voz('¡Atrás, despacio!', () => { if (arriba()) G.vObj = -1; }); },
+  giroIzq: { press: () => ordenGiro(1), release: () => finGiro(1) },
+  giroDer: { press: () => ordenGiro(-1), release: () => finGiro(-1) },
+  ladoIzq: { press: () => ordenLado(1), release: () => finLado(1) },
+  ladoDer: { press: () => ordenLado(-1), release: () => finLado(-1) },
+  mecida() {
+    if (enSuelo()) return;
+    const q = !G.mecidaOrden; G.mecidaOrden = q; actualizarMecidaBtn();
+    voz(q ? '¡A mecerlo, valientes!' : '¡Sin mecer, derecho!', () => {
+      if (!q) { G.mecida = false; return; }
+      const h = colisiona(G.pose, G.alt + G.pulsoDy, 0.25);
+      if (h) { golpe(h, 0.3); G.mecidaOrden = false; actualizarMecidaBtn(); return; }
+      G.mecida = true;
+    });
+  },
+  pulso() {
+    if (enSuelo()) return;
+    if (G.estado === 'pulso') return;
+    if (Math.abs(G.v) > 0.05) { toast('A pulso solo con el trono parado.', true); return; }
+    voz('¡A pulso! ¡Al cielo con ella!', () => {
+      if (G.estado !== 'arriba' || Math.abs(G.v) > 0.05) return;
+      if (G.cans > 65) { toast('La cuadrilla no puede: está demasiado cansada para subirlo a pulso.'); G.lev.desiguales++; G.inclin = 0.05; return; }
+      const h = colisiona(G.pose, CFG.pulso, G.mecida ? 0.25 : 0);
+      if (h) { golpe(h, 0.5); return; }
+      G.estado = 'pulso'; G.pulsoT = 0;
+      const zona = enPlaza(G.pose.x, G.pose.z) && Math.hypot(G.pose.x - TRIBUNA.x, G.pose.z - TRIBUNA.z) < 16;
+      const pts = zona ? 25 : 8; G.luci += pts; G.cans = Math.min(100, G.cans + 12);
+      toast(zona ? `¡A pulso ante la tribuna! +${pts} de lucimiento` : `A pulso. +${pts} de lucimiento`, 'bien');
+    });
+  },
+  camara() { camModo = (camModo + 1) % CAMS.length; camSnap = true; toast('Cámara: ' + CAMS[camModo].toLowerCase(), true); },
+  musica() { AU.musica = !AU.musica; $('#b-mus').firstChild.textContent = 'Banda: ' + (AU.musica ? 'sí' : 'no'); },
+  voz() { AU.voz = !AU.voz; $('#b-voz').firstChild.textContent = 'Voz: ' + (AU.voz ? 'sí' : 'no'); if (!AU.voz) try { speechSynthesis.cancel(); } catch (e) {} },
+  ayuda() { if (!$('#inicio').hidden || !$('#final').hidden) return; const a = $('#ayuda'); a.hidden = !a.hidden; pausa = !a.hidden; },
+  reiniciar() { nuevaPartida(); $('#final').hidden = true; toast('Volvemos a la nave.', true); },
+};
+function ordenGiro(s) {
+  if (enSuelo()) return;
+  voz(s > 0 ? '¡Derecha adelante, izquierda atrás!' : '¡Izquierda adelante, derecha atrás!', () => { if (arriba()) G.wObj = s; });
+}
+function finGiro(s) { if (!arriba()) return; voz('¡Derecho!', () => { if (G.wObj === s) G.wObj = 0; }, { hablar: false }); }
+function ordenLado(s) { if (enSuelo()) return; voz(s > 0 ? '¡De lado, a la izquierda!' : '¡De lado, a la derecha!', () => { if (arriba()) G.latObj = s; }); }
+function finLado(s) { if (!arriba()) return; voz('¡Ahí!', () => { if (G.latObj === s) G.latObj = 0; }, { hablar: false }); }
+
+function levantar() {
+  const n = G.toques.length;
+  const prep = clamp((n - 1) / 4, 0, 1);
+  let ritmo = 0.5;
+  if (n >= 3) { const iv = []; for (let i = 1; i < n; i++) iv.push(G.toques[i] - G.toques[i - 1]); const m = iv.reduce((a, b) => a + b, 0) / iv.length; const sd = Math.sqrt(iv.reduce((a, b) => a + (b - m) ** 2, 0) / iv.length); ritmo = clamp(1 - (sd / m) * 2, 0, 1); }
+  let fu = 0;
+  if (G.fuerteT !== null) { const gap = now - G.fuerteT; fu = gap < 0.35 ? 0.4 : gap <= 2 ? 1 : clamp(1 - (gap - 2) / 2, 0, 1); }
+  const frio = G.sueloT > 35 ? clamp(1 - (G.sueloT - 35) / 40, 0.4, 1) : 1;
+  const fat = G.cans > 80 ? 0.6 : 1;
+  const q = (0.35 * prep + 0.2 * ritmo + 0.45 * fu) * frio * fat;
+  const h = colisiona(G.pose, 0, 0);
+  G.toques = []; G.fuerteT = null; G.sec = [];
+  if (h) { golpe(h, 0.6); return; }
+  if (G.t0 === null) G.t0 = now;
+  G.estado = 'levantando'; G.liftT = 0; G.altObj = 0; G.ultQ = q;
+  if (q >= 0.8) { G.lev.perfectas++; G.luci += 15; toast('¡Levantá perfecta! Todos a una. +15', 'bien'); }
+  else if (q >= 0.55) { G.lev.buenas++; G.luci += 5; toast('Buena levantá. +5', 'bien'); }
+  else {
+    G.lev.desiguales++; G.inclin = 0.07; G.danio += 4;
+    const motivo = n < 3 ? 'pocos toques de preparación' : G.fuerteT === null && fu === 0 ? 'faltó el toque fuerte' : frio < 1 ? 'la cuadrilla se ha enfriado' : fat < 1 ? 'la cuadrilla está agotada' : 'sin ritmo en la campana';
+    toast(`Levantá desigual: ${motivo}. El trono se ha ladeado.`);
+  }
+  if (G.sueloT > 0) G.descansos++;
+  G.sueloT = 0;
+  const c = ac(); if (c && AU.musica) { const t0 = c.currentTime + 0.3; for (let k = 0; k < 6; k++) caja(t0 + k * 0.06, 0.06 + k * 0.025); bombo(t0 + 0.4); }
+}
+
+function golpe(h, fuerza) {
+  if (now - G.ultimoGolpe > 1.2) { G.golpes++; G.danio += 3 + 10 * fuerza; }
+  G.ultimoGolpe = now; G.shake = 0.35 + fuerza; sGolpe(fuerza);
+  G.v = 0; G.w = 0; G.lat = 0; G.vObj = 0; G.wObj = 0; G.latObj = 0; G.giroHeld = 0; G.latHeld = 0;
+  const quien = h.ob.pared ? '' : ` (${h.tier.nombre})`;
+  toast(`¡Golpe! El trono ha dado con ${h.ob.label}${quien}.`);
+  $('#st-golpes').classList.add('malo');
+}
+
+function terminar() {
+  G.fin = true;
+  const llegada = reloj();
+  const retrasoMin = Math.max(0, (llegada - CFG.horaLimite) / 60);
+  const nota = clamp(10 - G.golpes * 1 - G.lev.desiguales * 0.75 - retrasoMin * 0.3 + Math.min(1.5, G.luci / 60), 0, 10);
+  let rec = null; try { rec = JSON.parse(localStorage.getItem('capataz-trono') || 'null'); } catch (e) {}
+  const nuevo = !rec || nota > rec.nota;
+  if (nuevo) { rec = { nota, llegada }; try { localStorage.setItem('capataz-trono', JSON.stringify(rec)); } catch (e) {} }
+  const titulo = nota >= 9 ? 'Mayordomo de los que hacen afición' : nota >= 7 ? 'Buena salida: el barrio se acordará' : nota >= 5 ? 'Ha llegado, que no es poco' : 'La Agrupación querrá hablar contigo';
+  $('#fin-nota').textContent = fmt(nota, 1);
+  $('#fin-titulo').textContent = titulo;
+  $('#fin-hora').textContent = hhmm(llegada);
+  $('#fin-golpes').textContent = G.golpes;
+  $('#fin-levantas').textContent = `${G.lev.perfectas + G.lev.buenas}/${G.lev.perfectas + G.lev.buenas + G.lev.desiguales}`;
+  $('#fin-luci').textContent = Math.round(G.luci);
+  $('#fin-texto').textContent = (retrasoMin > 0 ? `Entrada con ${Math.round(retrasoMin)} min de retraso sobre las ${hhmm(CFG.horaLimite)}: la Agrupación lo anotará. ` : `En hora: el recorrido oficial te esperaba a las ${hhmm(CFG.horaLimite)}. `) + `${G.lev.perfectas} levantás perfectas, ${G.lev.desiguales} desiguales, ${G.descansos} descansos. ` + (G.golpes === 0 ? 'Ni un roce en los varales.' : `${G.golpes} ${G.golpes === 1 ? 'golpe' : 'golpes'}.`) + (nuevo ? ' Nuevo récord.' : '');
+  setTimeout(() => { $('#final').hidden = false; }, 1500);
+}
+
+// ---------------------------------------------------------------- bucle
+function onBeat() {
+  G.beatN++;
+  const cp = $('#compas'); cp.classList.add('on'); setTimeout(() => cp.classList.remove('on'), 90);
+  if (AU.musica && AU.ctx && arriba() && Math.abs(G.v) > 0.05) {
+    const t = AU.ctx.currentTime + 0.01, k = G.beatN % 16;
+    bombo(t); caja(t + BEAT / 2, 0.12);
+    const f = MELODIA[k]; if (f) { metal(t, f, 0.05); metal(t, f * 1.5, 0.025); }
+  }
+}
+
+const vis = { x: 0, z: 0, a: 0 };
+function update(dt) {
+  now += dt;
+  while (G.cola.length && G.cola[0].t <= now) G.cola.shift().fn();
+  G.beatAcc += dt; while (G.beatAcc >= BEAT) { G.beatAcc -= BEAT; onBeat(); }
+
+  // Subir, bajar, a pulso
+  if (G.estado === 'levantando') { G.liftT += dt / 1.1; G.alt = -0.4 + 0.4 * easeIO(Math.min(1, G.liftT)); if (G.liftT >= 1) { G.estado = 'arriba'; G.alt = 0; } }
+  else if (G.estado === 'bajando') {
+    G.v *= Math.max(0, 1 - dt * 3);
+    G.liftT += dt / 1.3; G.alt = -0.4 * easeIO(Math.min(1, G.liftT));
+    if (G.liftT >= 1) { G.estado = 'suelo'; G.alt = -0.4; G.v = 0; G.w = 0; G.lat = 0; G.vObj = 0; G.wObj = 0; G.latObj = 0; G.mecida = false; G.mecidaOrden = false; actualizarMecidaBtn(); G.sueloT = 0; G.sec = []; pintarToques(); }
+  } else if (G.estado === 'pulso') {
+    G.pulsoT += dt; const k = G.pulsoT < 0.8 ? easeIO(G.pulsoT / 0.8) : G.pulsoT < 3.2 ? 1 : 1 - easeIO(Math.min(1, (G.pulsoT - 3.2) / 0.9));
+    G.pulsoDy = CFG.pulso * k; if (G.pulsoT >= 4.1) { G.estado = 'arriba'; G.pulsoDy = 0; }
+  }
+
+  // Cansancio: solo baja en el suelo
+  if (G.estado === 'suelo') { G.sueloT += dt; if (G.sueloT > 2) G.cans = Math.max(0, G.cans - 4 * dt); }
+  else if (arriba()) {
+    const mov = Math.abs(G.v) > 0.05 || Math.abs(G.w) > 0.005;
+    G.cans += (mov ? 0.32 : 0.2) * dt + (G.mecida ? 0.25 * dt : 0) + (G.estado === 'pulso' ? 2.5 * dt : 0);
+    if (G.cans >= 100 && G.estado === 'arriba') {
+      G.cans = 100; toast('¡La cuadrilla no puede más! El trono baja de golpe.'); G.lev.desiguales++; G.danio += 8; G.shake = 0.6; sGolpe(0.7);
+      G.estado = 'bajando'; G.liftT = 0.5; G.vObj = 0; G.wObj = 0; G.latObj = 0;
+    }
+  }
+
+  // Inercia: la mole tarda en arrancar y en frenar
+  if (arriba() || G.estado === 'bajando') {
+    const vmax = (G.cans > 70 ? 0.7 : 1) * (G.mecida ? 0.85 : 1);
+    const vT = G.vObj > 0 ? CFG.vMax * vmax : G.vObj < 0 ? -CFG.vAtras : 0;
+    const a = Math.abs(vT) > Math.abs(G.v) && Math.sign(vT || 1) === Math.sign(G.v || vT || 1) ? CFG.acel : CFG.frena;
+    G.v += clamp(vT - G.v, -a * dt, a * dt);
+    const wT = G.wObj * CFG.wMax;
+    G.w += clamp(wT - G.w, -CFG.wAcel * dt, CFG.wAcel * dt);
+    const lT = G.latObj * CFG.lado;
+    G.lat += clamp(lT - G.lat, -0.12 * dt, 0.12 * dt);
+  }
+  const p = G.pose;
+  const np = { x: p.x + Math.sin(p.a) * G.v * dt + Math.cos(p.a) * G.lat * dt, z: p.z + Math.cos(p.a) * G.v * dt - Math.sin(p.a) * G.lat * dt, a: p.a + G.w * dt };
+  if (np.x !== p.x || np.z !== p.z || np.a !== p.a) {
+    const h = colisiona(np, G.alt + G.pulsoDy, G.mecida ? 0.25 : 0);
+    if (h) { const f = clamp(Math.abs(G.v) / CFG.vMax + Math.abs(G.w) / CFG.wMax * 0.5, 0, 1); golpe(h, f); }
+    else G.pose = np;
+  }
+  // Lucimiento por mecida
+  if (G.mecida && arriba()) G.luci += dt * (enPlaza(G.pose.x, G.pose.z) ? 0.6 : 0.12);
+  // Meta
+  if (!G.fin && G.t0 !== null) {
+    const fz = Math.cos(G.pose.a);
+    if (G.pose.z + fz * 5 > META_Z && G.pose.x > 55 && fz > 0.7) terminar();
+  }
+  if (G.t0 !== null && !G.fin) G.tiempo = now - G.t0;
+
+  // Visual
+  G.inclin *= Math.max(0, 1 - dt * 0.6);
+  G.mecFase += dt * (Math.PI * 2) / (BEAT * 2);
+  const mec = G.mecida && !REDUCIDO ? Math.sin(G.mecFase) : 0;
+  trono.position.set(G.pose.x + Math.cos(G.pose.a) * mec * 0.12, 0, G.pose.z - Math.sin(G.pose.a) * mec * 0.12);
+  trono.rotation.y = G.pose.a;
+  trono.rotation.z = (REDUCIDO ? 0 : mec * 0.03) + G.inclin;
+  const bob = REDUCIDO || !arriba() || Math.abs(G.v) < 0.05 ? 0 : Math.abs(Math.sin(now * Math.PI / BEAT)) * 0.025;
+  cuerpo.position.y = G.alt + G.pulsoDy + bob;
+  colocarHombres(now, Math.abs(G.v) > 0.05 ? 1 : 0, G.estado === 'suelo');
+  llamas.forEach((l, i) => { l.scale.y = 2 + Math.sin(now * 17 + i * 1.3) * 0.35; });
+  const fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a);
+  mayordomo.position.set(G.pose.x + fx * 6.4, 0, G.pose.z + fz * 6.4);
+  mayordomo.rotation.y = G.pose.a + Math.PI;
+  G.shake = Math.max(0, G.shake - dt);
+}
+
+function distLibre(dx, dz, max) {
+  let d = 4;
+  for (let k = 4; k <= max; k += 0.25) { const x = G.pose.x + dx * k, z = G.pose.z + dz * k; if (!dentroPoly(x, z) || !dentroPoly(x + 0.6, z) || !dentroPoly(x - 0.6, z) || !dentroPoly(x, z + 0.6) || !dentroPoly(x, z - 0.6)) break; d = k; }
+  return d;
+}
+const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmpP = new THREE.Vector3(), tmpL = new THREE.Vector3();
+function updateCam(dt) {
+  const p = G.pose, fx = Math.sin(p.a), fz = Math.cos(p.a), lx = Math.cos(p.a), lz = -Math.sin(p.a);
+  let up = [0, 1, 0];
+  mayordomo.visible = camModo !== 1;
+  if (camModo === 0) { const want = 17 * zoom, d = distLibre(-fx, -fz, want); tmpP.set(p.x - fx * d, 6 + 5 * zoom + (want - d) * 0.5, p.z - fz * d); tmpL.set(p.x + fx * 5, 2.6, p.z + fz * 5); }
+  else if (camModo === 1) { const d = distLibre(fx, fz, 10 * zoom); tmpP.set(p.x + fx * d, 1.7, p.z + fz * d); tmpL.set(p.x, 3.2, p.z); }
+  else if (camModo === 2) { tmpP.set(p.x, 38 * zoom, p.z); tmpL.set(p.x, 0, p.z); up = [fx, 0, fz]; }
+  else { tmpP.set(p.x + fx * 5.6 + lx * 3.0, 1.75, p.z + fz * 5.6 + lz * 3.0); tmpL.set(p.x + fx * 16 + lx * 2.4, 2.0, p.z + fz * 16 + lz * 2.4); }
+  const s = camSnap ? 1 : 1 - Math.exp(-dt * 4);
+  camPos.lerp(tmpP, s); camLook.lerp(tmpL, s); camSnap = false;
+  camera.position.copy(camPos);
+  if (G.shake > 0 && !REDUCIDO) camera.position.add(new THREE.Vector3((Math.random() - 0.5) * G.shake * 0.4, (Math.random() - 0.5) * G.shake * 0.3, (Math.random() - 0.5) * G.shake * 0.4));
+  camera.up.set(up[0], up[1], up[2]);
+  camera.lookAt(camLook);
+}
+
+// ---------------------------------------------------------------- HUD
+const mapa = $('#mapa'), mx = mapa.getContext('2d');
+function dibujarMapa() {
+  const W = mapa.width, S = W / 80, c = W / 2;
+  const p = G.pose, fx = Math.sin(p.a), fz = Math.cos(p.a), lx = Math.cos(p.a), lz = -Math.sin(p.a);
+  const T = (x, z) => { const rx = x - p.x, rz = z - p.z; return [c - (rx * lx + rz * lz) * S, c - (rx * fx + rz * fz) * S]; };
+  mx.setTransform(1, 0, 0, 1, 0, 0); mx.clearRect(0, 0, W, W);
+  mx.save(); mx.beginPath(); mx.arc(c, c, c - 2, 0, Math.PI * 2); mx.clip();
+  mx.fillStyle = '#0b0912'; mx.fillRect(0, 0, W, W);
+  mx.beginPath(); POLY.forEach(([x, z], i) => { const [a, b] = T(x, z); i ? mx.lineTo(a, b) : mx.moveTo(a, b); }); mx.closePath();
+  mx.fillStyle = '#2c2440'; mx.fill(); mx.strokeStyle = '#8a77ad'; mx.lineWidth = 2; mx.stroke();
+  for (const o of OBS) {
+    if (o.pared) continue;
+    mx.setLineDash(o.alto ? [6, 5] : []);
+    mx.strokeStyle = o.alto ? '#e0a33a' : '#d8c49b'; mx.fillStyle = 'rgba(216,196,155,0.8)'; mx.lineWidth = o.alto ? 2.5 : 2;
+    mx.beginPath();
+    if (o.kind === 'circle') { const [a, b] = T(o.x, o.z); mx.arc(a, b, o.r * S, 0, Math.PI * 2); }
+    else { const pts = o.kind === 'seg' ? [o.a, o.b] : o.pts; pts.forEach(([x, z], i) => { const [a, b] = T(x, z); i ? mx.lineTo(a, b) : mx.moveTo(a, b); }); if (o.kind !== 'seg') mx.closePath(); }
+    if (o.alto) mx.stroke(); else mx.fill();
+  }
+  mx.setLineDash([]);
+  { const [a, b] = T(56, META_Z), [a2, b2] = T(66, META_Z); mx.strokeStyle = '#d9a441'; mx.lineWidth = 4; mx.beginPath(); mx.moveTo(a, b); mx.lineTo(a2, b2); mx.stroke(); }
+  TIERS.forEach((t, i) => {
+    const e = esquinas(obb(p, t, G.mecida ? 0.25 : 0)); mx.beginPath(); e.forEach(([x, z], k) => { const [a, b] = T(x, z); k ? mx.lineTo(a, b) : mx.moveTo(a, b); }); mx.closePath();
+    if (i === 0) { mx.fillStyle = 'rgba(122,23,48,0.85)'; mx.fill(); } mx.strokeStyle = i === 0 ? '#d9a441' : 'rgba(241,230,204,0.7)'; mx.lineWidth = 2; mx.stroke();
+  });
+  mx.restore();
+}
+function objetivo() {
+  const { x, z } = G.pose;
+  if (G.fin) return '<strong>¡En el recorrido oficial!</strong>';
+  if (z < -1) return G.estado === 'suelo' ? '<strong>En la nave.</strong> Levanta el trono con la campana: 4 o 5 toques suaves y seguidos (Espacio), un toque fuerte (F) y ¡arriba! (G).' : '<strong>En la nave.</strong> Sal por el portón con el trono centrado.';
+  if (z < 55) return '<strong>Calle Ancha.</strong> Ramas de ficus a 3,5 m a los lados, una terraza de veladores y un quiosco. Ve por el centro.';
+  if (x < 16 && enPlaza(x, z)) return '<strong>Plaza de la Tribuna.</strong> Aquí luce: mecida (Z) y levantá a pulso (P) ante la tribuna. Gira hacia la calle del Ángel, a la izquierda.';
+  if (x < 50) return '<strong>Calle del Ángel.</strong> Al fondo, la esquina: los varales no caben si giras pegado. Para en el centro del cruce y gira sobre ti mismo.';
+  if (z < 82) return '<strong>La esquina.</strong> Gira a la derecha hacia la calle Real sin que la punta de los varales toque las fachadas.';
+  return `<strong>Calle Real.</strong> Público a los lados, un semáforo, un farol y una guirnalda a 4,75 m (¡ojo con subirlo a pulso!). Entrada en el recorrido oficial antes de las ${hhmm(CFG.horaLimite)}.`;
+}
+function avisoProximo() {
+  const fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a), lx = Math.cos(G.pose.a), lz = -Math.sin(G.pose.a);
+  let mejor = null, df = Infinity;
+  for (const o of OBS) {
+    if (!o.alto) continue;
+    const pts = o.kind === 'circle' ? [[o.x, o.z]] : o.kind === 'seg' ? [o.a, o.b, [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2]] : o.pts;
+    for (const [x, z] of pts) { const rx = x - G.pose.x, rz = z - G.pose.z, f = rx * fx + rz * fz, l = rx * lx + rz * lz; if (f > -3 && f < 22 && Math.abs(l) < 7 && f < df) { df = f; mejor = o; } }
+  }
+  const el = $('#aviso');
+  if (!mejor) { el.hidden = true; return; }
+  el.hidden = false;
+  const top = ALTO + (G.estado === 'pulso' ? CFG.pulso : 0);
+  const choca = top > mejor.minH;
+  el.classList.toggle('peligro', choca);
+  $('#aviso-txt').textContent = `${mejor.aviso}: ${fmt(mejor.minH)} m libres${choca ? ` · el palio llega a ${fmt(top)} m` : ''}`;
+}
+let ultimoHud = 0;
+function hud() {
+  $('#st-hora').textContent = hhmm(reloj());
+  $('#st-hora').classList.toggle('malo', reloj() > CFG.horaLimite);
+  $('#st-golpes').textContent = G.golpes;
+  $('#st-luci').textContent = Math.round(G.luci);
+  $('#st-vel').textContent = fmt(Math.abs(G.v));
+  const cb = $('#st-cans'); cb.style.width = G.cans + '%'; cb.style.background = G.cans > 80 ? 'var(--sangre)' : G.cans > 60 ? 'var(--oro)' : 'var(--verde)';
+  $('#st-cans-n').textContent = Math.round(G.cans);
+  let e;
+  if (G.estado === 'suelo') e = G.fin ? 'En el recorrido oficial' : G.sueloT > 35 ? 'En el suelo · la cuadrilla se está enfriando' : G.t0 === null ? 'En el suelo, sobre la mesa' : 'Descansando en el suelo';
+  else if (G.estado === 'levantando') e = '¡Arriba!';
+  else if (G.estado === 'bajando') e = 'Bajando a la mesa';
+  else if (G.estado === 'pulso') e = '¡A pulso!';
+  else e = Math.abs(G.v) > 0.03 ? (G.v > 0 ? 'Adelante' : 'Hacia atrás') : Math.abs(G.w) > 0.003 ? 'Girando' : Math.abs(G.lat) > 0.02 ? 'De lado' : 'Parado, en hombros';
+  if (arriba() && Math.abs(G.w) > 0.003 && Math.abs(G.v) > 0.03) e += ', girando';
+  if (G.mecida) e += ' · meciendo';
+  $('#st-estado').textContent = e;
+  $('#objetivo').innerHTML = objetivo();
+  if (G.estado !== 'bajando') pintarToques();
+  avisoProximo();
+}
+function pintarToques(txt) {
+  const el = $('#toques'); el.innerHTML = '';
+  (G ? G.sec : []).slice(-8).forEach((k) => { const i = document.createElement('i'); i.className = k; el.appendChild(i); });
+  let t = txt || '';
+  if (!txt && G && arriba()) t = enMarcha() ? 'un toque: parar' : 'un toque: bajar a la mesa';
+  if (!txt && G && G.estado === 'suelo') { const n = G.toques.length; t = G.fuerteT !== null ? 'hombro metido: ¡pong!' : n === 0 ? 'toques suaves para colocarse' : n < 4 ? `colocándose (${n})` : `colocados (${n}): toque fuerte`; }
+  $('#campana-txt').textContent = t;
+}
+function actualizarMecidaBtn() { const b = $('#b-mecida'); if (!b) return; b.classList.toggle('on', !!(G && G.mecidaOrden)); b.querySelector('span').textContent = G && G.mecidaOrden ? 'Sin mecer' : 'Mecida'; }
+let tOrden = 0;
+function mostrarOrden(txt, quien, esCampana) {
+  const el = $('#orden'); $('#orden-txt').textContent = txt; $('#orden-quien').textContent = quien;
+  el.classList.toggle('campana', !!esCampana);
+  el.classList.remove('esperando'); void el.offsetWidth; el.classList.add('vis'); if (!esCampana) el.classList.add('esperando');
+  clearTimeout(tOrden); tOrden = setTimeout(() => el.classList.remove('vis'), 2000);
+}
+let tToast = 0;
+function toast(txt, tipo) {
+  const el = $('#toast'); el.textContent = txt; el.classList.toggle('info', tipo === true); el.classList.toggle('bien', tipo === 'bien'); el.classList.add('vis');
+  clearTimeout(tToast); tToast = setTimeout(() => el.classList.remove('vis'), tipo ? 1900 : 2600);
+}
+
+// ---------------------------------------------------------------- entrada
+const TECLAS = { Space: 'toque', KeyF: 'fuerte', KeyG: 'pong', Enter: 'pong', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
+const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara']);
+const pulsadas = new Set();
+function press(acc) {
+  ac();
+  if (pausa && !SIEMPRE.has(acc)) return;
+  if (pulsadas.has(acc)) return;
+  const a = ACC[acc]; if (!a) return;
+  if (typeof a === 'function') a(); else { pulsadas.add(acc); a.press(); const b = document.querySelector(`.pb[data-acc="${acc}"]`); if (b) b.classList.add('on'); }
+}
+function release(acc) {
+  if (!pulsadas.has(acc)) return;
+  pulsadas.delete(acc); ACC[acc].release();
+  const b = document.querySelector(`.pb[data-acc="${acc}"]`); if (b) b.classList.remove('on');
+}
+addEventListener('keydown', (e) => {
+  const acc = TECLAS[e.code]; if (!acc) return;
+  if (e.target && e.target.tagName === 'BUTTON' && (e.code === 'Space' || e.code === 'Enter') && !$('#inicio').hidden) return;
+  e.preventDefault(); if (e.repeat) return;
+  press(acc);
+});
+addEventListener('keyup', (e) => { const acc = TECLAS[e.code]; if (acc) release(acc); });
+addEventListener('blur', () => { for (const a of [...pulsadas]) release(a); });
+document.querySelectorAll('.pb').forEach((b) => {
+  const acc = b.dataset.acc;
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} press(acc); });
+  const fin = () => release(acc);
+  b.addEventListener('pointerup', fin); b.addEventListener('pointercancel', fin); b.addEventListener('lostpointercapture', fin);
+  b.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); press(acc); setTimeout(() => release(acc), 400); } });
+});
+$('#b-cam').addEventListener('click', () => ACC.camara());
+$('#b-mus').addEventListener('click', () => ACC.musica());
+$('#b-voz').addEventListener('click', () => ACC.voz());
+$('#b-ayu').addEventListener('click', () => ACC.ayuda());
+$('#b-cerrar-ayuda').addEventListener('click', () => ACC.ayuda());
+$('#b-repetir').addEventListener('click', () => ACC.reiniciar());
+$('#b-mirar').addEventListener('click', () => { $('#final').hidden = true; });
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = clamp(zoom * (e.deltaY > 0 ? 1.08 : 0.93), 0.5, 1.9); }, { passive: false });
+function empezar() { ac(); $('#inicio').hidden = true; pausa = false; toast('Prepara la levantá: toques suaves y seguidos con Espacio.', true); }
+$('#b-empezar').addEventListener('click', empezar);
+try { const rec = JSON.parse(localStorage.getItem('capataz-trono') || 'null'); if (rec) $('#record').textContent = `Tu récord: ${fmt(rec.nota, 1)} sobre 10, entrando a las ${hhmm(rec.llegada)}.`; } catch (e) {}
+
+function resize() {
+  const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), css = mapa.clientWidth || 170;
+  mapa.width = mapa.height = Math.round(css * dpr);
+}
+addEventListener('resize', resize);
+
+nuevaPartida(); resize();
+let last = performance.now();
+function loop(t) {
+  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+  update(pausa ? 0 : dt);
+  updateCam(dt);
+  if (t - ultimoHud > 100) { hud(); ultimoHud = t; }
+  dibujarMapa();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+window.__trono = { get G() { return G; }, colisiona, OBS, press, release, TIERS, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
+})();
+</script>
+</body>
+</html>
