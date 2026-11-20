@@ -63,6 +63,8 @@ En móvil hay botones en pantalla con las mismas órdenes.
 - **Recorrido**: almacén → calle Alfarería (cable a 3,10 m, naranjos) → calle Feria (bolardos, balcones, cable a 3,05 m) → callejón del Agua (farol bajo y maceta) → plaza de San Roque → puerta del templo (3,00 m de ancho y 3,20 m de alto).
 - **Nota sobre 10**: un punto menos por golpe y medio punto por cada 15 s por encima de 3:50.
 
+Gráficos: los mismos que el trono (reflejos de metal, resplandor de velas y faroles, sombras, botón «Gráficos»), canastilla tallada en oro, faldón de terciopelo bordado, guardabrisas de cristal en los candelabros, figuras del misterio con rostro pintado y vecinos esperando en la plaza de San Roque y en los balcones de calle Feria.
+
 Todo el código está en `index.html` (Three.js r128 desde cdnjs, sonido sintetizado con Web Audio y voz con la síntesis de voz del navegador).
 
 ## Siguientes fases
