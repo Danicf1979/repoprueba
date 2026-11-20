@@ -206,7 +206,7 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
     <div class="carta">
       <h2>El trono</h2>
       <p class="sub">Desde la nave hasta la entrada del recorrido oficial</p>
-      <p>Eres el mayordomo de trono. El trono pesa casi cinco toneladas y lo llevan 84 hombres de trono que no se relevan: los que salen son los que llegan. Lo diriges con la campana; en marcha, los capataces de las esquinas repiten tus órdenes. Tienes que entrar en el recorrido oficial antes de las 20:10, por el itinerario que elijas.</p>
+      <p>Eres el mayordomo de trono. El trono pesa casi cinco toneladas y lo llevan 84 hombres de trono que no se relevan: los que salen son los que llegan. Lo diriges con la campana; en marcha, los capataces de las esquinas repiten tus órdenes. Tienes que entrar en el recorrido oficial antes de las 21:30, por el itinerario que elijas.</p>
       <details class="como"><summary>Cómo se manda el trono</summary>
       <h3>La campana</h3>
       <div class="teclas">
@@ -225,7 +225,7 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
       <p class="nota">El cansancio solo baja con el trono en el suelo. Si descansas demasiado, la cuadrilla se enfría y la siguiente levantá sale peor. Los varales sobresalen casi 4 m por delante y por detrás del cajillo, y los cuatro arbotantes sobresalen en las esquinas del cajillo: en la esquina, para en el centro del cruce y gira sobre ti mismo.</p>
       </details>
       <h3>Itinerario</h3>
-      <p class="nota">Elige por dónde vas desde la casa hermandad hasta la entrada del recorrido oficial: toca los cruces en orden (tocar el último lo quita) o elige uno propuesto. Las calles del itinerario las corta la policía y se llenan de público; si te sales, habrá coches aparcados y la Agrupación lo apuntará. Cada vez que bajas el trono para descansar, la partida se guarda.</p>
+      <p class="nota">Elige por dónde vas desde la casa hermandad hasta la entrada del recorrido oficial: toca los cruces en orden (tocar el último lo quita) o elige uno propuesto. Las calles del itinerario las corta la policía y se llenan de público; si te sales, habrá coches aparcados y la Agrupación lo apuntará. La partida se guarda en los puntos de guardado (los cruces con un aro en el plano), al terminar cada calle larga.</p>
       <div class="acciones" id="rutas-tipo"></div>
       <canvas id="plano" width="660" height="336" aria-label="Plano del barrio para elegir el itinerario"></canvas>
       <p class="nota" id="ruta-info"></p>
@@ -305,7 +305,7 @@ const CFG = {
   pulso: 0.45,         // m que sube a pulso
   bpm: 76,
   horaInicio: 18 * 3600 + 30 * 60,
-  horaLimite: 20 * 3600 + 10 * 60,
+  horaLimite: 21 * 3600 + 30 * 60,
   escalaReloj: 6,      // 1 s de juego = 6 s de reloj
 };
 const BEAT = 60 / CFG.bpm;
@@ -327,92 +327,143 @@ const TIERS = [
 const ALTO = TIERS[2].y1;
 
 // ---------------------------------------------------------------- ciudad
-// Un barrio inventado al estilo del centro de Málaga. Las calles forman un grafo de cruces (nodos) y tramos.
-// Antes de salir se elige el itinerario en el mapa: las calles del itinerario las corta la policía y se llenan
-// de público; en las demás hay coches aparcados. Todas acaban en la entrada del recorrido oficial.
-const NODOS = {
-  S: { x: 0, z: -10.5, nombre: 'la casa hermandad' },
-  C0: { x: 0, z: 70, nombre: 'la plaza de la Tribuna', plaza: true },
-  W0: { x: -60, z: 70, nombre: 'el cruce de Carretería' }, E0: { x: 60, z: 70, nombre: 'el cruce de calle Granada' },
-  W1: { x: -60, z: 170, nombre: 'el cruce de Carretería con Álamos' }, C1: { x: 0, z: 170, nombre: 'el cruce de Álamos' }, E1: { x: 60, z: 170, nombre: 'el cruce de Granada con Álamos' },
-  W2: { x: -60, z: 270, nombre: 'el cruce de Carretería con Císter' }, C2: { x: 0, z: 270, nombre: 'el cruce de Císter' }, E2: { x: 60, z: 270, nombre: 'el cruce de Granada con Císter' },
-  M: { x: 0, z: 300, nombre: 'la entrada del recorrido oficial' },
+// Un barrio inventado al estilo del centro de Málaga, con calles anchas para los tronos. Las calles forman una
+// cuadrícula de cruces (nodos) y tramos. Antes de salir se elige el itinerario en el plano: las calles del
+// itinerario las corta la policía y se llenan de público; en las demás hay coches aparcados.
+const CIU = {
+  cols: [{ id: 'W', x: -75 }, { id: 'C', x: 0 }, { id: 'E', x: 75 }],
+  rows: [{ z: 70 }, { z: 230 }, { z: 390 }, { z: 550 }],
+  stub: 12, chaflan: 3,
+  salida: { id: 'ancha', nombre: 'calle Ancha', w: 14, aviso: 'ficus, terraza y quiosco', desc: 'Ramas de ficus a 3,5 m a los lados, una terraza de veladores y un quiosco. Ve por el centro: a la altura de las ramas, los arbotantes de las esquinas abren el trono más que los propios varales.' },
+  meta: { id: 'larga', nombre: 'calle Larga', w: 12, largo: 75, metaU: 32, aviso: 'entrada al recorrido oficial', desc: 'La entrada del recorrido oficial: tribunas, sillas y el arco de la Agrupación.', arco: 'RECORRIDO OFICIAL' },
+  plazas: { C0: { hx: 16, hz: 18, nombre: 'la plaza de la Tribuna' } },
+  nombresNodo: { C0: 'la plaza de la Tribuna' },
+  // calles: clave «nodoA-nodoB» (de sur a norte o de centro hacia fuera)
+  calles: {
+    'C0-W0': { id: 'angel', nombre: 'calle del Ángel', w: 12, aviso: 'guirnalda a 4,75 m', desc: 'Calle ancha y lucida, con una guirnalda de luces a 4,75 m: cabe el palio, pero no a pulso.' },
+    'C0-E0': { id: 'compania', nombre: 'calle Compañía', w: 12, aviso: 'semáforo y farol', desc: 'Un semáforo con el brazo metido en la calle a 3 m y un farol de pared: ve por el centro.' },
+    'C0-C1': { id: 'balcones', nombre: 'calle de los Balcones', w: 8, aviso: 'balcones a 4,4 m: muy justa', desc: 'La más corta y la más difícil: balcones a 4,4 m a los dos lados que dejan a los arbotantes unos centímetros. Ve centrado y sin mecer.' },
+    'C1-C2': { id: 'nueva', nombre: 'calle Nueva', w: 11, aviso: 'terraza y quiosco', desc: 'Una terraza a un lado y un quiosco de prensa al otro: apártate de cada uno a su tiempo.' },
+    'C2-C3': { id: 'santamaria', nombre: 'calle Santa María', w: 10, aviso: 'semáforos y toldos', desc: 'Toldos altos de lado a lado y dos semáforos con el brazo metido: ve por el centro.' },
+    'W0-W1': { id: 'carreteriaS', nombre: 'calle Carretería', w: 11, aviso: 'ficus alternos', desc: 'Ficus con las ramas a 3,5 m, alternos: hay que ir apartándose de lado (Q / E) de uno a otro.' },
+    'W1-W2': { id: 'carreteriaN', nombre: 'calle Carretería (alta)', w: 11, aviso: 'iglesia: saeta', desc: 'La iglesia de Santiago: si paras el trono delante de la puerta, alguien canta una saeta desde un balcón. Guirnalda a 4,75 m.' },
+    'W2-W3': { id: 'pozo', nombre: 'calle del Pozo', w: 10, aviso: 'cables a 4,9 m y terraza', desc: 'Cables de lado a lado a 4,9 m (no subas a pulso) y una terraza.' },
+    'E0-E1': { id: 'granadaS', nombre: 'calle Granada', w: 9, aviso: 'naranjos: estrecha', desc: 'Estrecha y con naranjos alternos: sus copas, a 2,4 m, tocan los arbotantes. Apártate de lado del que tengas cerca.' },
+    'E1-E2': { id: 'granadaN', nombre: 'calle Granada (alta)', w: 9, aviso: 'convento: cantan las monjas', desc: 'El convento de las Clarisas: si paras delante en silencio, las monjas cantan a la Virgen. Cables a 4,9 m.' },
+    'E2-E3': { id: 'beatas', nombre: 'calle Beatas', w: 9, aviso: 'balcones a un lado', desc: 'Balcones bajos en la acera derecha: pégate un poco a la izquierda.' },
+    'W1-C1': { id: 'alamosW', nombre: 'calle Álamos', w: 10, aviso: 'obras en la acera', desc: 'Andamio de obras en la acera norte: pégate al lado sur para no rozarlo.' },
+    'C1-E1': { id: 'alamosE', nombre: 'calle Álamos (este)', w: 10, aviso: 'semáforo y guirnalda', desc: 'Un semáforo con el brazo metido y una guirnalda a 4,75 m.' },
+    'W2-C2': { id: 'cisterW', nombre: 'calle Císter', w: 12, aviso: 'peña cofrade: luce', desc: 'La peña cofrade tiene su tribunilla: mecida y a pulso aquí lucen.' },
+    'C2-E2': { id: 'cisterE', nombre: 'calle Císter (este)', w: 12, aviso: 'terraza', desc: 'Una terraza de veladores en la acera sur.' },
+    'W3-C3': { id: 'mercedW', nombre: 'calle de la Merced', w: 11, aviso: 'guirnalda', desc: 'Calle ancha con una guirnalda a 4,75 m.' },
+    'C3-E3': { id: 'mercedE', nombre: 'calle de la Merced (este)', w: 11, aviso: 'quiosco', desc: 'Un quiosco en la acera sur.' },
+  },
+  rutas: {
+    corta: { nombre: 'Por los Balcones', nodos: ['S', 'C0', 'C1', 'C2', 'C3', 'M'], nota: 'la más corta y la más justa' },
+    carreteria: { nombre: 'Por Carretería', nodos: ['S', 'C0', 'W0', 'W1', 'W2', 'W3', 'C3', 'M'], nota: 'larga, con ficus y la saeta de Santiago' },
+    granada: { nombre: 'Por calle Granada', nodos: ['S', 'C0', 'E0', 'E1', 'E2', 'E3', 'C3', 'M'], nota: 'estrecha, con naranjos y el convento' },
+  },
+  publico: (w) => (w >= 11 ? 1.7 : w >= 10 ? 1.4 : w >= 9 ? 1.2 : 1.1),
+  coches: (w) => (w >= 10 ? [-1, 1] : [-1]),
+  extraPlaza: (pz, gente) => {
+    if (pz.id !== 'C0') return;
+    add({ kind: 'circle', x: 10, z: 80, r: 3.3, minH: 0, maxH: 1.8, label: 'el público de la fuente', ruta: true });
+    for (let k = 0; k < 28; k++) { const a = (k / 28) * Math.PI * 2; gente.push([10 + Math.cos(a) * 2.95, 0, 80 + Math.sin(a) * 2.95, Math.atan2(Math.cos(a), Math.sin(a)), 0.85 + rnd() * 0.2]); }
+    for (let fz = 0; fz < 4; fz++) for (let x = -15.6; x < -8.8; x += 0.48) if (rnd() > 0.08) gente.push([x, 3.2, 53 + fz * 0.8, 0, 0.66 + rnd() * 0.08]);
+  },
+  puntos: ['C0', 'W1', 'C1', 'E1', 'W2', 'C2', 'E2', 'W3', 'C3', 'E3'],   // puntos de guardado: al acabar esas calles
 };
-const PLAZA = { x0: -16, x1: 16, z0: 52, z1: 88 };
-const META_Z = 300;
-const SALIDA = { x: 0, z: -10.5, a: 0 };
-const TRIBUNA = { x: -12, z: 58 };
-function enPlaza(x, z) { return x > PLAZA.x0 && x < PLAZA.x1 && z > PLAZA.z0 && z < PLAZA.z1; }
-// Tramos: ancho de fachada a fachada, nivel de dificultad y lo que hay en cada uno
-const TRAMOS = [
-  { id: 'ancha', a: 'S', b: 'C0', nombre: 'calle Ancha', w: 14, aviso: 'ficus, terraza y quiosco', desc: 'Ramas de ficus a 3,5 m a los lados, una terraza de veladores y un quiosco. Ve por el centro: a la altura de las ramas, los arbotantes de las esquinas abren el trono más que los propios varales.' },
-  { id: 'angel', a: 'C0', b: 'W0', nombre: 'calle del Ángel', w: 12, aviso: 'guirnalda a 4,75 m', desc: 'Calle ancha y lucida, con una guirnalda de luces a 4,75 m: cabe el palio, pero no a pulso.' },
-  { id: 'compania', a: 'C0', b: 'E0', nombre: 'calle Compañía', w: 12, aviso: 'semáforo y farol', desc: 'Un semáforo con el brazo metido en la calle a 3 m y un farol de pared: ve por el centro.' },
-  { id: 'balcones', a: 'C0', b: 'C1', nombre: 'calle de los Balcones', w: 8, aviso: 'balcones a 4,4 m: muy justa', desc: 'La más corta y la más difícil: balcones a 4,4 m a los dos lados que dejan a los arbotantes unos centímetros. Ve centrado y sin mecer.' },
-  { id: 'nueva', a: 'C1', b: 'C2', nombre: 'calle Nueva', w: 11, aviso: 'terraza y quiosco', desc: 'Una terraza a la izquierda y un quiosco de prensa a la derecha: apártate de cada uno a su tiempo.' },
-  { id: 'larga', a: 'C2', b: 'M', nombre: 'calle Larga', w: 12, aviso: 'entrada al recorrido oficial', desc: 'La entrada del recorrido oficial: tribunas, sillas y el arco de la Agrupación.' },
-  { id: 'carreteriaS', a: 'W0', b: 'W1', nombre: 'calle Carretería', w: 11, aviso: 'ficus a los dos lados', desc: 'Tres ficus con las ramas a 3,5 m, alternos: hay que ir apartándose de lado (Q / E) de uno a otro.' },
-  { id: 'carreteriaN', a: 'W1', b: 'W2', nombre: 'calle Carretería (alta)', w: 11, aviso: 'iglesia: saeta', desc: 'La iglesia de Santiago: si paras el trono delante de la puerta, alguien canta una saeta desde un balcón. Guirnalda a 4,75 m.' },
-  { id: 'granadaS', a: 'E0', b: 'E1', nombre: 'calle Granada', w: 9, aviso: 'naranjos: estrecha', desc: 'Estrecha y con naranjos alternos: sus copas, a 2,4 m, tocan los arbotantes. Apártate de lado del que tengas cerca.' },
-  { id: 'granadaN', a: 'E1', b: 'E2', nombre: 'calle Granada (alta)', w: 9, aviso: 'convento: cantan las monjas', desc: 'El convento de las Clarisas: si paras delante en silencio, las monjas cantan a la Virgen. Cables a 4,9 m (ojo a pulso).' },
-  { id: 'alamosW', a: 'W1', b: 'C1', nombre: 'calle Álamos', w: 10, aviso: 'obras en la acera', desc: 'Andamio de obras en la acera norte: pégate al lado sur para no rozarlo.' },
-  { id: 'alamosE', a: 'C1', b: 'E1', nombre: 'calle Álamos (este)', w: 10, aviso: 'semáforo y guirnalda', desc: 'Un semáforo con el brazo metido y una guirnalda a 4,75 m.' },
-  { id: 'cisterW', a: 'W2', b: 'C2', nombre: 'calle Císter', w: 12, aviso: 'peña cofrade: luce', desc: 'La peña cofrade tiene su tribunilla: mecida y a pulso aquí lucen.' },
-  { id: 'cisterE', a: 'C2', b: 'E2', nombre: 'calle Císter (este)', w: 12, aviso: 'terraza', desc: 'Una terraza de veladores en la acera sur.' },
-];
+// ==== BASE DE CIUDAD (común a tronos y pasos) ====
+const NODOS = { S: { x: CIU.cols.find((c) => c.id === 'C').x, z: -10.5, nombre: 'la casa hermandad' } };
+CIU.cols.forEach((c) => CIU.rows.forEach((r, j) => { NODOS[c.id + j] = { x: c.x, z: r.z, nombre: (CIU.nombresNodo || {})[c.id + j] || 'el cruce' }; }));
+const NC = CIU.rows.length - 1, XC = NODOS.S.x;
+NODOS.M = { x: XC, z: CIU.rows[NC].z + CIU.meta.metaU + 6, nombre: 'la entrada del recorrido oficial' };
+for (const [id, pz] of Object.entries(CIU.plazas)) NODOS[id].plaza = true;
+const TRAMOS = [{ a: 'S', b: 'C0', ...CIU.salida }];
+for (const [k, d] of Object.entries(CIU.calles)) { const [a, b] = k.split('-'); TRAMOS.push({ a, b, ...d }); }
+TRAMOS.push({ a: 'C' + NC, b: 'M', ...CIU.meta });
 const TR = Object.fromEntries(TRAMOS.map((t) => [t.id, t]));
-// Geometría de cada tramo: eje, extremos y pasillo de fachada a fachada
-const NODO_MEDIDA = {};   // semiancho del cruce en x y en z
-for (const [id, n] of Object.entries(NODOS)) {
+// nombres de los cruces a partir de las calles que se cruzan
+for (const [id, n] of Object.entries(NODOS)) if (n.nombre === 'el cruce') { const ts = TRAMOS.filter((t) => t.a === id || t.b === id).map((t) => t.nombre.replace(/ \(.*\)/, '')); const u = [...new Set(ts)]; n.nombre = u.length > 1 ? `el cruce de ${u[0]} con ${u[1].replace(/^calle /, '')}` : `el cruce de ${u[0]}`; }
+const NODO_MEDIDA = {};
+for (const id of Object.keys(NODOS)) {
   let hx = 0, hz = 0;
   for (const t of TRAMOS) if (t.a === id || t.b === id) { const a = NODOS[t.a], b = NODOS[t.b]; if (a.x === b.x) hx = Math.max(hx, t.w / 2); else hz = Math.max(hz, t.w / 2); }
-  NODO_MEDIDA[id] = { hx, hz };
+  NODO_MEDIDA[id] = { hx: hx || 5, hz: hz || 5 };
 }
+const PLAZAS = Object.entries(CIU.plazas).map(([id, p]) => ({ id, x0: NODOS[id].x - p.hx, x1: NODOS[id].x + p.hx, z0: NODOS[id].z - p.hz, z1: NODOS[id].z + p.hz, nombre: p.nombre }));
+const PLAZA = PLAZAS[0];
+function enPlaza(x, z) { return PLAZAS.some((p) => x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1); }
+const META_Z = CIU.rows[NC].z + NODO_MEDIDA['C' + NC].hz + CIU.meta.metaU;
+const SALIDA = { x: XC, z: -10.5, a: 0 };
+const FIN_Z = CIU.rows[NC].z + NODO_MEDIDA['C' + NC].hz + CIU.meta.largo;
 for (const t of TRAMOS) {
   const a = NODOS[t.a], b = NODOS[t.b];
   t.eje = a.x === b.x ? 'z' : 'x';
-  const lim = (id, n, sgn) => {   // borde del cruce en la dirección del tramo
+  const lim = (id, n, sgn) => {
     if (id === 'S') return -1;
-    if (id === 'M') return 330;
-    if (NODOS[id].plaza) return t.eje === 'z' ? (sgn > 0 ? PLAZA.z1 : PLAZA.z0) : (sgn > 0 ? PLAZA.x1 : PLAZA.x0);
+    if (id === 'M') return FIN_Z;
+    const pz = PLAZAS.find((p) => p.id === id);
+    if (pz) return t.eje === 'z' ? (sgn > 0 ? pz.z1 : pz.z0) : (sgn > 0 ? pz.x1 : pz.x0);
     const m = NODO_MEDIDA[id]; return (t.eje === 'z' ? n.z : n.x) + sgn * (t.eje === 'z' ? m.hz : m.hx);
   };
-  if (t.eje === 'z') { const s = Math.sign(b.z - a.z); t.c = a.x; t.u0 = lim(t.a, a, s); t.u1 = lim(t.b, b, -s); }
-  else { const s = Math.sign(b.x - a.x); t.c = a.z; t.u0 = lim(t.a, a, s); t.u1 = lim(t.b, b, -s); }
-  if (t.u0 > t.u1) [t.u0, t.u1] = [t.u1, t.u0];
-  t.largo = Math.abs((t.eje === 'z' ? b.z - a.z : b.x - a.x));
-  // rectángulo del pasillo en planta
+  const s = Math.sign(t.eje === 'z' ? b.z - a.z : b.x - a.x);
+  t.c = t.eje === 'z' ? a.x : a.z; t.u0 = lim(t.a, a, s); t.u1 = lim(t.b, b, -s);
+  t.aBajo = t.u0 <= t.u1; if (!t.aBajo) [t.u0, t.u1] = [t.u1, t.u0];
+  t.largo = Math.abs(t.eje === 'z' ? b.z - a.z : b.x - a.x);
   t.r = t.eje === 'z' ? [t.c - t.w / 2, t.u0, t.c + t.w / 2, t.u1] : [t.u0, t.c - t.w / 2, t.u1, t.c + t.w / 2];
 }
+// Punto de un tramo: u metros desde el extremo «a», desplazado «off» (positivo = hacia x o z mayores)
+function P(t, u, off = 0) { const c = t.aBajo ? t.u0 + u : t.u1 - u; return t.eje === 'z' ? [t.c + off, c] : [c, t.c + off]; }
+const L_UTIL = (t) => t.u1 - t.u0;
 function tramoEntre(a, b) { return TRAMOS.find((t) => (t.a === a && t.b === b) || (t.a === b && t.b === a)); }
 function vecinos(id) { return TRAMOS.filter((t) => t.a === id || t.b === id).map((t) => (t.a === id ? t.b : t.a)); }
-const RUTAS_TIPO = {
-  corta: { nombre: 'Por los Balcones', nodos: ['S', 'C0', 'C1', 'C2', 'M'], nota: 'la más corta y la más justa' },
-  carreteria: { nombre: 'Por Carretería', nodos: ['S', 'C0', 'W0', 'W1', 'W2', 'C2', 'M'], nota: 'larga, con ficus y la saeta de Santiago' },
-  granada: { nombre: 'Por calle Granada', nodos: ['S', 'C0', 'E0', 'E1', 'E2', 'C2', 'M'], nota: 'estrecha, con naranjos y el convento' },
-};
-// Manzanas (en planta). Las esquinas que dan a un cruce se achaflanan para poder girar el trono.
-const BLOQUES_BASE = [
-  [[-90, -1], [-7, -1], [-7, 52], [-90, 52]], [[7, -1], [90, -1], [90, 52], [7, 52]],
-  [[-90, 52], [-77.5, 52], [-77.5, 340], [-90, 340]], [[77.5, 52], [90, 52], [90, 340], [77.5, 340]],
-  [[-77.5, 52], [-65.5, 52], [-65.5, 64], [-77.5, 64]], [[-54.5, 52], [-16, 52], [-16, 64], [-54.5, 64]],
-  [[16, 52], [55.5, 52], [55.5, 64], [16, 64]], [[64.5, 52], [77.5, 52], [77.5, 64], [64.5, 64]],
-  [[-77.5, 76], [-65.5, 76], [-65.5, 165], [-77.5, 165]],
-  [[-54.5, 76], [-16, 76], [-16, 88], [-4, 88], [-4, 165], [-54.5, 165]],
-  [[4, 88], [16, 88], [16, 76], [55.5, 76], [55.5, 165], [4, 165]],
-  [[64.5, 76], [77.5, 76], [77.5, 165], [64.5, 165]],
-  [[-77.5, 175], [-65.5, 175], [-65.5, 264], [-77.5, 264]], [[-54.5, 175], [-5.5, 175], [-5.5, 264], [-54.5, 264]],
-  [[5.5, 175], [55.5, 175], [55.5, 264], [5.5, 264]], [[64.5, 175], [77.5, 175], [77.5, 264], [64.5, 264]],
-  [[-77.5, 276], [-65.5, 276], [-65.5, 288], [-77.5, 288]], [[64.5, 276], [77.5, 276], [77.5, 288], [64.5, 288]],
-  [[-77.5, 288], [-54.5, 288], [-54.5, 340], [-77.5, 340]], [[55.5, 288], [77.5, 288], [77.5, 340], [55.5, 340]],
-  [[-54.5, 276], [-6, 276], [-6, 340], [-54.5, 340]], [[6, 276], [55.5, 276], [55.5, 340], [6, 340]],
-  [[-6, 330], [6, 330], [6, 340], [-6, 340]],
-];
+const RUTAS_TIPO = CIU.rutas;
+// Manzanas: rectángulos entre calles (con los callejones sin salida de los bordes, para poder girar), recortados por las plazas
+const BLOQUES_BASE = [];
+{
+  const cols = CIU.cols, rows = CIU.rows, st = CIU.stub;
+  const hwV = (i, j) => { if (j < 0 || j >= NC) return NODO_MEDIDA[cols[i].id + (j < 0 ? 0 : NC)].hx; const t = TRAMOS.find((t) => t.eje === 'z' && t.c === cols[i].x && t.a !== 'S' && t.b !== 'M' && Math.min(NODOS[t.a].z, NODOS[t.b].z) === rows[Math.max(0, Math.min(j, NC - 1))].z); return t ? t.w / 2 : NODO_MEDIDA[cols[i].id + 0].hx; };
+  const hwH = (i, j) => { const t = TRAMOS.find((t) => t.eje === 'x' && t.c === rows[j].z && Math.min(NODOS[t.a].x, NODOS[t.b].x) === cols[Math.max(0, Math.min(i, cols.length - 2))].x); return t ? t.w / 2 : NODO_MEDIDA[cols[i < 0 ? 0 : cols.length - 1].id + j].hz; };
+  const fL = cols[0].x - NODO_MEDIDA[cols[0].id + 0].hx - st, fR = cols[cols.length - 1].x + NODO_MEDIDA[cols[cols.length - 1].id + 0].hx + st;
+  const fS = rows[0].z - NODO_MEDIDA[cols[0].id + 0].hz - st, fN = rows[NC].z + NODO_MEDIDA[cols[0].id + NC].hz + st;
+  CIU.marco = { x0: fL - 12, x1: fR + 12, z0: -20, z1: FIN_Z + 12 };
+  for (let i = -1; i < cols.length; i++) for (let j = -1; j < rows.length; j++) {
+    const x0 = i < 0 ? fL : cols[i].x + hwV(i, j), x1 = i + 1 >= cols.length ? fR : cols[i + 1].x - hwV(i + 1, j);
+    const z0 = j < 0 ? fS : rows[j].z + hwH(i, j), z1 = j + 1 >= rows.length ? fN : rows[j + 1].z - hwH(i, j + 1);
+    if (x1 - x0 < 0.5 || z1 - z0 < 0.5) continue;
+    BLOQUES_BASE.push([[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
+  }
+  const wS = CIU.salida.w / 2, wM = CIU.meta.w / 2, m = CIU.marco;
+  // marco exterior, el sur (con la calle de salida) y el norte (con la calle del recorrido oficial)
+  BLOQUES_BASE.push([[m.x0, m.z0], [fL, m.z0], [fL, m.z1], [m.x0, m.z1]], [[fR, m.z0], [m.x1, m.z0], [m.x1, m.z1], [fR, m.z1]]);
+  BLOQUES_BASE.push([[fL, -1], [XC - wS, -1], [XC - wS, fS], [fL, fS]], [[XC + wS, -1], [fR, -1], [fR, fS], [XC + wS, fS]]);
+  BLOQUES_BASE.push([[fL, fN], [XC - wM, fN], [XC - wM, m.z1], [fL, m.z1]], [[XC + wM, fN], [fR, fN], [fR, m.z1], [XC + wM, m.z1]], [[XC - wM, FIN_Z], [XC + wM, FIN_Z], [XC + wM, m.z1], [XC - wM, m.z1]]);
+  // plazas: recortar la esquina de las manzanas que tocan
+  for (const pz of PLAZAS) for (let k = 0; k < BLOQUES_BASE.length; k++) {
+    const b = BLOQUES_BASE[k]; if (b.length !== 4) continue;
+    const [x0, z0] = b[0], x1 = b[1][0], z1 = b[2][1];
+    const ox0 = Math.max(x0, pz.x0), ox1 = Math.min(x1, pz.x1), oz0 = Math.max(z0, pz.z0), oz1 = Math.min(z1, pz.z1);
+    if (ox1 - ox0 < 0.01 || oz1 - oz0 < 0.01) continue;
+    const izq = ox0 <= x0 + 0.01, der = ox1 >= x1 - 0.01, abj = oz0 <= z0 + 0.01, arr = oz1 >= z1 - 0.01;
+    if (izq && der && abj && arr) { BLOQUES_BASE.splice(k, 1); k--; continue; }
+    if (abj && arr && der) BLOQUES_BASE[k] = [[x0, z0], [ox0, z0], [ox0, z1], [x0, z1]];
+    else if (abj && arr && izq) BLOQUES_BASE[k] = [[ox1, z0], [x1, z0], [x1, z1], [ox1, z1]];
+    else if (izq && der && abj) BLOQUES_BASE[k] = [[x0, oz1], [x1, oz1], [x1, z1], [x0, z1]];
+    else if (izq && der && arr) BLOQUES_BASE[k] = [[x0, z0], [x1, z0], [x1, oz0], [x0, oz0]];
+    else if (der && arr) BLOQUES_BASE[k] = [[x0, z0], [x1, z0], [x1, oz0], [ox0, oz0], [ox0, z1], [x0, z1]];
+    else if (izq && arr) BLOQUES_BASE[k] = [[x0, z0], [x1, z0], [x1, z1], [ox1, z1], [ox1, oz0], [x0, oz0]];
+    else if (der && abj) BLOQUES_BASE[k] = [[x0, z0], [ox0, z0], [ox0, oz1], [x1, oz1], [x1, z1], [x0, z1]];
+    else if (izq && abj) BLOQUES_BASE[k] = [[ox1, z0], [x1, z0], [x1, z1], [x0, z1], [x0, oz1], [ox1, oz1]];
+    else if (der) BLOQUES_BASE[k] = [[x0, z0], [x1, z0], [x1, oz0], [ox0, oz0], [ox0, oz1], [x1, oz1], [x1, z1], [x0, z1]];
+    else if (izq) BLOQUES_BASE[k] = [[x0, z0], [x1, z0], [x1, z1], [x0, z1], [x0, oz1], [ox1, oz1], [ox1, oz0], [x0, oz0]];
+  }
+}
 function enCruce(x, z) {
   for (const [id, n] of Object.entries(NODOS)) { if (n.plaza || id === 'S' || id === 'M') continue; const m = NODO_MEDIDA[id]; if (Math.abs(x - n.x) < m.hx && Math.abs(z - n.z) < m.hz) return id; }
   return null;
 }
-const CHAFLAN = 3;
+const CHAFLAN = CIU.chaflan;
 const BLOQUES = BLOQUES_BASE.map((pts) => {
   let area = 0; pts.forEach((a, i) => { const b = pts[(i + 1) % pts.length]; area += a[0] * b[1] - b[0] * a[1]; });
   const out = [];
@@ -435,22 +486,23 @@ function dentroDe(pts, x, z) {
   }
   return d;
 }
-const NAVE = [[-6, -19], [6, -19], [6, -1.4], [3.2, -1.4], [3.2, -1], [7, -1], [7, 0], [-7, 0], [-7, -1], [-3.2, -1], [-3.2, -1.4], [-6, -1.4]];
-// ¿Es calle (o nave) y no fachada?
+const NAVE = [[XC - 6, -19], [XC + 6, -19], [XC + 6, -1.4], [XC + 3.2, -1.4], [XC + 3.2, -1], [XC + 7, -1], [XC + 7, 0], [XC - 7, 0], [XC - 7, -1], [XC - 3.2, -1], [XC - 3.2, -1.4], [XC - 6, -1.4]];
 function libre(x, z) {
   if (z < -1) return dentroDe(NAVE, x, z);
-  if (z > 340 || Math.abs(x) > 90) return false;
+  const m = CIU.marco; if (x < m.x0 || x > m.x1 || z > m.z1) return false;
   for (const b of BLOQUES) if (dentroDe(b, x, z)) return false;
   return true;
 }
 const dentroPoly = libre;
 function zonaEn(x, z) {
   if (z < -1) return { tipo: 'nave' };
-  if (enPlaza(x, z)) return { tipo: 'nodo', id: 'C0' };
+  for (const p of PLAZAS) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) return { tipo: 'nodo', id: p.id };
   const c = enCruce(x, z); if (c) return { tipo: 'nodo', id: c };
   for (const t of TRAMOS) { const [x0, z0, x1, z1] = t.r; if (x >= x0 && x <= x1 && z >= z0 && z <= z1) return { tipo: 'tramo', id: t.id }; }
   return null;
 }
+// ==== FIN BASE DE CIUDAD ====
+const TRIBUNA = { x: PLAZA.x0 + 4, z: PLAZA.z0 + 6 };
 const OBS = [];
 const add = (o) => (OBS.push(o), o);
 const OBS_FIJOS = () => OBS.filter((o) => !o.ruta);
@@ -591,8 +643,9 @@ const texSuelo = texCanvas(512, 512, (x, w, h) => {
       for (let k = 0; k < 220; k++) { x.fillStyle = rnd() < 0.5 ? `rgba(0,0,0,${rnd() * 0.12})` : `rgba(255,255,255,${rnd() * 0.08})`; x.fillRect(X + rnd() * s, j * s + rnd() * s, 2, 2); }
     } }
 }, [60, 120]);
-const suelo = new THREE.Mesh(new THREE.PlaneGeometry(180, 360), M(0xffffff, { map: texSuelo, roughness: 0.38, metalness: 0.0 }));
-suelo.rotation.x = -Math.PI / 2; suelo.position.set(0, 0, 160); suelo.receiveShadow = true; scene.add(suelo);
+const suelo = new THREE.Mesh(new THREE.PlaneGeometry(CIU.marco.x1 - CIU.marco.x0, CIU.marco.z1 - CIU.marco.z0), M(0xffffff, { map: texSuelo, roughness: 0.38, metalness: 0.0 }));
+texSuelo.repeat.set((CIU.marco.x1 - CIU.marco.x0) / 3, (CIU.marco.z1 - CIU.marco.z0) / 3);
+suelo.rotation.x = -Math.PI / 2; suelo.position.set((CIU.marco.x0 + CIU.marco.x1) / 2, 0, (CIU.marco.z0 + CIU.marco.z1) / 2); suelo.receiveShadow = true; scene.add(suelo);
 // Cera en el suelo de la plaza
 const texCera = texCanvas(256, 256, (x, w, h) => { x.clearRect(0, 0, w, h); for (let i = 0; i < 60; i++) { x.fillStyle = `rgba(250,240,215,${0.15 + rnd() * 0.25})`; x.beginPath(); x.arc(rnd() * w, rnd() * h, 1 + rnd() * 3, 0, Math.PI * 2); x.fill(); } }, [8, 8]);
 { const m = new THREE.Mesh(new THREE.PlaneGeometry(32, 36), new THREE.MeshBasicMaterial({ map: texCera, transparent: true, opacity: 0.5, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.position.set(0, 0.01, 70); scene.add(m); }
@@ -673,7 +726,7 @@ function farolPared(x, z, nx, nz) {
 for (const t of TRAMOS) {
   let lado = 1;
   for (let u = t.u0 + 9; u < t.u1 - 6; u += 22) {
-    if (t.id === 'larga' && u > 296) break;
+    if (t.id === CIU.meta.id && u > META_Z - 4) break;
     const [x, z, nx, nz] = t.eje === 'z' ? [t.c + lado * t.w / 2, u, -lado, 0] : [u, t.c + lado * t.w / 2, 0, -lado];
     farolPared(x, z, nx, nz); lado = -lado;
   }
@@ -728,11 +781,17 @@ function terraza(x0, z0, x1, z1) {
 }
 function quiosco(x0, z0, x1, z1, color = 0x2d4a3a) { const m = bloque(x0, z0, x1, z1, 0, 3.0, 'un quiosco', color); const t = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0 + 0.4, 0.15, z1 - z0 + 0.4), M(0x1d2a22)); t.position.set((x0 + x1) / 2, 3.05, (z0 + z1) / 2); scene.add(t); return m; }
 
-// ---- Lo que hay en cada calle (fijo, esté o no en el itinerario)
+// ---- Lo que hay en cada calle (fijo, esté o no en el itinerario). Las posiciones van referidas a cada calle:
+// u = metros desde su principio, off = desplazamiento desde el eje. Cada cosa deja un hueco sin público.
+const HUECOS = {};
+const hueco = (t, lado, u0, u1) => { const c0 = t.aBajo ? t.u0 + u0 : t.u1 - u1, c1 = t.aBajo ? t.u0 + u1 : t.u1 - u0; (HUECOS[t.id] = HUECOS[t.id] || []).push([lado, c0, c1]); };
+const bordeOff = (t, lado, d) => lado * (t.w / 2 - d);
+function fRect(t, u0, u1, off0, off1) { const [ax, az] = P(t, u0, off0), [bx, bz] = P(t, u1, off1); return [Math.min(ax, bx), Math.min(az, bz), Math.max(ax, bx), Math.max(az, bz)]; }
 // calle Ancha
 ficus(5.5, 15); ficus(-5.5, 35);
 terraza(-7, 25, -4.2, 31);
 quiosco(4.5, 43, 7, 47);
+HUECOS.ancha = [[-1, 24.5, 31.5], [1, 42.5, 47.5], [1, 13.5, 16.5], [-1, 33.5, 36.5]];
 // plaza de la Tribuna
 add({ kind: 'circle', x: 10, z: 80, r: 2.5, minH: 0, maxH: 1.2, label: 'la fuente' });
 { const f = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.6, 0.8, 28), M(0xc2ad8c)); f.position.set(10, 0.4, 80); scene.add(f);
@@ -742,66 +801,80 @@ bloque(-16, 52, -8.5, 56.5, 0, 3.2, 'la tribuna', 0x3a1f44);
 { const tx = texCanvas(512, 64, (x, w, h) => { x.fillStyle = '#3a1f44'; x.fillRect(0, 0, w, h); x.fillStyle = '#d9a441'; x.textAlign = 'center'; x.font = '600 34px serif'; x.fillText('TRIBUNA', w / 2, 45); });
   const pa = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 0.9), M(0xffffff, { map: tx })); pa.position.set(-12.25, 2.6, 56.52); scene.add(pa); }
 farola(-14.5, 60); farola(14.5, 60); farola(14.5, 86); farola(-14.5, 86);
+// Semáforo con el brazo metido en la calle: el poste en la acera (lado ±1), el brazo hasta 2,6 m del borde
+function semaforoEn(t, u, lado) { const [px, pz] = P(t, u, bordeOff(t, lado, 0.6)), [ax, az] = P(t, u, bordeOff(t, lado, 2.6 + (t.w >= 11 ? 0 : 0.6))); semaforo(px, pz, ax, az); hueco(t, lado, u - 1.5, u + 1.5); }
+function guirnaldaEn(t, u) { const [x0, z0] = P(t, u, -t.w / 2), [x1, z1] = P(t, u, t.w / 2); if (t.eje === 'z') guirnalda('x', z0, x0, x1); else guirnalda('z', x0, z0, z1); }
+function cableEn(t, u, h) { const [x0, z0] = P(t, u, -t.w / 2), [x1, z1] = P(t, u, t.w / 2); if (t.eje === 'z') cable('x', z0, x0, x1, h, 'unos cables'); else cable('z', x0, z0, z1, h, 'unos cables'); }
+function terrazaEn(t, u, lado, largo = 8, fondo = 2.2) { const r = fRect(t, u, u + largo, bordeOff(t, lado, 0), bordeOff(t, lado, fondo)); terraza(...r); hueco(t, lado, u - 1, u + largo + 1); }
+function quioscoEn(t, u, lado, color) { const r = fRect(t, u, u + 4, bordeOff(t, lado, 0), bordeOff(t, lado, 2)); quiosco(...r, color); hueco(t, lado, u - 1, u + 5); }
 // calle del Ángel y calle Compañía
-guirnalda('z', -35, 64, 76);
-semaforo(38, 64.6, 38, 67.2);
-bloque(29.6, 74.5, 30.4, 76, 4.2, 4.6, 'el farol de pared', 0x16161a, true, 'Farol de pared');
-{ const l = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), matLuz); l.position.set(30, 4.15, 74.7); scene.add(l); }
-// calle de los Balcones: balcones de verdad (son obstáculo) a 4,4 m a los dos lados
+guirnaldaEn(TR.angel, L_UTIL(TR.angel) * 0.5);
+semaforoEn(TR.compania, L_UTIL(TR.compania) * 0.55, -1);
+{ const t = TR.compania, u = L_UTIL(t) * 0.3, r = fRect(t, u - 0.4, u + 0.4, bordeOff(t, 1, 0), bordeOff(t, 1, 1.5)); bloque(...r, 4.2, 4.6, 'el farol de pared', 0x16161a, true, 'Farol de pared'); hueco(t, 1, u - 1, u + 1); }
+// calle de los Balcones: balcones de verdad (son obstáculo) a 4,4 m a los dos lados, y unos cables
 const BALCONES_BAJOS = [];
-for (let z = 92; z < 160; z += 7) for (const sx of [-1, 1]) {
-  const x0 = sx < 0 ? -4 : 2.9, x1 = sx < 0 ? -2.9 : 4;
-  add({ kind: 'poly', pts: rect(x0, z, x1, z + 2.2), minH: 4.4, maxH: 5.3, label: 'un balcón', alto: true, aviso: 'Balcón' });
-  BALCONES_BAJOS.push([sx * 3.45, 4.4, z + 1.1, sx]);
-}
-cable('x', 128, -4, 4, 5.0, 'unos cables');
-// calle Nueva
-terraza(-5.5, 195, -3.3, 203);
-quiosco(3.5, 228, 5.5, 232, 0x6a2a2a);
-// calle Carretería: ficus alternos; iglesia de Santiago en la parte alta
-ficus(-64.2, 100, 2.4); ficus(-55.8, 125, 2.4); ficus(-64.2, 150, 2.4);
-guirnalda('x', 245, -65.5, -54.5);
-const SAETA = { x: -60, z: 221, hecho: false, nombre: 'la iglesia de Santiago' };
-{ const torre = new THREE.Mesh(new THREE.BoxGeometry(8, 30, 8), M(0xffffff, { map: TEX_NAVE })); torre.position.set(-71.5, 15, 208); scene.add(torre);
-  const camp = new THREE.Mesh(new THREE.BoxGeometry(8.6, 4, 8.6), M(0xd8c4a0)); camp.position.set(-71.5, 31, 208); scene.add(camp);
-  const chap = new THREE.Mesh(new THREE.ConeGeometry(5.6, 5, 4), M(0x3a5a6a, { roughness: 0.4, metalness: 0.3 })); chap.position.set(-71.5, 35.5, 208); chap.rotation.y = Math.PI / 4; scene.add(chap);
-  const port = new THREE.Mesh(new THREE.BoxGeometry(0.5, 9, 7), M(0xcbb48e)); port.position.set(-65.6, 4.5, 221); scene.add(port);
-  const pu = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.6, 2.6), M(0x3a2414)); pu.position.set(-65.3, 2.3, 221); scene.add(pu);
-  const arco = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.18, 8, 16, Math.PI), M(0xe0cba4)); arco.position.set(-65.3, 4.6, 221); arco.rotation.y = Math.PI / 2; scene.add(arco); }
-// calle Granada: naranjos alternos; convento de las Clarisas en la parte alta
-naranjo(56.4, 92); naranjo(63.6, 108); naranjo(56.4, 124); naranjo(63.6, 140); naranjo(56.4, 156);
-cable('x', 240, 55.5, 64.5, 4.9, 'unos cables');
-const MONJAS = { x: 60, z: 216, hecho: false, nombre: 'el convento de las Clarisas' };
-{ const muro = new THREE.Mesh(new THREE.BoxGeometry(0.3, 10, 14), M(0xf4efe6)); muro.position.set(64.7, 5, 216); scene.add(muro);
-  for (let k = -1; k <= 1; k++) { const ce = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.6, 1.1), M(0x3a2a1a)); ce.position.set(64.5, 6.5, 216 + k * 3.5); scene.add(ce); }
-  const es = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 3.4), M(0xf4efe6)); es.position.set(64.8, 12, 216); scene.add(es);
-  const cpn = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, 0.5, 10, 1, true), M(0xb08a3a, { metalness: 0.8, roughness: 0.35, side: THREE.DoubleSide })); cpn.position.set(64.8, 12.3, 216); scene.add(cpn);
-  const pu = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 2), M(0x3a2414)); pu.position.set(64.45, 1.6, 216); scene.add(pu); }
+{ const t = TR.balcones;
+  for (let u = 4; u < L_UTIL(t) - 6; u += 7) for (const sx of [-1, 1]) {
+    const r = fRect(t, u, u + 2.2, bordeOff(t, sx, 0), bordeOff(t, sx, 1.1));
+    add({ kind: 'poly', pts: rect(...r), minH: 4.4, maxH: 5.3, label: 'un balcón', alto: true, aviso: 'Balcón' });
+    const [bx, bz] = P(t, u + 1.1, sx * (t.w / 2 - 0.55)); BALCONES_BAJOS.push([bx, 4.4, bz, sx]);
+  }
+  cableEn(t, L_UTIL(t) * 0.5, 5.0); }
+// calle Nueva y calle Santa María
+terrazaEn(TR.nueva, L_UTIL(TR.nueva) * 0.25, -1);
+quioscoEn(TR.nueva, L_UTIL(TR.nueva) * 0.62, 1, 0x6a2a2a);
+semaforoEn(TR.santamaria, L_UTIL(TR.santamaria) * 0.3, 1); semaforoEn(TR.santamaria, L_UTIL(TR.santamaria) * 0.7, -1);
+{ const t = TR.santamaria; for (let k = 1; k <= 6; k++) { const [x, z] = P(t, L_UTIL(t) * k / 7, 0); const tol = new THREE.Mesh(new THREE.PlaneGeometry(t.w, 2.6), M(k % 2 ? 0xe8dcc0 : 0xc8a050, { side: THREE.DoubleSide, roughness: 0.9 })); tol.rotation.x = -Math.PI / 2; tol.rotation.z = t.eje === 'z' ? 0 : Math.PI / 2; tol.position.set(x, 6.4, z); scene.add(tol); } }
+// calle Carretería: ficus alternos; iglesia de Santiago en la parte alta; calle del Pozo
+{ const t = TR.carreteriaS, n = 4; for (let k = 0; k < n; k++) { const u = L_UTIL(t) * (k + 1) / (n + 1), lado = k % 2 ? 1 : -1; ficus(...P(t, u, bordeOff(t, lado, 1.3)), 2.4); hueco(t, lado, u - 1.5, u + 1.5); } }
+guirnaldaEn(TR.carreteriaN, L_UTIL(TR.carreteriaN) * 0.8);
+const SAETA = { hecho: false, nombre: 'la iglesia de Santiago' };
+{ const t = TR.carreteriaN, u = L_UTIL(t) * 0.45, [wx, wz] = P(t, u, -t.w / 2), [sx2, sz2] = P(t, u, 0); SAETA.x = sx2; SAETA.z = sz2; hueco(t, -1, u - 5, u + 5);
+  const torre = new THREE.Mesh(new THREE.BoxGeometry(8, 30, 8), M(0xffffff, { map: TEX_NAVE })); torre.position.set(wx - 6, 15, wz - 13); scene.add(torre);
+  const camp = new THREE.Mesh(new THREE.BoxGeometry(8.6, 4, 8.6), M(0xd8c4a0)); camp.position.set(wx - 6, 31, wz - 13); scene.add(camp);
+  const chap = new THREE.Mesh(new THREE.ConeGeometry(5.6, 5, 4), M(0x3a5a6a, { roughness: 0.4, metalness: 0.3 })); chap.position.set(wx - 6, 35.5, wz - 13); chap.rotation.y = Math.PI / 4; scene.add(chap);
+  const port = new THREE.Mesh(new THREE.BoxGeometry(0.5, 9, 7), M(0xcbb48e)); port.position.set(wx - 0.1, 4.5, wz); scene.add(port);
+  const pu = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.6, 2.6), M(0x3a2414)); pu.position.set(wx + 0.2, 2.3, wz); scene.add(pu);
+  const arco = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.18, 8, 16, Math.PI), M(0xe0cba4)); arco.position.set(wx + 0.2, 4.6, wz); arco.rotation.y = Math.PI / 2; scene.add(arco); }
+cableEn(TR.pozo, L_UTIL(TR.pozo) * 0.35, 4.9);
+terrazaEn(TR.pozo, L_UTIL(TR.pozo) * 0.65, 1);
+// calle Granada: naranjos alternos; convento de las Clarisas; calle Beatas con balcones a un lado
+{ const t = TR.granadaS; let k = 0; for (let u = 16; u < L_UTIL(t) - 8; u += 16, k++) { const lado = k % 2 ? 1 : -1; naranjo(...P(t, u, bordeOff(t, lado, 0.9))); hueco(t, lado, u - 1, u + 1); } }
+const MONJAS = { hecho: false, nombre: 'el convento de las Clarisas' };
+{ const t = TR.granadaN, u = L_UTIL(t) * 0.45, [wx, wz] = P(t, u, t.w / 2), [cx, cz] = P(t, u, 0); MONJAS.x = cx; MONJAS.z = cz; hueco(t, 1, u - 8, u + 8);
+  const muro = new THREE.Mesh(new THREE.BoxGeometry(0.3, 10, 14), M(0xf4efe6)); muro.position.set(wx + 0.2, 5, wz); scene.add(muro);
+  for (let k = -1; k <= 1; k++) { const ce = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.6, 1.1), M(0x3a2a1a)); ce.position.set(wx, 6.5, wz + k * 3.5); scene.add(ce); }
+  const es = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4, 3.4), M(0xf4efe6)); es.position.set(wx + 0.3, 12, wz); scene.add(es);
+  const cpn = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, 0.5, 10, 1, true), M(0xb08a3a, { metalness: 0.8, roughness: 0.35, side: THREE.DoubleSide })); cpn.position.set(wx + 0.3, 12.3, wz); scene.add(cpn);
+  const pu = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 2), M(0x3a2414)); pu.position.set(wx - 0.05, 1.6, wz); scene.add(pu); }
+cableEn(TR.granadaN, L_UTIL(TR.granadaN) * 0.8, 4.9);
+{ const t = TR.beatas; for (let u = 8; u < L_UTIL(t) - 8; u += 9) { const r = fRect(t, u, u + 2.2, bordeOff(t, 1, 0), bordeOff(t, 1, 0.9)); add({ kind: 'poly', pts: rect(...r), minH: 4.3, maxH: 5.2, label: 'un balcón', alto: true, aviso: 'Balcón' }); const [bx, bz] = P(t, u + 1.1, t.w / 2 - 0.45); BALCONES_BAJOS.push([bx, 4.3, bz, 1]); } }
 // calle Álamos: andamio de obra en la acera norte; semáforo y guirnalda en la parte este
-bloque(-38, 171.6, -26, 175, 0, 7, 'el andamio de una obra', 0x8a8a8a);
-{ const lona = new THREE.Mesh(new THREE.PlaneGeometry(12, 6.6), M(0x2f5a8a, { side: THREE.DoubleSide, roughness: 0.9 })); lona.position.set(-32, 3.6, 171.55); scene.add(lona);
-  for (let x = -37.6; x <= -26; x += 2.9) for (const z of [171.7, 174.8]) { const tb = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 7, 5), matHierro); tb.position.set(x, 3.5, z); scene.add(tb); } }
-semaforo(30, 174.4, 30, 172.8);
-guirnalda('z', 42, 165, 175);
-// calle Císter: tribunilla de la peña; terraza en la parte este
-bloque(-32, 274, -22, 276, 0, 2.2, 'la tribunilla de la peña', 0x2a3a5a);
-const PENA = { x: -27, z: 270 };
-terraza(25, 264, 33, 266.3);
+{ const t = TR.alamosW, u = L_UTIL(t) * 0.35, r = fRect(t, u, u + 12, bordeOff(t, 1, 0), bordeOff(t, 1, 3.4)); bloque(...r, 0, 7, 'el andamio de una obra', 0x8a8a8a); hueco(t, 1, u - 1, u + 13);
+  const lona = new THREE.Mesh(new THREE.PlaneGeometry(12, 6.6), M(0x2f5a8a, { side: THREE.DoubleSide, roughness: 0.9 })); lona.position.set((r[0] + r[2]) / 2, 3.6, r[1] - 0.05); scene.add(lona); }
+semaforoEn(TR.alamosE, L_UTIL(TR.alamosE) * 0.35, 1);
+guirnaldaEn(TR.alamosE, L_UTIL(TR.alamosE) * 0.7);
+// calle Císter: tribunilla de la peña; terraza en la parte este. Calle de la Merced
+const PENA = {};
+{ const t = TR.cisterW, u = L_UTIL(t) * 0.5, r = fRect(t, u - 5, u + 5, bordeOff(t, 1, 0), bordeOff(t, 1, 2)); bloque(...r, 0, 2.2, 'la tribunilla de la peña', 0x2a3a5a); hueco(t, 1, u - 6, u + 6); [PENA.x, PENA.z] = P(t, u, 0); }
+terrazaEn(TR.cisterE, L_UTIL(TR.cisterE) * 0.4, -1);
+guirnaldaEn(TR.mercedW, L_UTIL(TR.mercedW) * 0.5);
+quioscoEn(TR.mercedE, L_UTIL(TR.mercedE) * 0.5, -1, 0x2d4a3a);
 // calle Larga: entrada en el recorrido oficial
-{ const arco = new THREE.Group();
+{ const arco = new THREE.Group(), hw = CIU.meta.w / 2;
   const matArco = M(0x3a1f44, { roughness: 0.6 });
-  for (const x of [-5.6, 5.6]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.6, 7, 0.6), matArco); c.position.set(x, 3.5, META_Z); arco.add(c); }
-  const tx = texCanvas(512, 96, (x, w, h) => { x.fillStyle = '#3a1f44'; x.fillRect(0, 0, w, h); x.fillStyle = '#d9a441'; x.textAlign = 'center'; x.font = '600 40px serif'; x.fillText('RECORRIDO OFICIAL', w / 2, 62); });
-  const pa = new THREE.Mesh(new THREE.BoxGeometry(11.8, 1.2, 0.3), M(0xffffff, { map: tx })); pa.position.set(0, 7.2, META_Z); arco.add(pa);
+  for (const x of [XC - hw + 0.4, XC + hw - 0.4]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.6, 7, 0.6), matArco); c.position.set(x, 3.5, META_Z); arco.add(c); }
+  const tx = texCanvas(512, 96, (x, w, h) => { x.fillStyle = '#3a1f44'; x.fillRect(0, 0, w, h); x.fillStyle = '#d9a441'; x.textAlign = 'center'; x.font = '600 40px serif'; x.fillText(CIU.meta.arco, w / 2, 62); });
+  const pa = new THREE.Mesh(new THREE.BoxGeometry(CIU.meta.w - 0.2, 1.2, 0.3), M(0xffffff, { map: tx })); pa.position.set(XC, 7.2, META_Z); arco.add(pa);
   scene.add(arco);
-  for (const sx of [-1, 1]) { add({ kind: 'poly', pts: rect(sx < 0 ? -6 : 4.3, 302, sx < 0 ? -4.3 : 6, 328), minH: 0, maxH: 3, label: 'las tribunas del recorrido oficial' });
-    for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1 + i * 0.7, 26), M(0x2a1830)); t.position.set(sx * (4.6 + i * 0.5), 0.5 + i * 0.35, 315); scene.add(t); } } }
+  for (const sx of [-1, 1]) { add({ kind: 'poly', pts: rect(sx < 0 ? XC - hw : XC + hw - 1.7, META_Z + 2, sx < 0 ? XC - hw + 1.7 : XC + hw, META_Z + 28), minH: 0, maxH: 3, label: 'las tribunas del recorrido oficial' });
+    for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1 + i * 0.7, 26), M(0x2a1830)); t.position.set(XC + sx * (hw - 1.4 + i * 0.5), 0.5 + i * 0.35, META_Z + 15); scene.add(t); } } }
 
 // Balcones de forja de adorno en todas las fachadas (instanciados)
 const BALC = [];   // [x, y, z, rotY, tramo]
 for (const t of TRAMOS) for (const lado of [-1, 1]) {
   for (let u = t.u0 + 5; u < t.u1 - 4; u += 6.5) {
-    if (t.id === 'larga' && u > 297) break;
+    if (t.id === CIU.meta.id && u > META_Z - 3) break;
     for (const y of [4.3, 7.5, 10.7]) {
       if (t.id === 'balcones' && y < 5) continue;
       if (y < 5 && t.w < 9) continue;
@@ -869,20 +942,6 @@ function franja(x0, z0, x1, z1, dx, dz, lista) {
     lista.push([x + (rnd() - 0.5) * 0.2, 0, z + (rnd() - 0.5) * 0.2, rot + (rnd() - 0.5) * 0.9, e]);
   }
 }
-// Huecos sin público en cada tramo: [lado (-1 izq / 1 der, según x o z creciente), desde, hasta]
-const HUECOS = {
-  ancha: [[-1, 24.5, 31.5], [1, 42.5, 47.5], [1, 13.5, 16.5], [-1, 33.5, 36.5]],
-  compania: [[-1, 36.5, 39.5], [1, 29, 31]],
-  nueva: [[-1, 194, 204], [1, 227, 233]],
-  carreteriaS: [[-1, 98.5, 101.5], [1, 123.5, 126.5], [-1, 148.5, 151.5]],
-  carreteriaN: [[-1, 216, 226]],
-  granadaS: [[-1, 91, 93], [1, 107, 109], [-1, 123, 125], [1, 139, 141], [-1, 155, 157]],
-  granadaN: [[1, 208, 224]],
-  alamosW: [[1, -39, -25]],
-  alamosE: [[1, 29, 31]],
-  cisterW: [[1, -33, -21]],
-  cisterE: [[-1, 24, 34]],
-};
 const COCHES = [0x8a1a1a, 0x1a3a6a, 0xd8d8d8, 0x1a1a1a, 0x6a6a72, 0x2a5a3a, 0xc8b070, 0x5a1a4a];
 function prepararRuta(nodos) {
   for (const m of RUTA_OBJ) { scene.remove(m); if (m.geometry && m.geometry !== PUB_GEO.piernas && m.geometry !== PUB_GEO.ropa && m.geometry !== PUB_GEO.piel && m.geometry !== PUB_GEO.pelo) m.geometry.dispose(); }
@@ -897,10 +956,10 @@ function prepararRuta(nodos) {
     // u0 corresponde al extremo de menor coordenada; averiguar qué extremo es a
     const aMenor = (t.eje === 'z' ? NODOS[t.a].z : NODOS[t.a].x) < (t.eje === 'z' ? NODOS[t.b].z : NODOS[t.b].x);
     let u0 = t.u0 + (aMenor ? finA : finB), u1 = t.u1 - (aMenor ? finB : finA);
-    if (t.id === 'larga') u1 = Math.min(u1, META_Z - 1.5);
+    if (t.id === CIU.meta.id) u1 = Math.min(u1, META_Z - 1.5);
     if (enRuta) {
-      const d = t.w >= 11 ? 1.7 : t.w >= 10 ? 1.4 : t.w >= 9 ? 1.2 : 1.1;
-      for (const lado of [-1, 1]) {
+      const d = CIU.publico(t.w);
+      for (const lado of (d > 0 ? [-1, 1] : [])) {
         const cortes = (HUECOS[t.id] || []).filter((h) => h[0] === lado).map((h) => [h[1], h[2]]).sort((a, b) => a[0] - b[0]);
         let ini = u0;
         const tramosLibres = [];
@@ -915,7 +974,7 @@ function prepararRuta(nodos) {
       for (const [x, y, z, r, tid, grande] of BALC) if (tid === t.id && rnd() < 0.75) { const k = 1 + Math.floor(rnd() * 3); for (let q = 0; q < k; q++) { const off = (q - (k - 1) / 2) * 0.6; gente.push([x + Math.cos(r) * off, y, z - Math.sin(r) * off, r, 0.95 + rnd() * 0.1]); } }
     } else {
       // calle sin cortar: coches aparcados (también estorban)
-      const lados = t.w >= 10 ? [-1, 1] : [-1];
+      const lados = CIU.coches(t.w);
       for (const lado of lados) for (let u = u0 + 3; u < u1 - 4.5; u += 6.2) {
         if (rnd() < 0.3) continue;
         if ((HUECOS[t.id] || []).some((h) => h[0] === lado && u + 4.3 > h[1] - 0.5 && u < h[2] + 0.5)) continue;
@@ -927,18 +986,27 @@ function prepararRuta(nodos) {
       }
     }
   }
-  // plaza de la Tribuna: público por todo el borde menos las bocacalles; la tribuna llena
-  if (RUTA.nodos.includes('C0')) {
-    franja(-16, 86.3, -4.5, 88, 0, -1, gente); franja(4.5, 86.3, 16, 88, 0, -1, gente);
-    franja(-16, 56.9, -14.3, 60.5, 1, 0, gente); franja(-16, 79.5, -14.3, 86.3, 1, 0, gente);
-    franja(14.3, 52, 16, 60.5, -1, 0, gente); franja(14.3, 79.5, 16, 86.3, -1, 0, gente);
-    franja(7.5, 52, 14.3, 53.7, 0, 1, gente);
-    add({ kind: 'circle', x: 10, z: 80, r: 3.3, minH: 0, maxH: 1.8, label: 'el público de la fuente', ruta: true });
-    for (let k = 0; k < 28; k++) { const a = (k / 28) * Math.PI * 2; gente.push([10 + Math.cos(a) * 2.95, 0, 80 + Math.sin(a) * 2.95, Math.atan2(Math.cos(a), Math.sin(a)), 0.85 + rnd() * 0.2]); }
-    for (let fz = 0; fz < 4; fz++) for (let x = -15.6; x < -8.8; x += 0.48) if (rnd() > 0.08) gente.push([x, 3.2, 53 + fz * 0.8, 0, 0.66 + rnd() * 0.08]);
+  // plazas: público por todo el borde menos las bocacalles y lo que haya arrimado
+  for (const pz of PLAZAS) {
+    if (!RUTA.nodos.includes(pz.id)) continue;
+    const d = CIU.publicoPlaza || 1.7, bocas = { x0: [], x1: [], z0: [], z1: [] };
+    for (const t of TRAMOS) if (t.a === pz.id || t.b === pz.id) { if (t.eje === 'z') (Math.abs(t.u1 - pz.z0) < 0.5 || Math.abs(t.u0 - pz.z0) < 0.5 ? bocas.z0 : bocas.z1).push([t.c - t.w / 2 - 0.5, t.c + t.w / 2 + 0.5]); else (Math.abs(t.u1 - pz.x0) < 0.5 || Math.abs(t.u0 - pz.x0) < 0.5 ? bocas.x0 : bocas.x1).push([t.c - t.w / 2 - 0.5, t.c + t.w / 2 + 0.5]); }
+    const libresEn = (a, b, cortes) => { const out = []; let ini = a; for (const [c0, c1] of cortes.sort((p, q) => p[0] - q[0])) { if (c0 > ini) out.push([ini, Math.min(c0, b)]); ini = Math.max(ini, c1); } if (ini < b) out.push([ini, b]); return out; };
+    const ocup = (x0, z0, x1, z1) => OBS.some((o) => !o.pared && !o.ruta && o.minH < 1.8 && (o.kind === 'circle' ? o.x + o.r > x0 && o.x - o.r < x1 && o.z + o.r > z0 && o.z - o.r < z1 : o.kind === 'poly' && o.pts.some(([x, z]) => x >= x0 - 0.5 && x <= x1 + 0.5 && z >= z0 - 0.5 && z <= z1 + 0.5)));
+    const tiras = [];
+    for (const [a, b] of libresEn(pz.x0, pz.x1, bocas.z0)) tiras.push([a, pz.z0, b, pz.z0 + d, 0, 1]);
+    for (const [a, b] of libresEn(pz.x0, pz.x1, bocas.z1)) tiras.push([a, pz.z1 - d, b, pz.z1, 0, -1]);
+    for (const [a, b] of libresEn(pz.z0 + d, pz.z1 - d, bocas.x0)) tiras.push([pz.x0, a, pz.x0 + d, b, 1, 0]);
+    for (const [a, b] of libresEn(pz.z0 + d, pz.z1 - d, bocas.x1)) tiras.push([pz.x1 - d, a, pz.x1, b, -1, 0]);
+    for (const [x0, z0, x1, z1, dx, dz] of tiras) {
+      // trocear para saltar lo que haya en el borde (tribuna, fuentes…)
+      const largo = Math.max(x1 - x0, z1 - z0), n = Math.max(1, Math.round(largo / 2));
+      for (let k = 0; k < n; k++) { const a0 = k / n, a1 = (k + 1) / n; const r = dx === 0 ? [x0 + (x1 - x0) * a0, z0, x0 + (x1 - x0) * a1, z1] : [x0, z0 + (z1 - z0) * a0, x1, z0 + (z1 - z0) * a1]; if (!ocup(...r)) franja(...r, dx, dz, gente); }
+    }
+    if (CIU.extraPlaza) CIU.extraPlaza(pz, gente);
   }
   // tribunas del recorrido oficial
-  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) for (let z = 303; z < 327; z += 0.5) if (rnd() > 0.15) gente.push([sx * (4.6 + i * 0.5), 1 + i * 0.7, z, sx < 0 ? Math.PI / 2 : -Math.PI / 2, 0.66]);
+  for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) for (let z = META_Z + 3; z < META_Z + 27; z += 0.5) if (rnd() > 0.15) gente.push([sx * (4.6 + i * 0.5), 1 + i * 0.7, z, sx < 0 ? Math.PI / 2 : -Math.PI / 2, 0.66]);
   crearPublico(gente);
   if (coches.length) {
     const body = new THREE.BoxGeometry(1.75, 0.75, 4.2); body.translate(0, 0.6, 0);
@@ -1403,7 +1471,7 @@ function nuevaPartida() {
     luci: 0, lev: { perfectas: 0, buenas: 0, desiguales: 0 }, descansos: 0,
     t0: null, tiempo: 0, fin: false, cola: [], beatAcc: 0, beatN: 0,
     banda: { estado: 'silencio', beats: 0, marcha: Math.floor(Math.random() * MARCHAS.length) - 1, pedida: false },
-    fuera: 0, fueraVisto: {}, paradoT: 0, ultGuardado: 0,
+    fuera: 0, fueraVisto: {}, paradoT: 0, puntos: {},
   };
   SAETA.hecho = false; MONJAS.hecho = false; PENA.hecho = false;
   G.alt = -0.4; G.altObj = -0.4;
@@ -1637,7 +1705,7 @@ function update(dt) {
   else if (G.estado === 'bajando') {
     G.v *= Math.max(0, 1 - dt * 3);
     G.liftT += dt / 1.3; G.alt = -0.4 * easeIO(Math.min(1, G.liftT));
-    if (G.liftT >= 1) { G.estado = 'suelo'; G.alt = -0.4; G.v = 0; G.w = 0; G.lat = 0; G.vObj = 0; G.wObj = 0; G.latObj = 0; G.mecida = false; G.mecidaOrden = false; actualizarMecidaBtn(); G.sueloT = 0; G.sec = []; pintarToques(); if (G.t0 !== null && !G.fin) guardarPartida(); }
+    if (G.liftT >= 1) { G.estado = 'suelo'; G.alt = -0.4; G.v = 0; G.w = 0; G.lat = 0; G.vObj = 0; G.wObj = 0; G.latObj = 0; G.mecida = false; G.mecidaOrden = false; actualizarMecidaBtn(); G.sueloT = 0; G.sec = []; pintarToques(); }
   } else if (G.estado === 'pulso') {
     G.pulsoT += dt; const k = G.pulsoT < 0.8 ? easeIO(G.pulsoT / 0.8) : G.pulsoT < 3.2 ? 1 : 1 - easeIO(Math.min(1, (G.pulsoT - 3.2) / 0.9));
     G.pulsoDy = CFG.pulso * k; if (G.pulsoT >= 4.1) { G.estado = 'arriba'; G.pulsoDy = 0; }
@@ -1677,6 +1745,7 @@ function update(dt) {
   // Fuera del itinerario autorizado: la Agrupación lo apunta
   if (G.t0 !== null && !G.fin) {
     const zn = zonaEn(G.pose.x, G.pose.z);
+    if (zn && zn.tipo === 'nodo' && CIU.puntos.includes(zn.id) && RUTA.nodos.includes(zn.id) && !G.puntos[zn.id]) { G.puntos[zn.id] = true; guardarPartida(); }
     if (zn && zn.tipo === 'tramo' && !RUTA.tramos.has(zn.id) && !G.fueraVisto[zn.id]) { G.fueraVisto[zn.id] = true; G.fuera++; toast(`Te has salido del itinerario: ${TR[zn.id].nombre} no está autorizada. La policía no la ha cortado y la Agrupación lo apuntará.`); }
     // Momentos de la calle: saeta en Santiago, las monjas de las Clarisas
     const parado = arriba() && Math.abs(G.v) < 0.03 && Math.abs(G.w) < 0.003;
@@ -1747,15 +1816,15 @@ function lugarActual() {
   return NODOS[zn.id].nombre;
 }
 function guardarPartida() {
-  const d = { v: 1, ruta: RUTA.nodos, pose: { ...G.pose }, tiempo: G.tiempo, golpes: G.golpes, luci: G.luci, lev: G.lev, descansos: G.descansos, rotas: G.rotas, danio: G.danio, fuera: G.fuera, fueraVisto: G.fueraVisto, cans: G.cans, saeta: SAETA.hecho, monjas: MONJAS.hecho, hora: reloj(), lugar: lugarActual(), fecha: Date.now() };
-  try { localStorage.setItem(CLAVE_PARTIDA, JSON.stringify(d)); toast(`Descanso: partida guardada en ${d.lugar}, a las ${hhmm(d.hora)}.`, true); } catch (e) {}
+  const d = { v: 1, ruta: RUTA.nodos, pose: { ...G.pose }, tiempo: G.tiempo, golpes: G.golpes, luci: G.luci, lev: G.lev, descansos: G.descansos, rotas: G.rotas, danio: G.danio, fuera: G.fuera, fueraVisto: G.fueraVisto, puntos: G.puntos, cans: G.cans, saeta: SAETA.hecho, monjas: MONJAS.hecho, hora: reloj(), lugar: lugarActual(), fecha: Date.now() };
+  try { localStorage.setItem(CLAVE_PARTIDA, JSON.stringify(d)); toast(`Punto de guardado: ${d.lugar}, a las ${hhmm(d.hora)}.`, 'bien'); } catch (e) {}
 }
 function leerGuardado() { try { const d = JSON.parse(localStorage.getItem(CLAVE_PARTIDA) || 'null'); return d && d.v === 1 ? d : null; } catch (e) { return null; } }
 function borrarGuardado() { try { localStorage.removeItem(CLAVE_PARTIDA); } catch (e) {} }
 function cargarPartida(d) {
   prepararRuta(d.ruta); nuevaPartida();
   G.pose = { ...d.pose }; G.prev = { ...d.pose };
-  for (const k of ['golpes', 'luci', 'lev', 'descansos', 'danio', 'fuera', 'fueraVisto', 'cans']) G[k] = d[k];
+  for (const k of ['golpes', 'luci', 'lev', 'descansos', 'danio', 'fuera', 'fueraVisto', 'cans', 'puntos']) if (d[k] !== undefined) G[k] = d[k];
   G.tiempo = d.tiempo; G.t0 = now - d.tiempo; G.estado = 'suelo'; G.alt = -0.4; G.altObj = -0.4; G.sueloT = 0;
   (d.rotas || []).forEach((n, arb) => { if (n) romperTulipas(arb, 0, n); });
   SAETA.hecho = !!d.saeta; MONJAS.hecho = !!d.monjas;
@@ -1764,7 +1833,8 @@ function cargarPartida(d) {
 // ---------------------------------------------------------------- plano del itinerario
 const plano = $('#plano'), px = plano.getContext('2d');
 let rutaSel = RUTAS_TIPO.carreteria.nodos.slice();
-const PL = { z0: -15, z1: 310, x0: -82, x1: 82 };
+const PL = { z0: -15, z1: FIN_Z + 4, x0: CIU.marco.x0 + 8, x1: CIU.marco.x1 - 8 };
+plano.height = Math.round(plano.width * (PL.x1 - PL.x0) / (PL.z1 - PL.z0));
 function aPlano(x, z) { const k = plano.width / (PL.z1 - PL.z0); return [(z - PL.z0) * k, (PL.x1 - x) * k]; }
 function dibujarPlano() {
   const W = plano.width, H = plano.height, k = W / (PL.z1 - PL.z0);
@@ -1790,7 +1860,7 @@ function dibujarPlano() {
   px.font = `${Math.round(11 * W / 660)}px "Alegreya Sans", sans-serif`; px.textAlign = 'center'; px.textBaseline = 'middle';
   for (const t of TRAMOS) {
     const a = NODOS[t.a], b = NODOS[t.b];
-    const mxw = (a.x + b.x) / 2, mzw = (t.eje === 'z' ? (t.u0 + Math.min(t.u1, 300)) / 2 : (a.z + b.z) / 2);
+    const mxw = (a.x + b.x) / 2, mzw = (t.eje === 'z' ? (t.u0 + Math.min(t.u1, META_Z)) / 2 : (a.z + b.z) / 2);
     const [sx, sy] = aPlano(t.eje === 'z' ? mxw : (t.u0 + t.u1) / 2, mzw);
     px.save(); px.translate(sx, sy); if (t.eje === 'x') px.rotate(-Math.PI / 2);
     px.fillStyle = RUTA_TIENE(t.id) ? '#1b1006' : '#f1e6cc'; px.fillText(t.nombre.replace(' (alta)', '').replace(' (este)', ''), 0, t.eje === 'z' ? -1 : 0); px.restore();
@@ -1802,10 +1872,11 @@ function dibujarPlano() {
     const enR = rutaSel.includes(id), pos = posibles.includes(id);
     px.beginPath(); px.arc(a, c, (id === 'S' || id === 'M' ? 9 : 7) * W / 660, 0, Math.PI * 2);
     px.fillStyle = enR ? '#d9a441' : pos ? '#8fc79a' : '#6a5a80'; px.fill(); px.strokeStyle = '#1a1126'; px.lineWidth = 2; px.stroke();
+    if (CIU.puntos.includes(id)) { px.beginPath(); px.arc(a, c, 11 * W / 660, 0, Math.PI * 2); px.strokeStyle = '#f1e6cc'; px.lineWidth = 1.5; px.stroke(); }
   }
   px.fillStyle = '#f1e6cc'; px.textAlign = 'left';
   { const [a, c] = aPlano(0, -10); px.fillText('Casa hermandad', a - 10, c - 22 * W / 660); }
-  { const [a, c] = aPlano(0, 300); px.textAlign = 'right'; px.fillText('Recorrido oficial', a - 12 * W / 660, c - 16 * W / 660); }
+  { const [a, c] = aPlano(XC, META_Z); px.textAlign = 'right'; px.fillText('Recorrido oficial', a - 12 * W / 660, c - 16 * W / 660); }
   // flecha norte
   px.textAlign = 'right'; px.fillStyle = '#b8ab92'; px.fillText('norte →', W - 8, H - 10);
 }
@@ -1814,7 +1885,7 @@ function infoRuta() {
   const el = $('#ruta-info');
   if (rutaSel.length < 2) { el.textContent = 'Toca el primer cruce: la plaza de la Tribuna.'; return; }
   let L = 0; const partes = [];
-  for (let i = 0; i + 1 < rutaSel.length; i++) { const t = tramoEntre(rutaSel[i], rutaSel[i + 1]); L += t.id === 'larga' ? 30 : t.largo; partes.push(`${t.nombre} (${t.aviso})`); }
+  for (let i = 0; i + 1 < rutaSel.length; i++) { const t = tramoEntre(rutaSel[i], rutaSel[i + 1]); L += t.id === CIU.meta.id ? CIU.meta.metaU : t.largo; partes.push(`${t.nombre} (${t.aviso})`); }
   const fin = rutaSel[rutaSel.length - 1] === 'M';
   el.innerHTML = `<strong>${fin ? 'Itinerario completo' : 'Sin terminar'}:</strong> ${partes.join(' → ')}. Unos ${Math.round(L / 10) * 10} m.` + (fin ? '' : ' Sigue tocando cruces hasta la entrada del recorrido oficial.');
   $('#b-empezar').disabled = !fin; $('#b-empezar').style.opacity = fin ? '' : '0.5';
