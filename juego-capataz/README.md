@@ -17,7 +17,10 @@ Prototipo jugable en el navegador de un juego de Semana Santa en el que mandas u
   4. **La salida procesional**: la calle de la casa hermandad sube, se estrecha y gira; después, tres itinerarios hasta el recorrido oficial (o la carrera oficial).
 - **Permisos:** para ensayar, el Ayuntamiento solo autoriza calles de las afueras o del polígono, sin obras ni avenidas con tráfico, y el ensayo tiene que volver a la nave. Para la procesión, el Ayuntamiento (sin obras y con anchura suficiente) y la Agrupación de Cofradías o el Consejo de Hermandades (que acabe en el recorrido oficial, que no use una calle reservada para otra cofradía y que se llegue a la hora). Sin permiso no se puede salir.
 - **Cuestas por ciudad:** en Málaga casi no hay (alguna calle puntual), en Sevilla alguna más; Granada (Realejo, Albaicín) tendrá muchas y fuertes.
-- **Progreso:** cada nivel superado (nota de 5 o más) abre el siguiente. La partida se guarda en los puntos de guardado, al terminar ciertas calles.
+- **Ensayos con adversidades:** camiones, furgonetas y coches mal aparcados, contenedores, señales, ramas bajas, bolardos y vecinos curioseando; y durante el ensayo, imprevistos: un coche que se salta el corte y se queda atravesado, o curiosos que se meten delante.
+- **Avance rápido (T o ⏩):** en los tramos sin nada cerca el tiempo va ×3; se corta solo si hay algo delante, cerca de un cruce o tras un golpe.
+- **Banda:** síntesis de banda de música (tronos: metales con vibrato, acordes, tuba, bombo, caja, platillos) o de cornetas y tambores (pasos), con eco de calle; 5 marchas inventadas.
+- **Progreso:** todos los niveles están abiertos; se recomienda empezar por el primero. La partida se guarda en los puntos de guardado, al terminar ciertas calles.
 
 ## El trono (etapa 2)
 

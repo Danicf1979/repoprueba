@@ -131,6 +131,8 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
 #siguiente { margin: 0; font-size: 0.86rem; line-height: 1.35; color: var(--cera); }
 #siguiente strong { color: var(--oro); font-weight: 500; }
 #b-info { padding: 1px 9px; font-family: var(--font-d); }
+#b-rapido { pointer-events: auto; }
+#b-rapido.on { border-color: var(--oro); background: var(--oro-suave); }
 #menu-herr { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-top: 6px; }
 .cab-inicio { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .btn.chico { padding: 6px 12px; font-size: 0.9rem; }
@@ -199,6 +201,7 @@ section[data-panel] { display: grid; gap: 12px; }
   <div id="mapa-wrap" class="hud">
     <canvas id="mapa" width="340" height="340" aria-label="Mapa de la calle alrededor del paso"></canvas>
     <div id="aviso" hidden><span class="t">Por delante</span><span class="v" id="aviso-txt"></span></div>
+    <button class="mini" id="b-rapido" type="button" title="Avance rápido en los tramos sin nada (T)">⏩ Rápido</button>
     <div id="herr"><button class="mini" id="b-menu" type="button" aria-expanded="false">☰ Menú</button><div id="menu-herr" hidden>
       <button class="mini" id="b-cam" type="button">Cámara<kbd>V</kbd></button>
       <button class="mini" id="b-mus" type="button">Banda: sí<kbd>M</kbd></button>
@@ -409,7 +412,7 @@ function avisoDe(t) {
   if (t.anchoMax - t.anchoMin > 1.5) a.push(`se estrecha a ${fmt(t.anchoMin, 1)} m`);
   if (Math.abs(t.pendiente) > 0.025) a.push(`${t.pendiente > 0 ? 'cuesta' : 'bajada'} del ${Math.round(Math.abs(t.pendiente) * 100)} %`);
   if (t.via) a.push('curvas');
-  const nom = { arbol: 'árboles', arboles: 'árboles', cable: 'cables', guirnalda: 'guirnalda', balcones: 'balcones', terraza: 'terraza', quiosco: 'quiosco', semaforo: JUEGO.tipo === 'paso' ? 'farol' : 'semáforo', farol: 'farol', camion: 'camión aparcado', iglesia: 'saeta', convento: 'convento', pena: 'peña' };
+  const nom = { arbol: 'árboles', arboles: 'árboles', cable: 'cables', guirnalda: 'guirnalda', balcones: 'balcones', terraza: 'terraza', quiosco: 'quiosco', semaforo: JUEGO.tipo === 'paso' ? 'farol' : 'semáforo', farol: 'farol', camion: 'camión aparcado', contenedores: 'contenedores', coche: 'coche mal aparcado', furgoneta: 'furgoneta', senal: 'señal', rama: 'rama baja', bolardos: 'bolardos', iglesia: 'saeta', convento: 'convento', pena: 'peña' };
   for (const k of new Set(c)) if (nom[k]) a.push(nom[k]);
   return a.join(', ') || `${fmt(t.anchoMin, 1)} m de ancho`;
 }
@@ -768,7 +771,6 @@ for (const t of TRAMOS) {
       const f = Fr(t, u + 2); for (let i = 0; i < (esPaso ? 3 : 5); i++) { const ff = Fr(t, u + 0.8 + i * 1.5), x = ff.x + ff.nx * lado * (ff.w / 2 - 0.8), z = ff.z + ff.nz * lado * (ff.w / 2 - 0.8); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.04, 10), M(0xd8d2c4)); m.position.set(x, Y(x, z) + 0.74, z); scene.add(m); }
       hueco(t, lado, u - 1, u + 9);
     } else if (k.tipo === 'quiosco') { bloqueQ(quad(t, u, u + (esPaso ? 2.5 : 4), 0, esPaso ? 1.3 : 2, lado), 0, 3, 'un quiosco', 0x2d4a3a); hueco(t, lado, u - 1, u + 5); }
-    else if (k.tipo === 'camion') { bloqueQ(quad(t, u, u + (esPaso ? 5.5 : 9), 0.3, esPaso ? 2.1 : 2.8, lado), 0, esPaso ? 2.8 : 3.6, 'un camión aparcado', 0xd8d8d8); hueco(t, lado, u - 1, u + 10); }
     else if (k.tipo === 'vallas') { const f = Fr(t, u), [a, b] = cruce(t, u); add({ kind: 'seg', a, b, minH: 0, maxH: 1.1, label: 'las vallas de la obra' }); const m = new THREE.Mesh(new THREE.BoxGeometry(f.w, 1.1, 0.1), M(0xd8c020)); m.position.set(f.x, Y(f.x, f.z) + 0.55, f.z); m.rotation.y = Math.atan2(f.tx, f.tz); scene.add(m); }
     else if (k.tipo === 'semaforo' || k.tipo === 'farol') {
       if (esPaso || k.tipo === 'farol') {   // farol de forja (pasos) o farol de pared (tronos), metido en la calle
@@ -801,6 +803,29 @@ for (const t of TRAMOS) {
         const tx = texCanvas(256, 64, (x, w, h) => { x.fillStyle = '#2a3a5a'; x.fillRect(0, 0, w, h); x.fillStyle = '#d9a441'; x.textAlign = 'center'; x.font = '600 26px serif'; x.fillText('PEÑA COFRADE', w / 2, 42); });
         const pa = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), M(0xffffff, { map: tx })); pa.position.set(0, 3.4, 0.05); pl.add(pa); }
       hueco(t, lado, u - 6, u + 6);
+    } else if (['contenedores', 'coche', 'furgoneta', 'camion'].includes(k.tipo) && Math.min(Fr(t, u).w, Fr(t, u + 6).w) - ({ contenedores: 1.5, coche: 2.05, furgoneta: 2.25, camion: 2.8 })[k.tipo] < JUEGO.anchoNecesario + 1.2) {
+      /* no cabe sin cerrar la calle: no se pone */
+    } else if (k.tipo === 'camion') { bloqueQ(quad(t, u, u + (esPaso ? 5.5 : 9), 0.3, esPaso ? 2.1 : 2.8, lado), 0, esPaso ? 2.8 : 3.6, 'un camión aparcado', 0xd8d8d8); hueco(t, lado, u - 1, u + 10); 
+    } else if (k.tipo === 'contenedores') {
+      const q = quad(t, u, u + (esPaso ? 1.6 : 2.4), 0.2, esPaso ? 1.1 : 1.5, lado); bloqueQ(q, 0, 1.4, 'unos contenedores de basura', 0x2f5a2a); hueco(t, lado, u - 1, u + 3.5);
+    } else if (k.tipo === 'coche' || k.tipo === 'furgoneta') {
+      const largo = k.tipo === 'coche' ? 4.3 : 5.2, ancho = k.tipo === 'coche' ? 1.8 : 2.0, alto = k.tipo === 'coche' ? 1.5 : 2.4;
+      const q = quad(t, u, u + largo, 0.25, 0.25 + ancho, lado); bloqueQ(q, 0, alto, k.tipo === 'coche' ? 'un coche mal aparcado' : 'una furgoneta mal aparcada', [0x8a1a1a, 0x1a3a6a, 0xd8d8d8, 0x6a6a72][Math.floor(rnd() * 4)]); hueco(t, lado, u - 1, u + largo + 1);
+    } else if (k.tipo === 'senal') {
+      const f = Fr(t, u), px = f.x + f.nx * lado * (f.w / 2 - 0.35), pz = f.z + f.nz * lado * (f.w / 2 - 0.35);
+      add({ kind: 'circle', x: px, z: pz, r: 0.1, minH: 0, maxH: 2.8, label: 'el poste de una señal' });
+      const hS = esPaso ? 1.9 : 2.1; add({ kind: 'poly', pts: quad(t, u - 0.35, u + 0.35, 0.1, 1.0, lado), minH: hS, maxH: hS + 0.7, label: 'una señal de tráfico', alto: true, aviso: 'Señal de tráfico' });
+      const y = Y(px, pz); const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, hS + 0.7, 6), matHierro); p2.position.set(px, y + (hS + 0.7) / 2, pz); scene.add(p2);
+      const pl = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.05), M(0x1a4a9a)); const fx = f.x + f.nx * lado * (f.w / 2 - 0.75), fz = f.z + f.nz * lado * (f.w / 2 - 0.75); pl.position.set(fx, y + hS + 0.35, fz); pl.rotation.y = Math.atan2(f.tx, f.tz) + Math.PI / 2; scene.add(pl);
+      hueco(t, lado, u - 1, u + 1);
+    } else if (k.tipo === 'rama') {
+      const f = Fr(t, u), r = esPaso ? 1.4 : 2.2, x = f.x + f.nx * lado * (f.w / 2 - 0.4), z = f.z + f.nz * lado * (f.w / 2 - 0.4), h0 = esPaso ? 2.75 : 3.9;
+      add({ kind: 'circle', x, z, r, minH: h0, maxH: h0 + 2, label: 'una rama baja', alto: true, aviso: 'Rama baja' });
+      const y = Y(x, z); const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, h0 + 1.5, 8), M(0x5b4a3a)); tr.position.set(f.x + f.nx * lado * (f.w / 2 + 0.6), y + (h0 + 1.5) / 2, f.z + f.nz * lado * (f.w / 2 + 0.6)); scene.add(tr);
+      const co = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), M(0x2a4a26, { flatShading: true })); co.scale.set(1, 0.45, 1); co.position.set(x, y + h0 + 0.5, z); co.castShadow = true; scene.add(co);
+    } else if (k.tipo === 'bolardos') {
+      for (const ld of [-1, 1]) for (const d of esPaso ? [0.35] : [0.5, 1.4]) { const f = Fr(t, u), x = f.x + f.nx * ld * (f.w / 2 - d), z = f.z + f.nz * ld * (f.w / 2 - d);
+        add({ kind: 'circle', x, z, r: 0.14, minH: 0, maxH: 0.95, label: 'un bolardo' }); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.9, 10), matHierro); b.position.set(x, Y(x, z) + 0.45, z); scene.add(b); hueco(t, ld, u - 1, u + 1); }
     } else if (k.tipo === 'farolas') { /* las de la calle ya están */ }
   }
 }
@@ -906,7 +931,15 @@ function prepararRuta(nodos) {
     const enRuta = RUTA.tramos.has(t.id), L = L_UTIL(t);
     let uFin = L; if (META && t === META.t) uFin = Math.min(L, NIVEL.meta.u - t.s0 - 1.5);
     const libresEn = (lado) => { const cortes = (HUECOS[t.id] || []).filter((h) => h[0] === lado).map((h) => [h[1], h[2]]).sort((p, q) => p[0] - q[0]); const out = []; let ini = 0; for (const [c0, c1] of cortes) { if (c0 > ini) out.push([ini, Math.min(c0, uFin)]); ini = Math.max(ini, c1); } if (ini < uFin) out.push([ini, uFin]); return out; };
-    if (enRuta) {
+    if (enRuta && NIVEL.modo === 'ensayo') {
+      // ensayo: vecinos curioseando en grupitos, aquí y allá
+      let lado = rnd() < 0.5 ? -1 : 1;
+      for (let v = 8 + rnd() * 8; v < uFin - 6; v += 20 + rnd() * 16, lado = -lado) {
+        if (!libresEn(lado).some(([a, b]) => v >= a && v + 4 <= b)) continue;
+        const w = Math.min(Fr(t, v).w, Fr(t, v + 4).w); if (w < (JUEGO.tipo === 'paso' ? 5.5 : 12)) continue;
+        const f = Fr(t, v + 1.5); franjaQ(quad(t, v, v + 2 + rnd() * 2, 0, JUEGO.tipo === 'paso' ? 0.7 : 1.1, lado), -f.nx * lado, -f.nz * lado, gente);
+      }
+    } else if (enRuta) {
       for (const lado of [-1, 1]) for (const [a, b] of libresEn(lado)) for (let v = a; v < b - 0.4; v += 2.5) {
         const v1 = Math.min(b, v + 2.5), w = Fr(t, (v + v1) / 2).w, d = CIU.publico(w);
         if (d <= 0) continue;
@@ -1119,21 +1152,74 @@ function campana(tipo) {
     const o = c.createOscillator(), g = c.createGain(); o.frequency.value = cfg.f * r; env(g, t, cfg.g * a, cfg.d / Math.sqrt(r)); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + cfg.d + 0.1); });
   const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'bandpass'; f.frequency.value = cfg.f * 3; env(g2, t, cfg.g * 0.3, 0.04); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.06);
 }
-function bombo(t) { const c = ac(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.2); env(g, t, 0.85, 0.5); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.55); }
-function caja(t, v) { const c = ac(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'highpass'; f.frequency.value = 1700; env(g, t, v, 0.11); s.connect(f); f.connect(g); g.connect(AU.master); s.start(t); s.stop(t + 0.15); }
-function metal(t, f0, v) { const c = ac(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = 'sawtooth'; o.frequency.value = f0; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; env(g, t, v, BEAT * 0.9); o.connect(lp); lp.connect(g); g.connect(AU.master); o.start(t); o.stop(t + BEAT); }
 function llamador() { const c = ac(); if (!c) return; const t0 = c.currentTime; for (const d of [0, 0.17]) { const t = t0 + d; const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(260, t + 0.08); env(g, t, 0.5, 0.12); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.15); const sr = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'bandpass'; f.frequency.value = 2400; env(g2, t, 0.35, 0.05); sr.connect(f); f.connect(g2); g2.connect(AU.master); sr.start(t); sr.stop(t + 0.08); } }
 function sGolpe(fuerza) { const c = ac(); if (!c) return; const t = c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(80, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.3); env(g, t, 0.6 + 0.4 * fuerza, 0.4); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.45); const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'lowpass'; f.frequency.value = 900; env(g2, t, 0.5, 0.3); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.35); }
 // Repertorio de la banda: 5 marchas inventadas, elegidas entre la banda y la hermandad; solo toca estas.
 // (Melodías de 16 tiempos que se repiten; en el modo historia, el repertorio lo elegirá el jugador.)
-const MARCHAS = [
-  { nombre: 'Cristo de la Fuente', notas: [294, 0, 349, 330, 294, 262, 294, 0, 220, 262, 294, 349, 392, 349, 330, 0] },
-  { nombre: 'Pasa la Hermandad', notas: [440, 0, 392, 349, 330, 349, 392, 0, 349, 330, 294, 262, 294, 330, 294, 0] },
-  { nombre: 'Madrugá del Pozo', notas: [220, 262, 294, 0, 294, 330, 349, 0, 392, 349, 330, 294, 262, 0, 294, 0] },
-  { nombre: 'Saeta del Laurel', notas: [349, 0, 440, 392, 349, 330, 349, 392, 440, 0, 466, 440, 392, 349, 330, 0] },
-  { nombre: 'Calle Cerrajería', notas: [294, 294, 0, 262, 233, 220, 0, 233, 262, 294, 330, 349, 330, 294, 0, 0] },
+// ---- Banda: síntesis de una banda de música (tronos) o de cornetas y tambores (pasos), con eco de calle
+const NOTA = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
+const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+function busBanda() {
+  if (AU.bus) return AU.bus;
+  const c = ac(); if (!c) return null;
+  const seco = c.createGain(); seco.gain.value = 0.8; seco.connect(AU.master);
+  const rev = c.createConvolver(), L = Math.floor(c.sampleRate * 2.4), ir = c.createBuffer(2, L, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3.2); }
+  rev.buffer = ir; const mojado = c.createGain(); mojado.gain.value = 0.32; seco.connect(rev); rev.connect(mojado); mojado.connect(AU.master);
+  AU.bus = seco; return seco;
+}
+// instrumento de viento: osciladores desafinados, filtro que se abre al atacar y vibrato
+function soplo(t, midi, dur, tipo, vol) {
+  const c = ac(), bus = busBanda(); if (!c || !bus) return;
+  const f = hz(midi), g = c.createGain(), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = tipo === 'corneta' ? 2.5 : 0.8;
+  const voces = tipo === 'corneta' ? [['square', -4], ['sawtooth', 6]] : tipo === 'tuba' ? [['triangle', 0], ['sawtooth', -3]] : tipo === 'pad' ? [['sawtooth', -8], ['sawtooth', 7]] : [['sawtooth', -6], ['sawtooth', 5], ['triangle', 0]];
+  const brillo = tipo === 'corneta' ? 9 : tipo === 'tuba' ? 2.2 : tipo === 'pad' ? 2.6 : 5;
+  const at = tipo === 'pad' ? 0.12 : 0.035, fin = t + Math.max(0.12, dur);
+  lp.frequency.setValueAtTime(f * 1.2, t); lp.frequency.linearRampToValueAtTime(f * brillo, t + at + 0.03); lp.frequency.exponentialRampToValueAtTime(f * brillo * 0.6, fin);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + at); g.gain.setValueAtTime(vol * 0.85, fin - 0.06); g.gain.exponentialRampToValueAtTime(0.0001, fin + 0.18);
+  const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 5.2; lg.gain.value = tipo === 'tuba' || tipo === 'pad' ? 0 : f * 0.005; lfo.connect(lg);
+  for (const [ty, det] of voces) { const o = c.createOscillator(); o.type = ty; o.frequency.value = f; o.detune.value = det; lg.connect(o.frequency); o.connect(lp); o.start(t); o.stop(fin + 0.25); }
+  lfo.start(t); lfo.stop(fin + 0.25); lp.connect(g); g.connect(bus);
+}
+function bombo(t, v = 0.85) { const c = ac(), bus = busBanda(); if (!c) return; t = t || c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.25); env(g, t, v, 0.6); o.connect(g); g.connect(bus || AU.master); o.start(t); o.stop(t + 0.65); }
+function caja(t, v) { const c = ac(), bus = busBanda(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.7; env(g, t, v, 0.12); s.connect(f); f.connect(g); g.connect(bus || AU.master); s.start(t); s.stop(t + 0.16); const o = c.createOscillator(), g2 = c.createGain(); o.frequency.value = 190; env(g2, t, v * 0.6, 0.06); o.connect(g2); g2.connect(bus || AU.master); o.start(t); o.stop(t + 0.08); }
+function platillo(t, v) { const c = ac(), bus = busBanda(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'highpass'; f.frequency.value = 5200; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6); s.loop = true; s.connect(f); f.connect(g); g.connect(bus || AU.master); s.start(t); s.stop(t + 1.7); }
+function redoble(t, dur, v0, v1) { for (let k = 0; k < dur; k += 0.055) caja(t + k, v0 + (v1 - v0) * (k / dur)); }
+function metal(t, f0, v) { soplo(t, 69 + 12 * Math.log2(f0 / 440), BEAT * 0.9, 'trompeta', v * 2); }
+// Repertorio: 5 marchas inventadas (8 compases de 4/4; acordes y melodía). Solo toca estas.
+const NOMBRES_MARCHAS = JUEGO.tipo === 'paso' ? ['Cristo de la Fuente', 'Pasa la Hermandad', 'Madrugá del Pozo', 'Saeta del Laurel', 'Calle Cerrajería'] : ['Esperanza de San Roque', 'Plaza de la Tribuna', 'Madrugada en el Ángel', 'Nave y campana', 'Calle Real'];
+const PARTITURAS = [
+  { acordes: ['Dm', 'Gm', 'A7', 'Dm', 'Bb', 'Gm', 'A7', 'Dm'], mel: [[69, 1], [74, 1], [77, 1.5], [76, 0.5], [74, 1], [79, 2], [77, 1], [76, 1.5], [74, 0.5], [73, 1], [76, 1], [74, 3], [69, 1], [74, 1], [77, 1], [82, 1.5], [81, 0.5], [79, 1], [82, 1], [81, 1], [79, 1], [77, 1], [76, 1], [79, 1], [73, 1], [74, 4]] },
+  { acordes: ['Gm', 'Cm', 'D7', 'Gm', 'Eb', 'Cm', 'D7', 'Gm'], mel: [[74, 1], [79, 1.5], [77, 0.5], [75, 1], [75, 1], [72, 1], [75, 1], [79, 1], [78, 1.5], [81, 0.5], [74, 1], [72, 1], [70, 2], [67, 2], [67, 1], [70, 1], [75, 1.5], [74, 0.5], [72, 1], [75, 1], [79, 1], [75, 1], [74, 1], [78, 1], [81, 1], [72, 1], [79, 4]] },
+  { acordes: ['Am', 'Dm', 'E7', 'Am', 'F', 'Dm', 'E7', 'Am'], mel: [[76, 1.5], [74, 0.5], [72, 1], [71, 1], [69, 1], [74, 1], [77, 1.5], [76, 0.5], [74, 1], [71, 1], [68, 1], [71, 1], [69, 3], [64, 1], [69, 1], [72, 1], [77, 1.5], [76, 0.5], [74, 1], [77, 1], [81, 1], [77, 1], [76, 1.5], [74, 0.5], [71, 1], [68, 1], [69, 4]] },
+  { acordes: ['Cm', 'Fm', 'G7', 'Cm', 'Ab', 'Fm', 'G7', 'Cm'], mel: [[67, 1], [72, 1], [75, 1.5], [74, 0.5], [72, 1], [77, 1], [80, 1], [77, 1], [79, 1.5], [77, 0.5], [74, 1], [71, 1], [72, 3], [67, 1], [72, 1], [75, 1], [80, 1.5], [79, 0.5], [77, 1], [80, 1], [84, 1], [80, 1], [79, 1], [77, 1], [74, 1], [71, 1], [72, 4]] },
+  { acordes: ['Em', 'Am', 'B7', 'Em', 'C', 'Am', 'B7', 'Em'], mel: [[71, 1], [76, 1], [79, 1.5], [78, 0.5], [76, 1], [81, 2], [79, 1], [78, 1.5], [76, 0.5], [75, 1], [78, 1], [76, 3], [71, 1], [76, 1], [79, 1], [84, 1.5], [83, 0.5], [81, 1], [84, 1], [83, 1], [81, 1], [79, 1], [78, 1], [81, 1], [75, 1], [76, 4]] },
 ];
+const MARCHAS = PARTITURAS.map((p, i) => {
+  let b = 0; const notas = p.mel.map(([m, d]) => { const n = { b, m, d }; b += d; return n; });
+  const acordes = p.acordes.map((a) => { const r = a.match(/^([A-G][b#]?)(m|7)?$/), raiz = NOTA[r[1]]; return { raiz, tonos: r[2] === 'm' ? [0, 3, 7] : r[2] === '7' ? [0, 4, 7, 10] : [0, 4, 7] }; });
+  return { nombre: NOMBRES_MARCHAS[i], notas, acordes };
+});
 const BEATS_MARCHA = 64, BEATS_TAMBOR = 24;
+let RAPIDO_ACTIVO = false;
+// Lo que suena en cada tiempo de la marcha (b = tiempo dentro de la marcha, desde 0)
+function tocarTiempo(t, M, b) {
+  const corn = JUEGO.tipo === 'paso', vuelta = b >= 32, bb = b % 32, comp = Math.floor(bb / 4), tiempo = bb % 4, A = M.acordes[comp];
+  // melodía (la segunda vuelta, doblada a la octava baja y más fuerte)
+  for (const n of M.notas) if (n.b >= bb && n.b < bb + 1) {
+    const tt = t + (n.b - bb) * BEAT, d = n.d * BEAT * 0.95;
+    soplo(tt, n.m, d, corn ? 'corneta' : 'trompeta', corn ? 0.07 : 0.06);
+    if (corn) soplo(tt, n.m - (vuelta ? 12 : 4), d, 'corneta', 0.035);
+    else if (vuelta) soplo(tt, n.m - 12, d, 'trompeta', 0.045);
+  }
+  if (!corn && tiempo === 0) { for (const k of A.tonos) soplo(t, 55 + ((A.raiz + k) % 12), BEAT * 3.9, "pad", 0.022); }
+  if (!corn && (tiempo === 0 || tiempo === 2)) soplo(t, 36 + A.raiz + (tiempo === 2 ? 7 : 0) - (A.raiz > 6 ? 12 : 0), BEAT * 1.8, 'tuba', 0.11);
+  // percusión
+  if (tiempo === 0 || tiempo === 2) bombo(t, corn ? 0.95 : 0.75);
+  if (corn) { caja(t, 0.16); caja(t + BEAT / 2, 0.1); if (tiempo === 3) redoble(t + BEAT / 2, BEAT / 2, 0.05, 0.16); }
+  else { caja(t + BEAT / 2, 0.09); if (tiempo === 3 && (comp === 3 || comp === 7)) redoble(t, BEAT, 0.04, 0.14); }
+  if (tiempo === 0 && (comp === 0 || comp === 4)) platillo(t, corn ? 0.05 : 0.07);
+}
 let vozES = null;
 function buscarVoz() { try { const vs = speechSynthesis.getVoices(); vozES = vs.find((v) => /es[-_]ES/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null; } catch (e) {} }
 if ('speechSynthesis' in window) { buscarVoz(); try { speechSynthesis.onvoiceschanged = buscarVoz; } catch (e) {} }
@@ -1275,6 +1361,7 @@ const ACC = {
     if (G.banda.estado === 'marcha') { toast('La banda ya está tocando.', true); return; }
     G.banda.pedida = true; mostrarOrden('¡Música!', 'El capataz pide a la banda');
   },
+  rapido() { RAPIDO = !RAPIDO; },
   mapaGrande() { if (!$('#inicio').hidden || !$('#final').hidden) return; if (MG.abierto) cerrarMG(); else abrirMG(true); },
   info() { $('#panel').classList.toggle('info'); },
   camara() { camModo = (camModo + 1) % CAMS.length; camSnap = true; toast('Cámara: ' + CAMS[camModo].toLowerCase(), true); },
@@ -1364,15 +1451,14 @@ function onBeat() {
   else if (B.estado === 'tambor' && (!anda || B.beats > BEATS_TAMBOR)) { if (anda) empezarMarcha(); else { B.estado = 'silencio'; B.beats = 0; } }
   else if (B.estado === 'silencio' && B.pedida && arriba()) empezarMarcha();
   else if (B.estado === 'silencio' && anda && B.beats > 8) { B.estado = 'tambor'; B.beats = 0; }
-  if (!AU.musica || !AU.ctx) return;
-  const t = AU.ctx.currentTime + 0.01;
-  if (B.estado === 'marcha') {
-    const k = (B.beats - 1) % 16, f = MARCHAS[B.marcha].notas[k];
-    bombo(t); caja(t + BEAT / 2, 0.12);
-    if (f) { metal(t, f, 0.05); metal(t, f * 1.5, 0.025); }
-  } else if (B.estado === 'tambor') {
-    caja(t, 0.2); if (B.beats % 2 === 0) bombo(t);
-    if (B.beats % 4 === 3) for (let k = 0; k < 5; k++) caja(t + BEAT / 2 + k * 0.05, 0.05 + k * 0.02);
+  if (!AU.musica || !AU.ctx || RAPIDO_ACTIVO) return;
+  const t = AU.ctx.currentTime + 0.03;
+  if (B.estado === 'marcha') tocarTiempo(t, MARCHAS[B.marcha], (B.beats - 1) % BEATS_MARCHA);
+  else if (B.estado === 'tambor') {
+    const corn = JUEGO.tipo === 'paso', k = B.beats % 4;
+    caja(t, 0.18); if (k === 0 || k === 2) bombo(t, 0.7);
+    if (corn) caja(t + BEAT / 2, 0.11);
+    if (k === 3) redoble(t + BEAT / 2, BEAT / 2, 0.05, 0.17);
   }
 }
 
@@ -1554,7 +1640,7 @@ function superados() { try { return JSON.parse(localStorage.getItem(CLAVE_NIVELE
 function irANivel(i, continuar) { try { localStorage.setItem(JUEGO.clave + '-nivel', String(i)); if (continuar) sessionStorage.setItem(JUEGO.clave + '-continuar', '1'); } catch (e) {} location.reload(); }
 { const caja = $('#niveles'), sup = superados();
   NIVELES_J.forEach((n, i) => {
-    const abierto = i === 0 || sup.includes(NIVELES_J[i - 1].id) || sup.includes(n.id);
+    const abierto = true;   // todos abiertos: se recomienda empezar por el primero
     const b = document.createElement('button'); b.type = 'button'; b.className = 'tarjeta' + (i === NIVEL_I ? ' on' : '');
     b.innerHTML = `<b>${i + 1}. ${n.titulo}${sup.includes(n.id) ? ' ✓' : ''}</b><small>${n.modo === 'ensayo' ? 'Ensayo · permiso del Ayuntamiento' : 'Procesión · Ayuntamiento y ' + JUEGO.fedCorta}</small><small>${abierto ? n.resumen.split('. ')[0] + '.' : 'Supera antes el nivel anterior.'}</small>`;
     b.disabled = !abierto;
@@ -1694,6 +1780,7 @@ $('#b-menu').addEventListener('click', () => { const m = $('#menu-herr'); m.hidd
 const ICONOS = {
   obras: ['🚧', 'En obras'], trafico: ['🚗', 'Tráfico'], reservada: ['⛔', 'Reservada a otra cofradía'], estrecha: ['↔', 'Se estrecha'], cuesta: ['⛰', 'Cuesta'], curva: ['↝', 'Curvas'],
   cable: ['⚡', 'Cable'], guirnalda: ['✨', 'Guirnalda'], balcones: ['🏛', 'Balcones'], arboles: ['🌳', 'Árboles'], terraza: ['☕', 'Terraza'], quiosco: ['📰', 'Quiosco'], camion: ['🚚', 'Camión'],
+  contenedores: ['🗑', 'Contenedores'], coche: ['🚙', 'Coche mal aparcado'], furgoneta: ['🚐', 'Furgoneta'], senal: ['🪧', 'Señal'], rama: ['🌿', 'Rama baja'], bolardos: ['⫶', 'Bolardos'],
   semaforo: ['🚦', 'Semáforo'], farol: ['🏮', 'Farol'], iglesia: ['⛪', 'Saeta'], convento: ['🔔', 'Convento'], pena: ['★', 'Peña'], esquina: ['⌐', 'Esquina viva'], angulo: ['∠', 'Cruce en ángulo'], plaza: ['♛', 'Plaza: luce'], puerta: ['🚪', 'Puerta'],
 };
 const MARCAS = (() => {
@@ -1717,6 +1804,8 @@ const MARCAS = (() => {
         terraza: 'Terraza de veladores en una acera: pásala por el otro lado.', quiosco: 'Quiosco en una acera: pásalo por el otro lado.', camion: 'Camión aparcado: pásalo por el otro lado.',
         semaforo: JUEGO.tipo === 'paso' ? 'Farol de forja a 2,4 m metido en la calle: apártate.' : 'Semáforo con el brazo metido en la calle a 3 m: ve por el centro o por el otro lado.',
         farol: JUEGO.tipo === 'paso' ? 'Farol de forja a 2,4 m metido en la calle: apártate.' : 'Farol de pared a 4,2 m que sale 1,5 m: apártate de esa acera.',
+        contenedores: 'Contenedores de basura en la acera: apártate al otro lado.', coche: 'Coche mal aparcado en el corte: pásalo por el otro lado.', furgoneta: 'Furgoneta mal aparcada: pásala por el otro lado.',
+        senal: `Señal de tráfico con la placa a ${JUEGO.tipo === 'paso' ? '1,9' : '2,1'} m, metida en la calle: la candelería la roza si vas pegado.`, rama: `Rama baja de un árbol a ${JUEGO.tipo === 'paso' ? '2,75' : '3,9'} m: ${JUEGO.tipo === 'paso' ? 'el misterio' : 'los arbotantes y el palio'} la rozan. Apártate o, ${JUEGO.tipo === 'paso' ? 'agachaditos' : 'si cabe, pasa por el centro'}.`, bolardos: 'Bolardos a los dos lados que estrechan la calle: centrado.',
         iglesia: 'Iglesia: si paras delante de la puerta, alguien canta una saeta desde un balcón.', convento: 'Convento: si paras delante en silencio, cantan las monjas.', pena: 'Peña cofrade: la mecida y la levantá a pulso lucen.',
       };
       const tipo = k.tipo === 'arbol' ? 'arboles' : k.tipo;
@@ -1865,6 +1954,43 @@ function avisoProximo() {
   $('#aviso-txt').textContent = `${mejor.aviso}: ${fmt(mejor.minH)} m libres${choca ? ` · el paso llega a ${fmt(top)} m` : ''}`;
 }
 let ultimoHud = 0;
+// ---------------------------------------------------------------- avance rápido
+// En los tramos sin nada cerca, el tiempo puede ir ×3. Se corta solo si hay algo delante, cerca de un cruce o tras un golpe.
+let RAPIDO = false;
+function puedeRapido() {
+  if (!arriba() || G.v < 0.05 || G.estado === 'pulso' || now - G.ultimoGolpe < 3 || Math.abs(G.w) > 0.01) return false;
+  const zn = zonaEn(G.pose.x, G.pose.z); if (!zn || zn.tipo !== 'tramo') return false;
+  const sig = NODOS[RUTA.nodos[G.k + 1]]; if (sig && Math.hypot(sig.x - G.pose.x, sig.z - G.pose.z) < (sig.rLibre || 6) + 14) return false;
+  const fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a);
+  for (const d of [2, 4, 7, 10]) if (colisiona({ x: G.pose.x + fx * d, z: G.pose.z + fz * d, a: G.pose.a }, G.alt + G.pulsoDy, G.mecida ? 0.4 : 0.15)) return false;
+  return true;
+}
+// ---------------------------------------------------------------- imprevistos del ensayo
+const EVENTOS = [];
+function quitarEvento(e) { for (const m of e.mallas) scene.remove(m); const i = OBS.indexOf(e.ob); if (i >= 0) OBS.splice(i, 1); hashSucio = true; EVENTOS.splice(EVENTOS.indexOf(e), 1); }
+function imprevisto() {
+  const zn = zonaEn(G.pose.x, G.pose.z); if (!zn || zn.tipo !== 'tramo' || !RUTA.tramos.has(zn.id)) return false;
+  const t = TR[zn.id], fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a), dist = JUEGO.mediaLargo + (JUEGO.tipo === 'paso' ? 10 : 16);
+  const x = G.pose.x + fx * dist, z = G.pose.z + fz * dist, zn2 = zonaEn(x, z); if (!zn2 || zn2.id !== zn.id) return false;
+  const k = CIUDAD.calleEn(x, z); if (!k) return false; const p = k.p, w = p.w, coche = rnd() < 0.5;
+  const largo = coche ? Math.min(w - 1.2, 4.4) : w * 0.55, fondo = coche ? 1.9 : 1.4;
+  const ax = p.tx, az = p.tz, nx = p.nx, nz = p.nz, off = coche ? 0 : (rnd() < 0.5 ? -1 : 1) * (w / 2 - largo / 2);
+  const cx = p.x + nx * off, cz = p.z + nz * off;
+  const pts = [[cx - nx * largo / 2 - ax * fondo / 2, cz - nz * largo / 2 - az * fondo / 2], [cx + nx * largo / 2 - ax * fondo / 2, cz + nz * largo / 2 - az * fondo / 2], [cx + nx * largo / 2 + ax * fondo / 2, cz + nz * largo / 2 + az * fondo / 2], [cx - nx * largo / 2 + ax * fondo / 2, cz - nz * largo / 2 + az * fondo / 2]];
+  const ob = add({ kind: 'poly', pts, minH: 0, maxH: coche ? 1.5 : 1.8, label: coche ? 'un coche que se ha saltado el corte' : 'unos curiosos que se han metido delante', ruta: true });
+  const mallas = [];
+  if (coche) mallas.push(cajaEn(pts, 0, 1.5, 0xc8b070));
+  else { const lista = []; franjaQ(pts, -ax, -az, lista); OBS.pop(); crearPublico(lista); mallas.push(...RUTA_OBJ.splice(RUTA_OBJ.length - 4, 4)); }
+  EVENTOS.push({ ob, mallas, fin: now + (coche ? 16 : 11) });
+  toast(coche ? '¡Un coche se ha saltado el corte y se ha quedado atravesado delante! Para y espera a que la policía lo saque.' : '¡Un grupo de curiosos se ha metido delante para hacer fotos! Para o rodéalos.');
+  RAPIDO = false; return true;
+}
+function eventosEnsayo(dt) {
+  for (const e of [...EVENTOS]) if (now > e.fin) { quitarEvento(e); toast('Ya está la calle libre.', true); }
+  if (NIVEL.modo !== 'ensayo' || G.t0 === null || G.fin || !arriba() || G.v < 0.05) return;
+  G.proxImprevisto = (G.proxImprevisto || 50 + rnd() * 40) - dt;
+  if (G.proxImprevisto <= 0) { G.proxImprevisto = imprevisto() ? 70 + rnd() * 60 : 8; }
+}
 function hud() {
   $('#st-hora').textContent = hhmm(reloj());
   $('#st-hora').classList.toggle('malo', reloj() > CFG.horaLimite);
@@ -1911,7 +2037,7 @@ function toast(txt, tipo) {
 }
 
 // ---------------------------------------------------------------- entrada
-const TECLAS = { Tab: 'mapaGrande', KeyI: 'info', Space: 'toque', KeyC: 'agachar', KeyX: 'relevo', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
+const TECLAS = { KeyT: 'rapido', Tab: 'mapaGrande', KeyI: 'info', Space: 'toque', KeyC: 'agachar', KeyX: 'relevo', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'ladoIzq', KeyE: 'ladoDer', KeyZ: 'mecida', KeyP: 'pulso', KeyV: 'camara', KeyB: 'musicaBanda', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
 const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara', 'mapaGrande', 'info']);
 const pulsadas = new Set();
 function press(acc) {
@@ -1942,6 +2068,7 @@ document.querySelectorAll('.pb').forEach((b) => {
   b.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); press(acc); setTimeout(() => release(acc), 400); } });
 });
 $('#b-cam').addEventListener('click', () => ACC.camara());
+$('#b-rapido').addEventListener('click', () => ACC.rapido());
 $('#b-mus').addEventListener('click', () => ACC.musica());
 $('#b-voz').addEventListener('click', () => ACC.voz());
 $('#b-ayu').addEventListener('click', () => ACC.ayuda());
@@ -2001,7 +2128,11 @@ function actualizarLuces(t) {
 let last = performance.now();
 function loop(t) {
   const dt = Math.min(0.05, (t - last) / 1000); last = t;
-  update(pausa ? 0 : dt);
+  const ff = RAPIDO && !pausa && puedeRapido() ? 3 : 1;
+  RAPIDO_ACTIVO = ff > 1;
+  for (let i = 0; i < ff; i++) update(pausa ? 0 : dt);
+  if (!pausa) eventosEnsayo(dt * ff);
+  $('#b-rapido').classList.toggle('on', RAPIDO); $('#b-rapido').textContent = RAPIDO ? (ff > 1 ? '⏩ ×3' : '⏩ espera') : '⏩ Rápido';
   updateCam(dt);
   if (t - ultimoHud > 100) { hud(); ultimoHud = t; }
   dibujarMapa();
@@ -2011,7 +2142,7 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
-window.__trono = { get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, prepararRuta, RUTAS_TIPO, TR, NODOS, TRAMOS, libre, zonaEn, CIUDAD, NIVEL, SALIDA, JUEGO, guardarPartida, leerGuardado, cargarPartida, get RUTA() { return RUTA; }, get composer() { return composer; }, elegirRuta, get rutaSel() { return rutaSel; }, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
+window.__trono = { puedeRapido, imprevisto, eventosEnsayo, get EVENTOS() { return EVENTOS; }, get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, prepararRuta, RUTAS_TIPO, TR, NODOS, TRAMOS, libre, zonaEn, CIUDAD, NIVEL, SALIDA, JUEGO, guardarPartida, leerGuardado, cargarPartida, get RUTA() { return RUTA; }, get composer() { return composer; }, elegirRuta, get rutaSel() { return rutaSel; }, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
 })();
 </script>
 </body>
