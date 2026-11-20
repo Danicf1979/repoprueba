@@ -23,7 +23,7 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave hasta la ent
 | B | ¡Música!: pedir una marcha a la banda |
 | V · M · N · H · R | Cámara · sonido de la banda · voz · ayuda · reiniciar |
 
-- **Cuerpos del trono:** varales y hombres de trono (4,4 × 13 m, hasta 1,9 m), mesa y candelería (hasta 3,1 m) y palio (hasta 4,6 m).
+- **Cuerpos del trono:** varales y hombres de trono (4,4 × 13 m, hasta 1,9 m), mesa y candelería (hasta 3,1 m), palio (hasta 4,6 m) y cuatro arbotantes en las esquinas que sobresalen por los lados (5,1 m de ancho entre 2,9 y 4,1 m de alto).
 - **Cansancio sin relevos:** solo baja con el trono en el suelo. Si se descansa más de 35 s, la cuadrilla se enfría y la levantá sale peor.
 - **Retardo:** las voces tardan 0,7 s en cumplirse (los capataces de las esquinas las repiten); la campana es inmediata.
 - **Recorrido:** nave → calle Ancha (ficus, terraza, quiosco) → plaza de la Tribuna (fuente, público) → calle del Ángel → esquina estrecha → calle Real (semáforo, farol, guirnalda a 4,75 m, balcón) → recorrido oficial.
