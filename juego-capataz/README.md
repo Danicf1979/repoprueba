@@ -3,11 +3,12 @@
 Prototipo jugable en el navegador de un juego de Semana Santa en el que mandas un paso o un trono. El documento de diseño completo está en Claude Docs.
 
 - `index.html` — **La mudanza** (etapa 1): paso de costaleros.
-- `trono.html` — **El trono** (etapa 2): trono de Málaga mandado con la campana.
+- `trono.html` — **El trono** (etapa 2): trono de Málaga mandado con la campana, por un barrio de calles anchas.
+- `paso.html` — **La procesión** (etapa 3): paso de misterio mandado con el llamador, con relevos de costaleros, por un barrio de calles estrechas.
 
 ## El trono (etapa 2)
 
-Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa hermandad hasta la entrada del recorrido oficial, antes de las 20:10, por un barrio con varias calles. Antes de salir eliges el itinerario en un plano.
+Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa hermandad hasta la entrada del recorrido oficial, antes de las 21:30, por un barrio de cuatro filas de calles (itinerarios de 600 a 800 m). Antes de salir eliges el itinerario en un plano.
 
 | Tecla | Orden |
 |---|---|
@@ -29,8 +30,25 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa h
 - **Itinerario:** el barrio tiene tres calles que suben hacia el recorrido oficial (Carretería, la de los Balcones y Granada) y tres que las cruzan (del Ángel/Compañía, Álamos y Císter), con la plaza de la Tribuna. Se elige tocando los cruces en el plano o con uno de los tres itinerarios propuestos. Las calles del itinerario las corta la policía y se llenan de público; las demás tienen coches aparcados, y salirse del itinerario resta un punto («la Agrupación lo apuntará»).
 - **Cada calle tiene su dificultad:** ficus alternos en Carretería, balcones a 4,4 m que dejan unos centímetros a los arbotantes en la de los Balcones, naranjos en Granada, un andamio en Álamos, semáforos con el brazo metido, guirnaldas y cables a los que no se puede subir a pulso. Los cruces tienen chaflanes para poder girar el trono sobre sí mismo.
 - **Momentos:** parado delante de la iglesia de Santiago, alguien canta una saeta; delante del convento de las Clarisas, en silencio, cantan las monjas. La tribuna de la plaza y la peña de calle Císter dan lucimiento a la mecida y a la levantá a pulso.
-- **Partida guardada:** cada vez que bajas el trono para descansar se guarda; en la pantalla de inicio aparece «Continuar la partida».
+- **Puntos de guardado:** la partida se guarda al llegar a ciertos cruces, al terminar cada calle larga (marcados con un aro en el plano); en la pantalla de inicio aparece «Continuar la partida».
 - **Gráficos:** reflejos de entorno para que el oro y la plata parezcan metal, resplandor (bloom) de velas, tulipas y farolas, sombras, Virgen con rostro pintado, rostrillo, corona imperial y ráfaga, público con cuerpo, brazos y piernas. El botón «Gráficos» baja la calidad en móviles lentos (altos: todo; medios: sin sombras; bajos: sin resplandor).
+
+## La procesión (etapa 3)
+
+Eres el capataz de un paso de misterio y lo llevas desde el templo hasta la entrada en la carrera oficial, antes de las 19:45, por un barrio de calles estrechas y encaladas (itinerarios de 530 a 600 m). Usa el mismo motor y la misma base de ciudad que el trono (`CIU` describe la cuadrícula de calles de cada ciudad y lo demás se genera).
+
+| Tecla | Orden |
+|---|---|
+| Espacio | Llamador. En tierra: un golpe, «¡Atención, preparados!»; otro al poco, «¡A esta es!» y el paso sube. En marcha: ¡paramos! Parado: ¡ahí quedó!, a tierra |
+| W / S | ¡De frente! / atrás; en marcha, más paso o menos |
+| A / D | Izquierda alante, derecha atrás (y al revés) |
+| Q / E | Costero a costero |
+| C | ¡Agachaditos!: el paso baja 35 cm para pasar bajo cables (3,05–3,1 m) y balcones |
+| X | Relevo, con el paso en tierra: entra otra cuadrilla y el cansancio vuelve a cero, a cambio de tiempo |
+| Z · P · B | Mecida · a pulso · ¡música! |
+
+- **Calles:** balcones a 2,6 m (calle Feria), naranjos y cables bajos (Alfarería, Castellar, Cuna, Cabeza), el callejón del Agua (4,4 m, con faroles de forja y macetas, sin sitio para el público), la saeta de Santiago, las monjas del convento y la peña.
+- **Itinerario y guardado:** igual que el trono: se elige en el plano y se guarda en los puntos de guardado.
 
 ## La mudanza (etapa 1)
 

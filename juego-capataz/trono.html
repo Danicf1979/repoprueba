@@ -230,7 +230,7 @@ details.como[open] > *:not(summary) { margin-top: 10px; }
       <canvas id="plano" width="660" height="336" aria-label="Plano del barrio para elegir el itinerario"></canvas>
       <p class="nota" id="ruta-info"></p>
       <div class="acciones"><span class="nota">Orfebrería del trono:</span><button class="btn sec orfe" data-orfe="oro" type="button">Dorada</button><button class="btn sec orfe" data-orfe="plata" type="button">De plata</button></div>
-      <div class="acciones"><button class="btn" id="b-empezar" type="button">Empezar la salida</button><button class="btn sec" id="b-continuar" type="button" hidden>Continuar la partida</button><a class="btn sec" href="index.html">Jugar la mudanza</a></div>
+      <div class="acciones"><button class="btn" id="b-empezar" type="button">Empezar la salida</button><button class="btn sec" id="b-continuar" type="button" hidden>Continuar la partida</button><a class="btn sec" href="paso.html">La procesión de pasos</a><a class="btn sec" href="index.html">Jugar la mudanza</a></div>
       <p class="nota" id="guardado"></p>
       <p class="nota" id="record"></p>
     </div>
@@ -817,7 +817,7 @@ const BALCONES_BAJOS = [];
   for (let u = 4; u < L_UTIL(t) - 6; u += 7) for (const sx of [-1, 1]) {
     const r = fRect(t, u, u + 2.2, bordeOff(t, sx, 0), bordeOff(t, sx, 1.1));
     add({ kind: 'poly', pts: rect(...r), minH: 4.4, maxH: 5.3, label: 'un balcón', alto: true, aviso: 'Balcón' });
-    const [bx, bz] = P(t, u + 1.1, sx * (t.w / 2 - 0.55)); BALCONES_BAJOS.push([bx, 4.4, bz, sx]);
+    const [bx, bz] = P(t, u + 1.1, sx * (t.w / 2 - 0.55)); BALCONES_BAJOS.push([bx, 4.4, bz, sx < 0 ? Math.PI / 2 : -Math.PI / 2, t.id]);
   }
   cableEn(t, L_UTIL(t) * 0.5, 5.0); }
 // calle Nueva y calle Santa María
@@ -848,7 +848,7 @@ const MONJAS = { hecho: false, nombre: 'el convento de las Clarisas' };
   const cpn = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, 0.5, 10, 1, true), M(0xb08a3a, { metalness: 0.8, roughness: 0.35, side: THREE.DoubleSide })); cpn.position.set(wx + 0.3, 12.3, wz); scene.add(cpn);
   const pu = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 2), M(0x3a2414)); pu.position.set(wx - 0.05, 1.6, wz); scene.add(pu); }
 cableEn(TR.granadaN, L_UTIL(TR.granadaN) * 0.8, 4.9);
-{ const t = TR.beatas; for (let u = 8; u < L_UTIL(t) - 8; u += 9) { const r = fRect(t, u, u + 2.2, bordeOff(t, 1, 0), bordeOff(t, 1, 0.9)); add({ kind: 'poly', pts: rect(...r), minH: 4.3, maxH: 5.2, label: 'un balcón', alto: true, aviso: 'Balcón' }); const [bx, bz] = P(t, u + 1.1, t.w / 2 - 0.45); BALCONES_BAJOS.push([bx, 4.3, bz, 1]); } }
+{ const t = TR.beatas; for (let u = 8; u < L_UTIL(t) - 8; u += 9) { const r = fRect(t, u, u + 2.2, bordeOff(t, 1, 0), bordeOff(t, 1, 0.9)); add({ kind: 'poly', pts: rect(...r), minH: 4.3, maxH: 5.2, label: 'un balcón', alto: true, aviso: 'Balcón' }); const [bx, bz] = P(t, u + 1.1, t.w / 2 - 0.45); BALCONES_BAJOS.push([bx, 4.3, bz, -Math.PI / 2, t.id]); } }
 // calle Álamos: andamio de obra en la acera norte; semáforo y guirnalda en la parte este
 { const t = TR.alamosW, u = L_UTIL(t) * 0.35, r = fRect(t, u, u + 12, bordeOff(t, 1, 0), bordeOff(t, 1, 3.4)); bloque(...r, 0, 7, 'el andamio de una obra', 0x8a8a8a); hueco(t, 1, u - 1, u + 13);
   const lona = new THREE.Mesh(new THREE.PlaneGeometry(12, 6.6), M(0x2f5a8a, { side: THREE.DoubleSide, roughness: 0.9 })); lona.position.set((r[0] + r[2]) / 2, 3.6, r[1] - 0.05); scene.add(lona); }
@@ -885,7 +885,7 @@ for (const t of TRAMOS) for (const lado of [-1, 1]) {
     }
   }
 }
-for (const [x, y, z, sx] of BALCONES_BAJOS) BALC.push([x, y, z, sx < 0 ? Math.PI / 2 : -Math.PI / 2, 'balcones', true]);
+for (const [x, y, z, r, tid] of BALCONES_BAJOS) BALC.push([x, y, z, r, tid, true]);
 { const texReja = texCanvas(128, 64, (x, w, h) => { x.clearRect(0, 0, w, h); x.fillStyle = '#141418'; x.fillRect(0, 0, w, 5); x.fillRect(0, h - 4, w, 4); for (let i = 0; i < w; i += 10) x.fillRect(i, 0, 3, h); x.strokeStyle = '#141418'; x.lineWidth = 2; for (let i = 5; i < w; i += 20) { x.beginPath(); x.arc(i + 5, h / 2, 5, 0, Math.PI * 2); x.stroke(); } });
   const n = BALC.length, dm = new THREE.Object3D();
   const losas = new THREE.InstancedMesh(new THREE.BoxGeometry(2.2, 0.12, 0.75), M(0x9a9184), n);
@@ -898,7 +898,7 @@ for (const [x, y, z, sx] of BALCONES_BAJOS) BALC.push([x, y, z, sx < 0 ? Math.PI
   scene.add(losas); scene.add(rejas); }
 
 // ---- Lo que depende del itinerario: público en las calles cortadas, coches aparcados en las demás
-let RUTA = { nodos: RUTAS_TIPO.corta.nodos.slice(), tramos: new Set() };
+let RUTA = { nodos: Object.values(RUTAS_TIPO)[0].nodos.slice(), tramos: new Set() };
 const RUTA_OBJ = [];
 const PUB_GEO = (() => {
   const piernas = unirGeos([-0.09, 0.09].map((x) => { const g = new THREE.CylinderGeometry(0.07, 0.065, 0.82, 7); g.translate(x, 0.41, 0); return g; }));
@@ -1832,7 +1832,7 @@ function cargarPartida(d) {
 }
 // ---------------------------------------------------------------- plano del itinerario
 const plano = $('#plano'), px = plano.getContext('2d');
-let rutaSel = RUTAS_TIPO.carreteria.nodos.slice();
+let rutaSel = Object.values(RUTAS_TIPO)[1].nodos.slice();
 const PL = { z0: -15, z1: FIN_Z + 4, x0: CIU.marco.x0 + 8, x1: CIU.marco.x1 - 8 };
 plano.height = Math.round(plano.width * (PL.x1 - PL.x0) / (PL.z1 - PL.z0));
 function aPlano(x, z) { const k = plano.width / (PL.z1 - PL.z0); return [(z - PL.z0) * k, (PL.x1 - x) * k]; }
