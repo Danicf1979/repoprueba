@@ -543,21 +543,32 @@ const llamas = [];
   filas.forEach(([z, h], fi) => { for (let k = 0; k < 9 - fi; k++) { const x = -1.2 + (k + fi * 0.5) * (2.4 / 8);
     const v = new THREE.Mesh(gv, mv); v.scale.y = h; v.position.set(x, 2.9 + h / 2, z); cuerpo.add(v);
     const l = new THREE.Mesh(gl, ml); l.scale.set(1, 2, 1); l.position.set(x, 2.95 + h, z); cuerpo.add(l); llamas.push(l); } }); }
-// Imagen bajo palio
-{ const manto = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.5, 20, 1, true), M(0x163a2a, { side: THREE.DoubleSide, roughness: 0.7 })); manto.position.set(0, 3.65, -0.8); cuerpo.add(manto);
+// Imagen bajo palio. El palio (barras, techo y bambalinas) va aparte: se mueve con retraso respecto a los hombres de trono.
+const PALIO_Y = 2.88;
+const palio = new THREE.Group(); palio.rotation.order = 'YXZ';
+const BAMBALINAS = [];
+const PAL = { rx: 0, vx: 0, rz: 0, vz: 0, lado: 0, ladoV: 0, v: 0, y: 0, yV: 0 };
+function sacudirPalio(f) { PAL.vz += (Math.random() - 0.5) * f; PAL.vx += (Math.random() - 0.5) * f; BAMBALINAS.forEach((b) => { b.v += (Math.random() - 0.3) * f * 2; }); }
+{ const manto = new THREE.Mesh(new THREE.ConeGeometry(0.75, 1.5, 20, 1, true), M(0x163a2a, { side: THREE.DoubleSide, roughness: 0.7 })); manto.position.set(0, 3.2, -0.8); cuerpo.add(manto);
   const cola = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 1.3), M(0x163a2a)); cola.position.set(0, 2.93, -1.6); cola.rotation.x = 0.05; cuerpo.add(cola);
-  const saya = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 16), M(0xe8dcc0)); saya.position.set(0, 3.55, -0.62); cuerpo.add(saya);
-  const cara = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), M(0xd9b08a)); cara.position.set(0, 4.43, -0.72); cuerpo.add(cara);
-  const toca = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10, 0, Math.PI * 2, 0, Math.PI / 1.6), M(0xf4efe4)); toca.position.set(0, 4.45, -0.76); cuerpo.add(toca);
-  const corona = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.13, 0.2, 14, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide })); corona.position.set(0, 4.62, -0.76); cuerpo.add(corona);
-  const rafaga = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.02, 6, 24), matOro); rafaga.position.set(0, 4.62, -0.8); cuerpo.add(rafaga);
-  // varales de palio y techo
-  for (const x of [-1.25, 1.25]) for (let i = 0; i < 6; i++) { const z = -1.85 + i * 0.74; const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.65, 8), matPlata); v.position.set(x, 3.7, z); cuerpo.add(v); }
-  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), M(0x163a2a)); techo.position.y = 4.55; cuerpo.add(techo);
-  const glo = new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M(0xd8b04a, { metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide })); glo.rotation.x = Math.PI / 2; glo.position.y = 4.5; cuerpo.add(glo);
+  const saya = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 16), M(0xe8dcc0)); saya.position.set(0, 3.1, -0.62); cuerpo.add(saya);
+  const cara = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), M(0xd9b08a)); cara.position.set(0, 3.98, -0.72); cuerpo.add(cara);
+  const toca = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10, 0, Math.PI * 2, 0, Math.PI / 1.6), M(0xf4efe4)); toca.position.set(0, 4.0, -0.76); cuerpo.add(toca);
+  const corona = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.13, 0.2, 14, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.25, side: THREE.DoubleSide })); corona.position.set(0, 4.17, -0.76); cuerpo.add(corona);
+  const rafaga = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.02, 6, 24), matOro); rafaga.position.set(0, 4.17, -0.8); cuerpo.add(rafaga);
+  // varales de palio y techo: van en su propio grupo, con su base sobre el cajillo, para que oscilen con retraso
+  palio.position.y = PALIO_Y; cuerpo.add(palio);
+  for (const x of [-1.25, 1.25]) for (let i = 0; i < 6; i++) { const z = -1.85 + i * 0.74; const v = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.65, 8), matPlata); v.position.set(x, 3.7 - PALIO_Y, z); palio.add(v); }
+  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), M(0x163a2a)); techo.position.y = 4.55 - PALIO_Y; palio.add(techo);
+  const glo = new THREE.Mesh(new THREE.CircleGeometry(0.7, 20), M(0xd8b04a, { metalness: 0.5, roughness: 0.4, side: THREE.DoubleSide })); glo.rotation.x = Math.PI / 2; glo.position.y = 4.5 - PALIO_Y; palio.add(glo);
   const texBamb = texCanvas(256, 64, (x, w, h) => { x.fillStyle = '#163a2a'; x.fillRect(0, 0, w, h); x.strokeStyle = '#d4a845'; x.lineWidth = 3; for (let i = 0; i < 8; i++) { x.beginPath(); x.arc(i * 32 + 16, 20, 10, 0, Math.PI * 2); x.stroke(); } x.fillStyle = '#d4a845'; for (let i = 0; i < w; i += 6) x.fillRect(i, h - 12, 3, 12); }, [3, 1]);
   const mb = M(0xffffff, { map: texBamb, side: THREE.DoubleSide });
-  for (const [w, x, z, ry] of [[2.6, 0, 1.9, 0], [2.6, 0, -1.9, 0], [3.8, 1.3, 0, Math.PI / 2], [3.8, -1.3, 0, Math.PI / 2]]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.45), mb); b.position.set(x, 4.3, z); b.rotation.y = ry; cuerpo.add(b); }
+  // Bambalinas: cuelgan del techo con holgura y se balancean por su cuenta (bisagra en el borde de arriba)
+  for (const [w, x, z, ry, eje] of [[2.6, 0, 1.9, 0, 'x'], [2.6, 0, -1.9, 0, 'x'], [3.8, 1.3, 0, Math.PI / 2, 'z'], [3.8, -1.3, 0, Math.PI / 2, 'z']]) {
+    const piv = new THREE.Group(); piv.rotation.order = 'YXZ'; piv.position.set(x, 4.525 - PALIO_Y, z); piv.rotation.y = ry; palio.add(piv);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.45), mb); b.position.y = -0.225; piv.add(b);
+    BAMBALINAS.push({ piv, eje, a: 0, v: 0 });
+  }
   const campana = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.11, 0.16, 12, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.3, side: THREE.DoubleSide })); campana.position.set(0, 2.55, 2.68); cuerpo.add(campana);
   const pl = new THREE.PointLight(0xffc27a, 2.2, 16, 2); pl.position.set(0, 3.6, 1.2); cuerpo.add(pl); }
 // Hombres de trono: por fuera en los varales exteriores; en los interiores, delante y detrás del cajillo
@@ -752,7 +763,7 @@ const ACC = {
       if (G.cans > 65) { toast('La cuadrilla no puede: está demasiado cansada para subirlo a pulso.'); G.lev.desiguales++; G.inclin = 0.05; return; }
       const h = colisiona(G.pose, CFG.pulso, G.mecida ? 0.25 : 0);
       if (h) { golpe(h, 0.5); return; }
-      G.estado = 'pulso'; G.pulsoT = 0;
+      G.estado = 'pulso'; G.pulsoT = 0; sacudirPalio(0.6);
       const zona = enPlaza(G.pose.x, G.pose.z) && Math.hypot(G.pose.x - TRIBUNA.x, G.pose.z - TRIBUNA.z) < 16;
       const pts = zona ? 25 : 8; G.luci += pts; G.cans = Math.min(100, G.cans + 12);
       toast(zona ? `¡A pulso ante la tribuna! +${pts} de lucimiento` : `A pulso. +${pts} de lucimiento`, 'bien');
@@ -791,7 +802,7 @@ function levantar() {
   G.toques = []; G.fuerteT = null; G.sec = [];
   if (h) { golpe(h, 0.6); return; }
   if (G.t0 === null) G.t0 = now;
-  G.estado = 'levantando'; G.liftT = 0; G.altObj = 0; G.ultQ = q;
+  G.estado = 'levantando'; G.liftT = 0; G.altObj = 0; G.ultQ = q; sacudirPalio(q < 0.55 ? 1.5 : 0.5);
   if (q >= 0.8) { G.lev.perfectas++; G.luci += 15; toast('¡Levantá perfecta! Todos a una. +15', 'bien'); }
   else if (q >= 0.55) { G.lev.buenas++; G.luci += 5; toast('Buena levantá. +5', 'bien'); }
   else {
@@ -806,7 +817,7 @@ function levantar() {
 
 function golpe(h, fuerza) {
   if (now - G.ultimoGolpe > 1.2) { G.golpes++; G.danio += 3 + 10 * fuerza; }
-  G.ultimoGolpe = now; G.shake = 0.35 + fuerza; sGolpe(fuerza);
+  G.ultimoGolpe = now; G.shake = 0.35 + fuerza; sGolpe(fuerza); sacudirPalio(1.2 + fuerza * 2);
   G.v = 0; G.w = 0; G.lat = 0; G.vObj = 0; G.wObj = 0; G.latObj = 0; G.giroHeld = 0; G.latHeld = 0;
   const quien = h.ob.pared ? '' : ` (${h.tier.nombre})`;
   toast(`¡Golpe! El trono ha dado con ${h.ob.label}${quien}.`);
@@ -861,6 +872,28 @@ function onBeat() {
   }
 }
 
+// El palio como un muelle amortiguado: los hombres de trono mueven la base y la parte de arriba
+// (barras de palio y techo) responde con retraso; las bambalinas, con su propia holgura, un poco después.
+function moverPalio(dt, lado, y) {
+  if (dt <= 0) return;
+  const ladoV = (lado - PAL.lado) / dt, yV = (y - PAL.y) / dt;
+  const aLat = clamp((ladoV - PAL.ladoV) / dt + G.v * G.w, -8, 8);
+  const aFwd = clamp((G.v - PAL.v) / dt, -8, 8);
+  const aVer = clamp((yV - PAL.yV) / dt, -8, 8);
+  PAL.lado = lado; PAL.ladoV = ladoV; PAL.v = G.v; PAL.y = y; PAL.yV = yV;
+  const h = Math.min(dt, 1 / 30);
+  for (let n = 0, pasos = Math.ceil(dt / h); n < pasos; n++) {
+    PAL.vz += (-30 * PAL.rz - 4 * PAL.vz + 0.4 * aLat) * h; PAL.rz += PAL.vz * h;
+    PAL.vx += (-30 * PAL.rx - 4 * PAL.vx - 0.4 * aFwd) * h; PAL.rx += PAL.vx * h;
+    for (const b of BAMBALINAS) {
+      const empuje = (b.eje === 'x' ? aFwd : aLat) * 0.35 + aVer * 0.15 + (b.eje === 'x' ? -PAL.vx : PAL.vz) * 1.5;
+      b.v += (-16 * b.a - 2.2 * b.v + empuje) * h; b.a = clamp(b.a + b.v * h, -0.5, 0.5);
+    }
+  }
+  palio.rotation.z = REDUCIDO ? 0 : PAL.rz;
+  palio.rotation.x = REDUCIDO ? 0 : PAL.rx;
+  for (const b of BAMBALINAS) b.piv.rotation.x = REDUCIDO ? 0 : b.a;
+}
 const vis = { x: 0, z: 0, a: 0 };
 function update(dt) {
   now += dt;
@@ -928,6 +961,7 @@ function update(dt) {
   trono.rotation.y = G.pose.a;
   trono.rotation.z = G.inclin;
   cuerpo.position.y = G.alt + G.pulsoDy;
+  moverPalio(dt, lado, cuerpo.position.y);
   colocarHombres(now, G.andarAmp, G.estado === 'suelo');
   llamas.forEach((l, i) => { l.scale.y = 2 + Math.sin(now * 17 + i * 1.3) * 0.35; });
   const fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a);
@@ -1122,7 +1156,7 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
-window.__trono = { get G() { return G; }, colisiona, OBS, press, release, TIERS, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
+window.__trono = { get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
 })();
 </script>
 </body>
