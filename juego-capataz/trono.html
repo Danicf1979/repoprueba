@@ -406,9 +406,31 @@ const META = CIUDAD.META;
 const RUTAS_TIPO = NIVEL.rutas;
 CIU.puntos = NIVEL.puntos || [];
 CIU.marco = CIUDAD.MARCO;
-CIU.publico = (w) => (NIVEL.modo === 'ensayo' ? 0 : JUEGO.publico(w));
+// ---------------------------------------------------------------- la hermandad
+// Lo que sale a la calle es lo que tiene la hermandad: hermanos con papeleta, enseres comprados, acólitos, presidencia
+// y la banda (contratada o propia). En el modo historia esta ficha la llenará la gestión; de momento hay dos de prueba
+// (?hermandad=nueva o ?hermandad=veterana en la dirección; por defecto, la veterana).
+const HERMANDADES = {
+  nueva: {
+    nombre: 'Hermandad de la Misericordia', anos: 3, prestigio: 0.3,
+    nazarenos: 46, tunica: 0xefeae0, capirote: 0x3a1a4a, capa: null, cinturon: 0xb89a5a,
+    insignias: ['cruz', 'bandera', 'estandarte'], faroles: 0, acolitos: { ciriales: 2, incensarios: 1 }, presidencia: 3,
+    banda: { nombre: 'una banda de música contratada', propia: false, musicos: 26, nivel: 0.45, chaqueta: 0x1c2a48, pantalon: 0x16161e, gorra: 0x1c2a48, galon: 0xc8b070 },
+  },
+  veterana: {
+    nombre: 'Real Cofradía de la Esperanza Coronada', anos: 82, prestigio: 1,
+    nazarenos: 360, tunica: 0xf4f1ea, capirote: 0x1d4a34, capa: 0x1d4a34, cinturon: 0xd8b860,
+    insignias: ['cruz', 'senatus', 'bandera', 'libro', 'guion', 'simpecado', 'estandarte'], faroles: 2, acolitos: { ciriales: 4, incensarios: 4 }, presidencia: 5,
+    banda: { nombre: 'su banda propia', propia: true, musicos: 72, nivel: 0.9, chaqueta: 0x5a1020, pantalon: 0x14141a, gorra: 0x5a1020, galon: 0xe0c060 },
+  },
+};
+let HERM_ID = 'veterana';
+try { const q = new URLSearchParams(location.search).get('hermandad'); if (HERMANDADES[q]) HERM_ID = q; } catch (e) {}
+const HERMANDAD = HERMANDADES[HERM_ID];
+// El público de la salida depende del prestigio: una hermandad recién fundada llena poco las aceras
+CIU.publico = (w) => { if (NIVEL.modo === 'ensayo') return 0; const d = JUEGO.publico(w) * (0.45 + 0.55 * HERMANDAD.prestigio); return d < 0.5 ? 0 : d; };
 CIU.coches = JUEGO.coches;
-CIU.publicoPlaza = JUEGO.publicoPlaza;
+CIU.publicoPlaza = JUEGO.publicoPlaza * (0.45 + 0.55 * HERMANDAD.prestigio);
 const TRIBUNA = PLAZA ? { x: PLAZA.x1 - 4, z: PLAZA.z0 + 3 } : { x: 1e9, z: 1e9 };
 CFG.horaInicio = NIVEL.horaInicio * 60; CFG.horaLimite = NIVEL.horaLimite * 60;
 // nombres de los cruces
@@ -1028,6 +1050,7 @@ function prepararRuta(nodos) {
     mc.castShadow = true; scene.add(mc); RUTA_OBJ.push(mc);
   }
   SAETA.hecho = false; MONJAS.hecho = false;
+  if (typeof construirCortejo === 'function' && G) construirCortejo();
 }
 
 // ---------------------------------------------------------------- el trono
@@ -1611,6 +1634,196 @@ function decir(txt) {
 // ---------------------------------------------------------------- estado
 let G, now = 0, pausa = true, camModo = 0, zoom = 1, camSnap = true;
 const CAMS = ['Detrás del trono', 'Delante, con el mayordomo', 'Desde arriba', 'Capataz de la esquina'];
+// ---------------------------------------------------------------- cortejo y banda
+// Delante del trono va el cortejo por el itinerario elegido: cruz de guía (con faroles), tramos de nazarenos con cirio
+// (cada tramo lo abre una insignia), acólitos con ciriales e incensarios y la presidencia. Detrás, la banda.
+// Todo sale de la ficha de la hermandad (HERMANDAD). En los ensayos solo sale el trono.
+const CAMINO = { pts: [], i: 0, sT: 0, sAnt: 0, vel: 0, fase: 0 };
+function construirCamino() {
+  const pts = [];
+  const empuja = (x, z, w) => { const u = pts[pts.length - 1]; if (u && Math.hypot(x - u.x, z - u.z) < 0.25) return; pts.push({ x, z, w }); };
+  const nodos = RUTA.nodos, n0 = NODOS[nodos[0]];
+  // de la nave a la primera esquina, en línea recta
+  if (n0) { const L = Math.hypot(n0.x - SALIDA.x, n0.z - SALIDA.z); for (let s = 0; s < L; s += 0.5) empuja(SALIDA.x + (n0.x - SALIDA.x) * s / L, SALIDA.z + (n0.z - SALIDA.z) * s / L, 8); }
+  for (let i = 0; i + 1 < nodos.length; i++) {
+    const t = tramoEntre(nodos[i], nodos[i + 1]); if (!t) continue;
+    const ps = t.a === nodos[i] ? t.pts : t.pts.slice().reverse();
+    for (const p of ps) empuja(p.x, p.z, p.w);
+  }
+  let s = 0;
+  pts.forEach((p, i) => {
+    if (i) s += Math.hypot(p.x - pts[i - 1].x, p.z - pts[i - 1].z); p.s = s;
+    const a = pts[Math.max(0, i - 2)], b = pts[Math.min(pts.length - 1, i + 2)];
+    let tx = b.x - a.x, tz = b.z - a.z; const l = Math.hypot(tx, tz) || 1; p.tx = tx / l; p.tz = tz / l;
+  });
+  CAMINO.pts = pts; CAMINO.i = 0; CAMINO.L = s;
+}
+// punto del camino a una distancia s (fuera de él, sigue en línea recta)
+function enCamino(s) {
+  const ps = CAMINO.pts, n = ps.length;
+  if (!n) return null;
+  if (s <= 0) { const p = ps[0]; return { x: p.x + p.tx * s, z: p.z + p.tz * s, tx: p.tx, tz: p.tz, w: p.w }; }
+  if (s >= CAMINO.L) return null;   // ya ha entrado en el recorrido oficial
+  let lo = 0, hi = n - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (ps[m].s <= s) lo = m; else hi = m; }
+  const a = ps[lo], b = ps[hi], k = (s - a.s) / Math.max(1e-6, b.s - a.s);
+  return { x: a.x + (b.x - a.x) * k, z: a.z + (b.z - a.z) * k, tx: a.tx + (b.tx - a.tx) * k, tz: a.tz + (b.tz - a.tz) * k, w: a.w + (b.w - a.w) * k };
+}
+// por dónde va el trono en el camino (proyección, buscando cerca de la última vez)
+function sDelTrono() {
+  const ps = CAMINO.pts; if (!ps.length) return 0;
+  const x = G.pose.x, z = G.pose.z;
+  let mejor = 1e9, im = CAMINO.i;
+  const busca = (i0, i1) => { for (let i = Math.max(0, i0); i < Math.min(ps.length, i1); i++) { const d = (ps[i].x - x) ** 2 + (ps[i].z - z) ** 2; if (d < mejor) { mejor = d; im = i; } } };
+  busca(CAMINO.i - 60, CAMINO.i + 60);
+  if (mejor > 15 * 15) busca(0, ps.length);
+  CAMINO.i = im;
+  const p = ps[im];
+  return p.s + ((x - p.x) * p.tx + (z - p.z) * p.tz);
+}
+
+// ---- figuras
+function geoNazareno(capa) {
+  const tun = new THREE.LatheGeometry(V2([[0.001, 0.02], [0.27, 0.02], [0.25, 0.4], [0.21, 0.85], [0.2, 1.15], [0.17, 1.32], [0.001, 1.36]]), 12);
+  // antifaz: cae del capirote sobre la cabeza y los hombros hasta el pecho
+  const capirote = new THREE.LatheGeometry(V2([[0.001, 1.08], [0.25, 1.1], [0.22, 1.24], [0.17, 1.38], [0.13, 1.5], [0.09, 1.72], [0.001, 2.3]]), 14);
+  const cint = new THREE.TorusGeometry(0.205, 0.025, 5, 16); cint.rotateX(Math.PI / 2); cint.translate(0, 0.98, 0);
+  const capaG = capa ? (() => { const g = new THREE.CylinderGeometry(0.24, 0.32, 1.15, 12, 1, true, Math.PI * 0.62, Math.PI * 0.76); g.translate(0, 0.72, -0.02); return g; })() : null;
+  const mangas = [-1, 1].map((sx) => { const g = new THREE.CylinderGeometry(0.055, 0.085, 0.4, 8); g.translate(0, -0.2, 0); g.rotateX(-0.75); g.translate(sx * 0.15, 1.1, 0.04); return g; });
+  return { tunica: unirGeos([tun, ...mangas]), capirote, cint, capa: capaG };
+}
+const NAZ_GEO = geoNazareno(!!HERMANDAD.capa);
+const G_CIRIO = (() => { const g = new THREE.CylinderGeometry(0.022, 0.024, 1.05, 6); g.translate(0, 0.52, 0); g.rotateX(0.12); g.translate(0.2, 0.5, 0.17); return g; })();
+const G_LLAMA = (() => { const g = new THREE.SphereGeometry(0.03, 6, 5); g.scale(1, 2, 1); g.translate(0.2, 1.63, 0.3); return g; })();
+const G_VARA = (() => { const g = new THREE.CylinderGeometry(0.018, 0.018, 2.4, 6); g.translate(0.16, 1.2, 0.22); return g; })();
+const G_VARITA = (() => { const g = new THREE.CylinderGeometry(0.014, 0.014, 1.25, 6); g.translate(0.24, 0.62, 0.2); return g; })();
+// remates de las insignias, en lo alto de la vara
+const REMATE = {
+  cruz: (() => { const a = new THREE.BoxGeometry(0.09, 1.0, 0.07), b = new THREE.BoxGeometry(0.62, 0.09, 0.07); a.translate(0, 0.5, 0); b.translate(0, 0.72, 0); const g = unirGeos([a, b]); g.translate(0.16, 2.2, 0.22); return g; })(),
+  bandera: (() => { const g = new THREE.PlaneGeometry(0.85, 1.05); g.translate(0.45, -0.5, 0); g.translate(0.16, 2.35, 0.22); return g; })(),
+  senatus: (() => { const g = new THREE.PlaneGeometry(0.5, 0.75); g.translate(0.16, 1.95, 0.24); return g; })(),
+  libro: (() => { const g = new THREE.BoxGeometry(0.34, 0.44, 0.08); g.translate(0, 0.95, 0.32); return g; })(),
+  guion: (() => { const g = new THREE.PlaneGeometry(0.55, 0.8); g.translate(0.16, 2.0, 0.24); return g; })(),
+  simpecado: (() => { const g = new THREE.PlaneGeometry(0.62, 0.95); g.translate(0.16, 1.85, 0.24); return g; })(),
+  estandarte: (() => { const g = new THREE.PlaneGeometry(0.6, 1.0); g.translate(0.16, 1.85, 0.24); return g; })(),
+  farol: (() => { const g = new THREE.CylinderGeometry(0.1, 0.07, 0.3, 6); g.translate(0.16, 2.45, 0.22); return g; })(),
+  cirial: (() => { const g = new THREE.CylinderGeometry(0.05, 0.03, 0.22, 8); g.translate(0.16, 2.45, 0.22); return g; })(),
+  incensario: (() => { const g = new THREE.SphereGeometry(0.08, 8, 6); g.translate(0.26, 0.55, 0.28); return g; })(),
+};
+const COLOR_REMATE = { cruz: 0x3a2414, bandera: HERMANDAD.capirote, senatus: 0x6a1a24, libro: 0x5a1a24, guion: 0x6a1a24, simpecado: HERMANDAD.capirote, estandarte: 0x6a1a24, farol: 0xe2ac4a, cirial: 0xe2ac4a, incensario: 0xd0d0d8 };
+// banda: gorra, instrumento (cornetas y trompetas o tambores)
+const G_GORRA = (() => { const g = new THREE.CylinderGeometry(0.11, 0.105, 0.11, 10); g.translate(0, 1.76, 0); const v = new THREE.CylinderGeometry(0.115, 0.115, 0.012, 10, 1, false, -Math.PI / 2, Math.PI); v.translate(0, 1.71, 0.04); return unirGeos([g, v]); })();
+const G_METAL = (() => { const tubo = new THREE.CylinderGeometry(0.012, 0.012, 0.42, 6); tubo.rotateX(Math.PI / 2); tubo.translate(0, 1.58, 0.3); const pab = new THREE.ConeGeometry(0.075, 0.16, 10, 1, true); pab.rotateX(-Math.PI / 2); pab.translate(0, 1.58, 0.56); return unirGeos([tubo, pab]); })();
+const G_TAMBOR = (() => { const g = new THREE.CylinderGeometry(0.19, 0.19, 0.2, 12); g.translate(0, 0.92, 0.22); return g; })();
+
+const CORTEJO = { grupos: [], miembros: [], humo: null };
+function grupoInst(geo, mat, n) { const m = new THREE.InstancedMesh(geo, mat, Math.max(1, n)); m.count = n; m.castShadow = true; m.frustumCulled = false; scene.add(m); CORTEJO.grupos.push(m); return m; }
+function construirCortejo() {
+  for (const m of CORTEJO.grupos) { scene.remove(m); m.geometry.dispose && 0; }
+  CORTEJO.grupos.length = 0; CORTEJO.miembros.length = 0;
+  construirCamino();
+  if (NIVEL.modo === 'ensayo') return;
+  const H = HERMANDAD, r2 = rng(H.anos * 31 + H.nazarenos);
+  // --- la fila, de delante (cruz de guía) hacia atrás (el trono); d = metros por delante del trono
+  const fila = [];   // { tipo, lado, extra }
+  const pareja = (tipo, extra) => { fila.push({ tipo, lado: -1, extra, paso: 0 }); fila.push({ tipo, lado: 1, extra, paso: 1.7 }); };
+  fila.push({ tipo: 'insignia', lado: 0, extra: 'cruz', paso: 0 });
+  for (let k = 0; k < H.faroles; k++) fila.push({ tipo: 'insignia', lado: k ? 1 : -1, extra: 'farol', paso: k ? 1.6 : 0 });
+  const ins = H.insignias.slice(1), nTramos = ins.length + 1, porTramo = Math.ceil(H.nazarenos / 2 / nTramos);
+  let quedan = H.nazarenos;
+  for (let tr = 0; tr < nTramos; tr++) {
+    if (tr > 0) { fila.push({ tipo: 'insignia', lado: 0, extra: ins[tr - 1], paso: 2.2 }); fila.push({ tipo: 'varita', lado: -1, extra: null, paso: 0 }); fila.push({ tipo: 'varita', lado: 1, extra: null, paso: 0 }); }
+    for (let k = 0; k < porTramo && quedan > 0; k++, quedan -= 2) pareja('nazareno', null);
+  }
+  fila.push({ tipo: 'persona', lado: 0, extra: 'preste', paso: 2.4 });
+  for (let k = 0; k < H.presidencia; k++) fila.push({ tipo: 'persona', lado: (k % 3) - 1, extra: 'presidencia', paso: k % 3 ? 0 : 1.3 });
+  for (let k = 0; k < H.acolitos.incensarios; k++) fila.push({ tipo: 'persona', lado: k % 2 ? 1 : -1, extra: 'incensario', paso: k % 2 ? 0 : 1.2 });
+  for (let k = 0; k < H.acolitos.ciriales; k++) fila.push({ tipo: 'persona', lado: k % 2 ? 1 : -1, extra: 'cirial', paso: k % 2 ? 0 : 1.2 });
+  // distancias: del trono hacia delante
+  // cada miembro va «paso» metros detrás del anterior (0 = al lado)
+  let d = 9.5; for (let i = fila.length - 1; i >= 0; i--) { fila[i].d = d; d += Math.max(0, fila[i].paso); }
+  // --- la banda, detrás del trono, en filas
+  const B = H.banda, porFila = B.musicos > 40 ? 6 : 4, nFilas = Math.ceil(B.musicos / porFila);
+  fila.push({ tipo: 'persona', lado: 0, extra: 'banderin', d: -9.5 });
+  fila.push({ tipo: 'persona', lado: 0, extra: 'director', d: -11 });
+  for (let f = 0; f < nFilas; f++) for (let c = 0; c < porFila && f * porFila + c < B.musicos; c++) {
+    const metal = f < nFilas - 2;
+    fila.push({ tipo: 'persona', lado: (c - (porFila - 1) / 2) / ((porFila - 1) / 2), extra: metal ? 'metal' : 'tambor', d: -12.6 - f * 1.25, banda: true, col: c });
+  }
+  // --- instancias por tipo
+  const cuenta = (fn) => fila.filter(fn).length;
+  const nNaz = cuenta((f) => f.tipo === 'nazareno' || f.tipo === 'insignia' || f.tipo === 'varita');
+  const matTun = M(H.tunica, { roughness: 0.85 }), matCap = M(H.capirote, { roughness: 0.8 });
+  const gTun = grupoInst(NAZ_GEO.tunica, matTun, nNaz), gCap = grupoInst(NAZ_GEO.capirote, matCap, nNaz), gCin = grupoInst(NAZ_GEO.cint, M(H.cinturon, { roughness: 0.7 }), nNaz);
+  const gCapa = NAZ_GEO.capa ? grupoInst(NAZ_GEO.capa, M(H.capa, { roughness: 0.8, side: THREE.DoubleSide }), nNaz) : null;
+  const nCirio = cuenta((f) => f.tipo === 'nazareno');
+  const gCirio = grupoInst(G_CIRIO, M(0xece2c8, { roughness: 0.6, emissive: 0x140e06 }), nCirio), gLlama = grupoInst(G_LLAMA, matLlama, nCirio);
+  const nVara = cuenta((f) => f.tipo === 'insignia' && f.extra !== 'libro') + cuenta((f) => f.extra === 'cirial' || f.extra === 'banderin');
+  const gVara = grupoInst(G_VARA, matOro, nVara), gVarita = grupoInst(G_VARITA, matOro, cuenta((f) => f.tipo === 'varita' || f.extra === 'presidencia'));
+  const remates = {};
+  for (const k of Object.keys(REMATE)) { const n = cuenta((f) => f.extra === k); if (n) remates[k] = grupoInst(REMATE[k], k === 'farol' || k === 'cirial' || k === 'cruz' ? matOro : M(COLOR_REMATE[k], { roughness: 0.6, side: THREE.DoubleSide, metalness: k === 'incensario' ? 0.9 : 0.1 }), n); }
+  const nLuzR = cuenta((f) => f.extra === 'farol' || f.extra === 'cirial'), gLuzR = grupoInst((() => { const g = new THREE.SphereGeometry(0.035, 6, 5); g.scale(1, 2, 1); g.translate(0.16, 2.62, 0.22); return g; })(), matLlama, nLuzR);
+  const nPer = cuenta((f) => f.tipo === 'persona');
+  const PG = PUB_GEO.hombre;
+  const gP = [grupoInst(PG.piernas, M(0xffffff, { roughness: 0.8 }), nPer), grupoInst(PG.ropa, M(0xffffff, { roughness: 0.8 }), nPer), grupoInst(PG.piel, M(0xffffff, { roughness: 0.55 }), nPer), grupoInst(PG.pelo, M(0xffffff, { roughness: 0.9 }), nPer)];
+  const nBanda = cuenta((f) => f.banda);
+  const gGorra = grupoInst(G_GORRA, M(B.gorra, { roughness: 0.6 }), nBanda + 1);
+  const gMetal = grupoInst(G_METAL, M(0xe8c060, { metalness: 1, roughness: 0.22 }), cuenta((f) => f.extra === 'metal'));
+  const gTambor = grupoInst(G_TAMBOR, M(0xd8d0c0, { roughness: 0.5 }), cuenta((f) => f.extra === 'tambor'));
+  const ix = {}; const sig = (k) => (ix[k] = (ix[k] || 0) + 1) - 1;
+  const col = new THREE.Color(), pick = (a) => a[Math.floor(r2() * a.length)];
+  for (const f of fila) {
+    const m = { d: f.d, lado: f.lado, banda: !!f.banda, partes: [], fase: r2() * 6.28, esc: 0.94 + r2() * 0.1 };
+    if (f.tipo !== 'persona') {
+      const k = sig('naz'); m.partes.push([gTun, k], [gCap, k], [gCin, k]); if (gCapa) m.partes.push([gCapa, k]);
+      if (f.tipo === 'nazareno') { const c = sig('cirio'); m.partes.push([gCirio, c], [gLlama, c]); }
+      if (f.tipo === 'varita') m.partes.push([gVarita, sig('varita')]);
+      if (f.tipo === 'insignia') { if (f.extra !== 'libro') m.partes.push([gVara, sig('vara')]); m.partes.push([remates[f.extra], sig('r' + f.extra)]); if (f.extra === 'farol') m.partes.push([gLuzR, sig('luzr')]); }
+    } else {
+      const k = sig('per'); m.partes.push(...gP.map((g) => [g, k]));
+      const e = f.extra;
+      const [pierna, ropa] = f.banda || e === 'banderin' || e === 'director' ? [B.pantalon, B.chaqueta] : e === 'presidencia' || e === 'preste' ? [0x16161c, 0x16161c] : [0x8a1a22, 0xf2efe8];
+      gP[0].setColorAt(k, col.setHex(pierna)); gP[1].setColorAt(k, col.setHex(ropa)); gP[2].setColorAt(k, col.setHex(pick(PIEL))); gP[3].setColorAt(k, col.setHex(pick(PELO)));
+      if (f.banda || e === 'banderin' || e === 'director') m.partes.push([gGorra, sig('gorra')]);
+      if (e === 'metal') m.partes.push([gMetal, sig('metal')]);
+      if (e === 'tambor') m.partes.push([gTambor, sig('tambor')]);
+      if (e === 'presidencia') m.partes.push([gVarita, sig('varita')]);
+      if (e === 'cirial') { m.partes.push([gVara, sig('vara')], [remates.cirial, sig('rcirial')], [gLuzR, sig('luzr')]); }
+      if (e === 'incensario') m.partes.push([remates.incensario, sig('rincensario')]);
+      if (e === 'banderin') m.partes.push([gVara, sig('vara')]);
+    }
+    CORTEJO.miembros.push(m);
+  }
+  for (const g of gP) if (g.instanceColor) g.instanceColor.needsUpdate = true;
+  CORTEJO.largo = d; CORTEJO.listo = true;
+  actualizarCortejo(0, true);
+}
+const _dm = new THREE.Object3D();
+function actualizarCortejo(dt, forzar) {
+  if (!CORTEJO.miembros.length || !G) return;
+  const s = sDelTrono();
+  const v = dt > 0 ? (s - CAMINO.sAnt) / dt : 0; CAMINO.sAnt = s;
+  CAMINO.vel += (Math.abs(v) - CAMINO.vel) * Math.min(1, dt * 3);
+  const andando = CAMINO.vel > 0.05;
+  CAMINO.fase += dt * (andando ? 5.5 : 0);
+  const B = G.banda, tocando = B && B.estado === 'marcha', tAhora = performance.now() / 1000;
+  for (const m of CORTEJO.miembros) {
+    const p = enCamino(s + m.d);
+    if (!p) { for (const [g, k] of m.partes) { _dm.position.set(0, -50, 0); _dm.scale.set(0.001, 0.001, 0.001); _dm.updateMatrix(); g.setMatrixAt(k, _dm.matrix); } continue; }
+    const nx = p.tz, nz = -p.tx;   // izquierda según avanza
+    const sep = m.banda ? Math.min(2.2, p.w * 0.2) : m.lado ? Math.min(1.7, Math.max(0.9, p.w * 0.19)) : 0;
+    const x = p.x + nx * m.lado * sep, z = p.z + nz * m.lado * sep;
+    const fase = CAMINO.fase + m.fase * 0.15;
+    let bob = andando ? Math.abs(Math.sin(fase)) * 0.035 : 0, bal = andando ? Math.sin(fase) * 0.03 : 0;
+    if (m.banda && tocando) bob += Math.max(0, Math.sin(tAhora * 6.6 + m.fase * 0.05)) * 0.025;
+    _dm.position.set(x, Y(x, z) + bob, z);
+    _dm.rotation.set(0, Math.atan2(p.tx, p.tz), bal);
+    _dm.scale.set(m.esc, m.esc, m.esc); _dm.updateMatrix();
+    for (const [g, k] of m.partes) g.setMatrixAt(k, _dm.matrix);
+  }
+  for (const g of CORTEJO.grupos) g.instanceMatrix.needsUpdate = true;
+}
+
 function nuevaPartida() {
   G = {
     pose: { ...SALIDA }, prev: { ...SALIDA },
@@ -2477,7 +2690,7 @@ addEventListener('resize', resize);
 trono.traverse((o) => { if (o.isMesh) o.castShadow = true; });
 // Halos de las farolas
 scene.add(halos(FAROLAS.map((f) => new THREE.Vector3(f.x, f.y + 0.3, f.z)), 1.8));
-prepararRuta(rutaSel); nuevaPartida(); resize(); aplicarCalidad();
+prepararRuta(rutaSel); nuevaPartida(); construirCortejo(); resize(); aplicarCalidad();
 dibujarPlano(); infoRuta(); irAPaso(1);
 { const d = leerGuardado(); if (d) { $('#b-continuar').hidden = false; const otro = d.nivel !== NIVEL_I; $('#guardado').textContent = `Tienes una partida guardada${otro ? ` del nivel «${NIVELES_J[d.nivel].titulo}»` : ''} en ${d.lugar}, a las ${hhmm(d.hora)} (${d.golpes} golpes).`;
   let cont = false; try { cont = sessionStorage.getItem(JUEGO.clave + '-continuar') === '1'; sessionStorage.removeItem(JUEGO.clave + '-continuar'); } catch (e) {}
@@ -2499,6 +2712,7 @@ function loop(t) {
   for (let i = 0; i < ff; i++) update(pausa ? 0 : dt);
   if (!pausa) eventosEnsayo(dt * ff);
   $('#b-rapido').classList.toggle('on', RAPIDO); $('#b-rapido').textContent = RAPIDO ? (ff > 1 ? '⏩ ×3' : '⏩ espera') : '⏩ Rápido';
+  actualizarCortejo(dt);
   updateCam(dt);
   if (t - ultimoHud > 100) { hud(); ultimoHud = t; }
   dibujarMapa();
@@ -2508,7 +2722,7 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
-window.__trono = { puedeRapido, imprevisto, eventosEnsayo, get EVENTOS() { return EVENTOS; }, get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, prepararRuta, RUTAS_TIPO, TR, NODOS, TRAMOS, libre, zonaEn, CIUDAD, NIVEL, SALIDA, JUEGO, guardarPartida, leerGuardado, cargarPartida, get RUTA() { return RUTA; }, get composer() { return composer; }, elegirRuta, get rutaSel() { return rutaSel; }, get vista() { return VISTA; }, set vista(v) { VISTA = v; }, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
+window.__trono = { puedeRapido, imprevisto, eventosEnsayo, get EVENTOS() { return EVENTOS; }, get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, prepararRuta, RUTAS_TIPO, TR, NODOS, TRAMOS, libre, zonaEn, CIUDAD, NIVEL, SALIDA, JUEGO, guardarPartida, leerGuardado, cargarPartida, get RUTA() { return RUTA; }, get composer() { return composer; }, elegirRuta, get rutaSel() { return rutaSel; }, get CAMINO() { return CAMINO; }, enCamino, HERMANDAD, get vista() { return VISTA; }, set vista(v) { VISTA = v; }, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
 })();
 </script>
 </body>
