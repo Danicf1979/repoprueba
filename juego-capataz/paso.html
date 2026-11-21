@@ -606,7 +606,13 @@ const texSuelo = texCanvas(512, 512, (x, w, h) => {
   const p = g.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, Hs(p.getX(i), p.getZ(i)) - 0.01);
   g.computeVertexNormals();
   const rep = EST === 'malaga' ? 3 : EST === 'sevilla' ? 5 : 8; texSuelo.repeat.set(W / rep, D / rep);
-  const s = new THREE.Mesh(g, M(0xffffff, { map: texSuelo, roughness: EST === 'malaga' ? 0.38 : EST === 'sevilla' ? 0.72 : 0.85 })); s.receiveShadow = true; scene.add(s); }
+  const s = new THREE.Mesh(g, M(0xffffff, { map: texSuelo, roughness: EST === 'malaga' ? 0.38 : EST === 'sevilla' ? 0.72 : 0.85 })); s.receiveShadow = true; scene.add(s);
+  // texturas fotográficas con relieve (CC0, Poly Haven), reducidas a 512 px; si no cargan, se queda la dibujada
+  const pre = EST === 'malaga' ? 'granito' : EST === 'industrial' ? null : 'adoq';
+  if (pre) { const tl = new THREE.TextureLoader(), k = pre === 'granito' ? 2.6 : 2.0;
+    const ld = (n, srgb, cb) => tl.load('tex/' + n + '.jpg', (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / k, D / k); t.anisotropy = 8; if (srgb) t.encoding = THREE.sRGBEncoding; cb(t); s.material.needsUpdate = true; });
+    ld(pre + '_diff', true, (t) => { s.material.map = t; s.material.color.setHex(pre === 'granito' ? 0xd8d0c4 : 0xcfc4b4); });
+    ld(pre + '_nor', false, (t) => { s.material.normalMap = t; s.material.normalScale.set(1.2, 1.2); }); } }
 // Fachadas: cada tramo del contorno es un paño de fachada; todos los del mismo estilo van en una sola malla
 function texFachada(base, banda, persiana, tipo) {
   return texCanvas(512, 512, (x, w, h) => {
@@ -673,6 +679,7 @@ const TEX_NAVE = texFachada('#bdb6aa', '#000', '#000', 'nave');
     G.tex.repeat.set(1, 1);
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(G.pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(G.uv, 2)); g.setIndex(G.idx); g.computeVertexNormals();
     const m = new THREE.Mesh(g, M(0xffffff, { map: G.tex, roughness: 0.9, side: THREE.DoubleSide })); m.receiveShadow = true; scene.add(m);
+    new THREE.TextureLoader().load('tex/estuco_nor.jpg', (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 2.5); m.material.normalMap = t; m.material.normalScale.set(0.9, 0.9); m.material.needsUpdate = true; });
   }
   if (cornisa.length) { const pos = [], idx = []; cornisa.forEach(([a, b, y], i) => { const n = i * 4; pos.push(a[0], y, a[1], b[0], y, b[1], b[0], y + 0.35, b[1], a[0], y + 0.35, a[1]); idx.push(n, n + 1, n + 2, n, n + 2, n + 3); });
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xd9cfbd, roughness: 0.8, side: THREE.DoubleSide }))); }
@@ -878,35 +885,55 @@ if (EST !== 'industrial') for (const t of TRAMOS) for (const lado of [-1, 1]) {
 // ---- Lo que depende del itinerario: público en las calles cortadas, coches aparcados en las demás
 let RUTA = { nodos: Object.values(RUTAS_TIPO)[0].nodos.slice(), tramos: new Set() };
 const RUTA_OBJ = [];
-const PUB_GEO = (() => {
-  const piernas = unirGeos([-0.09, 0.09].map((x) => { const g = new THREE.CylinderGeometry(0.07, 0.065, 0.82, 7); g.translate(x, 0.41, 0); return g; }));
-  const torso = new THREE.LatheGeometry([[0, 0.78], [0.16, 0.8], [0.17, 1.0], [0.2, 1.3], [0.12, 1.43], [0, 1.45]].map(([r, y]) => new THREE.Vector2(r, y)), 9); torso.scale(1, 1, 0.68);
-  const brazos = [-1, 1].map((s) => { const g = new THREE.CylinderGeometry(0.05, 0.045, 0.62, 6); g.rotateZ(s * 0.1); g.translate(s * 0.22, 1.08, 0); return g; });
-  const ropa = unirGeos([torso, ...brazos]);
-  const cab = new THREE.SphereGeometry(0.105, 9, 7); cab.scale(1, 1.15, 1.05); cab.translate(0, 1.57, 0);
-  const cuello = new THREE.CylinderGeometry(0.045, 0.05, 0.1, 6); cuello.translate(0, 1.46, 0);
-  const manos = [-1, 1].map((s) => { const g = new THREE.SphereGeometry(0.045, 5, 4); g.translate(s * 0.25, 0.77, 0); return g; });
-  const piel = unirGeos([cab, cuello, ...manos]);
-  const pelo = new THREE.SphereGeometry(0.113, 9, 6, 0, Math.PI * 2, 0, Math.PI / 2.1); pelo.scale(1, 1.1, 1.08); pelo.translate(0, 1.6, -0.012);
-  return { piernas, ropa, piel, pelo };
-})();
+// Personas: dos tipos (hombre y mujer) con piernas, zapatos, cadera, torso, brazos doblados, cuello, cabeza y pelo
+const V2 = (a) => a.map(([r, y]) => new THREE.Vector2(r, y));
+function geoPersona(mujer) {
+  const cil = (r0, r1, h, x, y, z, rx = 0, rz = 0) => { const g = new THREE.CylinderGeometry(r1, r0, h, 8); g.translate(0, h / 2, 0); g.rotateX(rx); g.rotateZ(rz); g.translate(x, y, z); return g; };
+  const zap = [-1, 1].map((sx) => { const g = new THREE.BoxGeometry(0.1, 0.07, 0.25); g.translate(sx * 0.095, 0.035, 0.04); return g; });
+  let bajo;
+  if (mujer) { const falda = new THREE.LatheGeometry(V2([[0.001, 0.45], [0.23, 0.47], [0.2, 0.7], [0.16, 0.95], [0.001, 0.97]]), 12); falda.scale(1, 1, 0.8); bajo = unirGeos([falda, cil(0.045, 0.05, 0.47, -0.08, 0.02, 0), cil(0.045, 0.05, 0.47, 0.08, 0.02, 0), ...zap]); }
+  else bajo = unirGeos([cil(0.058, 0.08, 0.92, -0.095, 0.04, 0), cil(0.058, 0.08, 0.92, 0.095, 0.04, 0), ...zap]);
+  const torso = new THREE.LatheGeometry(V2(mujer ? [[0.001, 0.9], [0.16, 0.93], [0.14, 1.06], [0.165, 1.24], [0.18, 1.36], [0.12, 1.44], [0.001, 1.46]] : [[0.001, 0.9], [0.17, 0.92], [0.165, 1.06], [0.19, 1.25], [0.215, 1.37], [0.13, 1.46], [0.001, 1.48]]), 12); torso.scale(1, 1, 0.62);
+  const ancho = mujer ? 0.19 : 0.215;
+  const sup = [-1, 1].map((sx) => { const g = new THREE.CylinderGeometry(0.05, 0.046, 0.3, 8); g.translate(0, -0.15, 0); g.rotateZ(sx * 0.1); g.translate(sx * (ancho + 0.02), 1.42, 0); return g; });
+  const ant = [-1, 1].map((sx) => { const g = new THREE.CylinderGeometry(0.044, 0.038, 0.28, 8); g.translate(0, -0.14, 0); g.rotateX(0.45); g.translate(sx * (ancho + 0.045), 1.13, 0.0); return g; });
+  const ropa = unirGeos([torso, ...sup, ...ant]);
+  const cab = new THREE.SphereGeometry(0.1, 14, 10); cab.scale(0.9, 1.15, 1); cab.translate(0, 1.62, 0.005);
+  const nariz = new THREE.ConeGeometry(0.016, 0.04, 5); nariz.rotateX(Math.PI / 2); nariz.translate(0, 1.6, 0.105);
+  const orejas = [-1, 1].map((sx) => { const g = new THREE.SphereGeometry(0.022, 6, 5); g.scale(0.5, 1, 0.8); g.translate(sx * 0.09, 1.61, 0); return g; });
+  const cuello = new THREE.CylinderGeometry(0.045, 0.05, 0.12, 8); cuello.translate(0, 1.5, 0);
+  const manos = [-1, 1].map((sx) => { const g = new THREE.SphereGeometry(0.043, 8, 6); g.scale(0.8, 1.1, 1); g.translate(sx * (ancho + 0.045), 0.88, 0.13); return g; });
+  const piel = unirGeos([cab, nariz, ...orejas, cuello, ...manos]);
+  const casco = new THREE.SphereGeometry(0.108, 14, 8, 0, Math.PI * 2, 0, Math.PI / (mujer ? 1.75 : 2.15)); casco.scale(0.93, 1.12, 1.04); casco.translate(0, 1.635, -0.012);
+  const pelo = mujer ? unirGeos([casco, (() => { const g = new THREE.SphereGeometry(0.1, 10, 8); g.scale(0.95, 1.6, 0.55); g.translate(0, 1.5, -0.07); return g; })()]) : casco;
+  return { piernas: bajo, ropa, piel, pelo };
+}
+const PUB_GEO = { hombre: geoPersona(false), mujer: geoPersona(true) };
 const ROPA = [0x1f2230, 0x2a2f45, 0x3a2a2a, 0x2b3a2e, 0x4a4036, 0x6b5d4c, 0x8a7a66, 0x2a2a2e, 0x5a2a32, 0x24354f, 0xb9ad98, 0x7a6a8a, 0x8a3a2a, 0xd8cdb8];
 const PANT = [0x1a1a22, 0x23283a, 0x2e2a26, 0x3a3a40, 0x4a5a7a, 0x5a4a3a];
 const PIEL = [0xc6976f, 0xd9b08a, 0xa97a55, 0xe3c2a0, 0x8a5a3a, 0xf0d0b0];
 const PELO = [0x1a120c, 0x2a1d12, 0x111111, 0x5a4030, 0x8a6a40, 0x9a9a9a, 0xd0c0a0];
 function crearPublico(lista) {
   const n = lista.length; if (!n) return;
-  const mk = (geo, rough) => { const m = new THREE.InstancedMesh(geo, M(0xffffff, { roughness: rough }), n); m.castShadow = true; m.receiveShadow = true; scene.add(m); RUTA_OBJ.push(m); return m; };
-  const mP = mk(PUB_GEO.piernas, 0.8), mR = mk(PUB_GEO.ropa, 0.85), mS = mk(PUB_GEO.piel, 0.6), mH = mk(PUB_GEO.pelo, 0.9);
-  const dm = new THREE.Object3D(), col = new THREE.Color(), r2 = rng(n * 13 + 7), pick = (a) => a[Math.floor(r2() * a.length)];
-  lista.forEach(([x, y, z, r, e], i) => {
-    const mantilla = r2() < 0.08, nino = e < 0.8;
-    dm.position.set(x, Y(x, z) + y, z); dm.rotation.set(0, r, 0); dm.scale.set(e, e, e); dm.updateMatrix();
-    for (const m of [mP, mR, mS, mH]) m.setMatrixAt(i, dm.matrix);
-    mP.setColorAt(i, col.setHex(mantilla ? 0x101012 : pick(PANT)));
-    mR.setColorAt(i, col.setHex(mantilla ? 0x0c0c10 : nino ? pick([0x2a4a8a, 0x8a2a3a, 0x3a6a3a, 0xd8cdb8]) : pick(ROPA)));
-    mS.setColorAt(i, col.setHex(pick(PIEL))); mH.setColorAt(i, col.setHex(mantilla ? 0x050505 : pick(PELO)));
-  });
+  const r2 = rng(n * 13 + 7), pick = (a) => a[Math.floor(r2() * a.length)];
+  const tipos = { hombre: [], mujer: [] };
+  lista.forEach((p) => tipos[r2() < 0.48 ? 'mujer' : 'hombre'].push(p));
+  for (const [tipo, l] of Object.entries(tipos)) {
+    if (!l.length) continue;
+    const G2 = PUB_GEO[tipo], k = l.length;
+    const mk = (geo, rough) => { const m = new THREE.InstancedMesh(geo, M(0xffffff, { roughness: rough }), k); m.castShadow = true; m.receiveShadow = true; scene.add(m); RUTA_OBJ.push(m); return m; };
+    const mP = mk(G2.piernas, 0.8), mR = mk(G2.ropa, 0.85), mS = mk(G2.piel, 0.55), mH = mk(G2.pelo, 0.9);
+    const dm = new THREE.Object3D(), col = new THREE.Color();
+    l.forEach(([x, y, z, r, e], i) => {
+      const mantilla = tipo === 'mujer' && r2() < 0.15, nino = e < 0.8;
+      dm.position.set(x, Y(x, z) + y, z); dm.rotation.set(0, r, 0); dm.scale.set(e, e * (0.96 + r2() * 0.08), e); dm.updateMatrix();
+      for (const m of [mP, mR, mS, mH]) m.setMatrixAt(i, dm.matrix);
+      mP.setColorAt(i, col.setHex(mantilla ? 0x0c0c10 : tipo === 'mujer' ? pick([0x1a1a22, 0x2a2f45, 0x3a2a2a, 0x5a2a32, 0x24354f, 0x2b3a2e]) : pick(PANT)));
+      mR.setColorAt(i, col.setHex(mantilla ? 0x0c0c10 : nino ? pick([0x2a4a8a, 0x8a2a3a, 0x3a6a3a, 0xd8cdb8]) : pick(ROPA)));
+      mS.setColorAt(i, col.setHex(pick(PIEL)));
+      mH.setColorAt(i, col.setHex(mantilla ? 0x050505 : pick(PELO)));
+    });
+  }
 }
 // gente en una franja cualquiera (cuadrilátero), mirando hacia (dx, dz)
 function franjaQ(q, dx, dz, lista) {
@@ -1985,7 +2012,7 @@ function imprevisto() {
   const ob = add({ kind: 'poly', pts, minH: 0, maxH: coche ? 1.5 : 1.8, label: coche ? 'un coche que se ha saltado el corte' : 'unos curiosos que se han metido delante', ruta: true });
   const mallas = [];
   if (coche) mallas.push(cajaEn(pts, 0, 1.5, 0xc8b070));
-  else { const lista = []; franjaQ(pts, -ax, -az, lista); OBS.pop(); crearPublico(lista); mallas.push(...RUTA_OBJ.splice(RUTA_OBJ.length - 4, 4)); }
+  else { const lista = [], n0 = RUTA_OBJ.length; franjaQ(pts, -ax, -az, lista); OBS.pop(); crearPublico(lista); mallas.push(...RUTA_OBJ.splice(n0)); }
   EVENTOS.push({ ob, mallas, fin: now + (coche ? 16 : 11) });
   toast(coche ? '¡Un coche se ha saltado el corte y se ha quedado atravesado delante! Para y espera a que la policía lo saque.' : '¡Un grupo de curiosos se ha metido delante para hacer fotos! Para o rodéalos.');
   RAPIDO = false; return true;
