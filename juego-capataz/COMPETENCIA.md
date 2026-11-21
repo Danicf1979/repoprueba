@@ -1,5 +1,7 @@
 # Otros juegos de Semana Santa (noviembre de 2026)
 
+**El documento al día, con los 10 juegos revisados, está en Claude Docs:** [Juegos de Semana Santa: referencias para Capataz](https://claude.ai/artifact/L97RmkMe8H432oV3Vj9HET). Este archivo es el primer resumen.
+
 Revisado a partir de las descripciones públicas de sus cuentas de TikTok (textos y cifras, no los vídeos). Sirve para
 saber qué ya existe, qué gusta y en qué nos diferenciamos. **No se copia ningún juego:** ni nombres, ni personajes,
 ni arte, ni música; solo se aprende del género.
