@@ -429,6 +429,12 @@ const HERMANDADES = {
 let HERM_ID = 'veterana';
 try { const q = new URLSearchParams(location.search).get('hermandad'); if (HERMANDADES[q]) HERM_ID = q; } catch (e) {}
 const HERMANDAD = HERMANDADES[HERM_ID];
+// Estilo de las figuras (prueba): ?estilo=casa (cabezones, colores planos), ?estilo=playmobil (muñeco de plástico),
+// ?estilo=barro (figuras de belén de barro pintado). Sin nada, las figuras de siempre. El trono y la imagen no cambian.
+let ESTILO = 'actual';
+try { const q = new URLSearchParams(location.search).get('estilo'); if (['casa', 'playmobil', 'barro'].includes(q)) ESTILO = q; } catch (e) {}
+// altura de la cabeza de una persona en cada estilo (para gorras, instrumentos y hombres de trono)
+const CABEZA_Y = { actual: 1.62, casa: 1.2, playmobil: 1.27, barro: 1.6 }[ESTILO];
 // El público de la salida depende del prestigio: una hermandad recién fundada llena poco las aceras
 CIU.publico = (w) => { if (NIVEL.modo === 'ensayo') return 0; const d = JUEGO.publico(w) * (0.45 + 0.55 * HERMANDAD.prestigio); return d < 0.5 ? 0 : d; };
 CIU.coches = JUEGO.coches;
@@ -952,6 +958,42 @@ const RUTA_OBJ = [];
 // Personas: dos tipos (hombre y mujer) con piernas, zapatos, cadera, torso, brazos doblados, cuello, cabeza y pelo
 const V2 = (a) => a.map(([r, y]) => new THREE.Vector2(r, y));
 function geoPersona(mujer) {
+  if (ESTILO !== 'actual') return geoPersonaEstilo(mujer);
+  return geoPersonaReal(mujer);
+}
+function geoPersonaEstilo(mujer) {
+  const lathe = (pts, n = 14) => new THREE.LatheGeometry(V2(pts), n);
+  const esf = (r, x, y, z, sx = 1, sy = 1, sz = 1) => { const g = new THREE.SphereGeometry(r, 14, 10); g.scale(sx, sy, sz); g.translate(x, y, z); return g; };
+  const cil = (r0, r1, h, x, y, z, rx = 0, rz = 0) => { const g = new THREE.CylinderGeometry(r1, r0, h, 10); g.translate(0, h / 2, 0); g.rotateX(rx); g.rotateZ(rz); g.translate(x, y, z); return g; };
+  const caja = (w, h, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y + h / 2, z); return g; };
+  if (ESTILO === 'casa') {   // cabezón: piernas cortas, cuerpo de pera, cabeza enorme
+    const piernas = unirGeos([cil(0.06, 0.07, 0.36, -0.08, 0, 0), cil(0.06, 0.07, 0.36, 0.08, 0, 0), esf(0.075, -0.08, 0.03, 0.04, 1, 0.6, 1.4), esf(0.075, 0.08, 0.03, 0.04, 1, 0.6, 1.4)]);
+    const cuerpo = lathe(mujer ? [[0.001, 0.32], [0.26, 0.34], [0.22, 0.6], [0.17, 0.86], [0.001, 0.92]] : [[0.001, 0.34], [0.2, 0.35], [0.22, 0.6], [0.19, 0.86], [0.001, 0.92]]);
+    const brazos = [-1, 1].map((sx) => cil(0.05, 0.055, 0.34, sx * 0.2, 0.52, 0.02, 0, sx * 0.35));
+    const piel = unirGeos([esf(0.25, 0, 1.18, 0), esf(0.055, -0.27, 0.52, 0.04), esf(0.055, 0.27, 0.52, 0.04)]);
+    const pelo = mujer ? unirGeos([esf(0.265, 0, 1.24, -0.03, 1, 0.92, 1), esf(0.2, 0, 1.0, -0.12, 1.05, 1.1, 0.7)]) : esf(0.262, 0, 1.25, -0.03, 1, 0.85, 1);
+    return { piernas, ropa: unirGeos([cuerpo, ...brazos]), piel, pelo };
+  }
+  if (ESTILO === 'playmobil') {   // bloque de plástico: piernas rectas, cuerpo trapecio, manos en C, pelo de casco
+    const piernas = unirGeos([caja(0.13, 0.55, 0.15, -0.075, 0, 0), caja(0.13, 0.55, 0.15, 0.075, 0, 0), caja(0.31, 0.1, 0.17, 0, 0.5, 0)]);
+    const tronco = lathe([[0.001, 0.58], [0.17, 0.58], [0.18, 0.62], [0.2, 1.02], [0.12, 1.06], [0.001, 1.06]], 4); tronco.rotateY(Math.PI / 4); tronco.scale(1, 1, 0.6);
+    const brazos = [-1, 1].map((sx) => cil(0.055, 0.055, 0.36, sx * 0.21, 0.66, 0.06, -0.35, 0));
+    const manos = [-1, 1].map((sx) => { const g = new THREE.TorusGeometry(0.045, 0.022, 6, 10, Math.PI * 1.4); g.rotateY(Math.PI / 2); g.translate(sx * 0.21, 0.62, 0.2); return g; });
+    const cab = cil(0.15, 0.15, 0.26, 0, 1.12, 0); const tapa = esf(0.15, 0, 1.38, 0, 1, 0.35, 1), barb = esf(0.15, 0, 1.12, 0, 1, 0.3, 1);
+    const piel = unirGeos([cab, tapa, barb, cil(0.06, 0.06, 0.06, 0, 1.06, 0), ...manos]);
+    const casco = new THREE.SphereGeometry(0.165, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2); casco.scale(1, 0.9, 1); casco.translate(0, 1.3, -0.005);
+    const nuca = cil(0.162, 0.162, mujer ? 0.3 : 0.14, 0, mujer ? 1.02 : 1.18, -0.02); nuca.scale(1, 1, 0.9);
+    return { piernas, ropa: unirGeos([tronco, ...brazos]), piel, pelo: unirGeos([casco, nuca]) };
+  }
+  // barro: figura de belén, alargada y redondeada, con túnica larga y manto
+  const tunica = lathe([[0.001, 0.0], [0.24, 0.0], [0.22, 0.4], [0.18, 0.95], [0.19, 1.25], [0.15, 1.42], [0.001, 1.45]]);
+  const manto = (() => { const g = new THREE.CylinderGeometry(0.2, 0.27, 1.25, 14, 1, true, Math.PI * 0.55, Math.PI * 0.9); g.translate(0, 0.72, -0.03); return g; })();
+  const brazos = [-1, 1].map((sx) => cil(0.05, 0.06, 0.42, sx * 0.17, 0.95, 0.06, -0.6, sx * 0.15));
+  const piel = unirGeos([esf(0.11, 0, 1.58, 0.01, 0.92, 1.12, 1), esf(0.045, -0.2, 0.78, 0.3), esf(0.045, 0.2, 0.78, 0.3), cil(0.045, 0.05, 0.12, 0, 1.44, 0)]);
+  const pelo = mujer ? esf(0.125, 0, 1.6, -0.02, 1, 1.25, 1) : esf(0.115, 0, 1.63, -0.015, 1, 0.8, 1);
+  return { piernas: cil(0.08, 0.1, 0.05, 0, 0, 0.05), ropa: unirGeos([tunica, manto, ...brazos]), piel, pelo };
+}
+function geoPersonaReal(mujer) {
   const cil = (r0, r1, h, x, y, z, rx = 0, rz = 0) => { const g = new THREE.CylinderGeometry(r1, r0, h, 8); g.translate(0, h / 2, 0); g.rotateX(rx); g.rotateZ(rz); g.translate(x, y, z); return g; };
   const zap = [-1, 1].map((sx) => { const g = new THREE.BoxGeometry(0.1, 0.07, 0.25); g.translate(sx * 0.095, 0.035, 0.04); return g; });
   let bajo;
@@ -977,12 +1019,16 @@ const ROPA = [0x1f2230, 0x2a2f45, 0x3a2a2a, 0x2b3a2e, 0x4a4036, 0x6b5d4c, 0x8a7a
 const PANT = [0x1a1a22, 0x23283a, 0x2e2a26, 0x3a3a40, 0x4a5a7a, 0x5a4a3a];
 const PIEL = [0xc6976f, 0xd9b08a, 0xa97a55, 0xe3c2a0, 0x8a5a3a, 0xf0d0b0];
 const PELO = [0x1a120c, 0x2a1d12, 0x111111, 0x5a4030, 0x8a6a40, 0x9a9a9a, 0xd0c0a0];
+{ const pon = (a, v) => { a.length = 0; a.push(...v); };
+  if (ESTILO === 'casa') { pon(ROPA, [0xe0606a, 0x5a8ad8, 0xf0c050, 0x6ac08a, 0xb07ad0, 0xf09050, 0x4ab0c0, 0xe8e0d0, 0x2a3a5a]); pon(PANT, [0x2a3a5a, 0x4a4a58, 0x6a4a3a, 0x3a5a8a]); pon(PIEL, [0xf2c8a8, 0xe0b090, 0xc89070, 0xf8d8c0]); pon(PELO, [0x3a2414, 0x1a1a1a, 0x7a4a2a, 0xd8a050, 0xa0a0a8]); }
+  if (ESTILO === 'playmobil') { pon(ROPA, [0xc81e24, 0x1e5ac8, 0xf0c818, 0x1e9a3a, 0xf0f0f0, 0x222222, 0xe86a18]); pon(PANT, [0x1e3a8a, 0x222222, 0x6a3a1a, 0xc81e24]); pon(PIEL, [0xf6cfa0]); pon(PELO, [0x5a2a0a, 0x1a1a1a, 0xe8c050, 0xa04a1a, 0xd8d8d8]); }
+  if (ESTILO === 'barro') { pon(ROPA, [0x8a4a32, 0x6a7a5a, 0xa8865a, 0x5a6a8a, 0xb8a080, 0x7a3a3a, 0xc8b08a]); pon(PANT, [0x5a4030]); pon(PIEL, [0xd8a882, 0xc8946e, 0xe0b894]); pon(PELO, [0x3a2a1a, 0x5a3a22, 0x2a2018, 0xe8e0d0]); } }
 
 // El público se mueve: cada persona se balancea y cambia el peso de pie a su ritmo, y aplaude (se agita más) en las
 // levantás y cuando suena la banda. Se hace en el shader, para que miles de personas no cuesten nada.
 const PUB_U = { t: { value: 0 }, animo: { value: 0 } };
 function matPublico(rough) {
-  const m = M(0xffffff, { roughness: rough });
+  const m = M(0xffffff, { roughness: ESTILO === 'playmobil' ? 0.3 : ESTILO === 'barro' ? 1 : ESTILO === 'casa' ? 0.75 : rough, flatShading: ESTILO === 'barro' });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uT = PUB_U.t; sh.uniforms.uAnimo = PUB_U.animo;
     sh.vertexShader = 'uniform float uT; uniform float uAnimo;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -1576,14 +1622,18 @@ const PORTADORES = [];
 { for (const x of VARALES_X) {
     const ext = Math.abs(x) > 1.9;   // los de los varales de fuera van todo a lo largo; los de dentro, delante y detrás del cajillo
     for (let z = -6.2; z <= 6.21; z += 0.55) { if (!ext && Math.abs(z) < 2.7) continue; PORTADORES.push({ x: x + Math.sign(x) * 0.17, z, vx: x }); } } }
+let HT_P = null;
 const HT = (() => {
   const n = PORTADORES.length;
   const gTun = new THREE.LatheGeometry([[0, 0], [0.27, 0], [0.25, 0.25], [0.21, 0.8], [0.2, 1.15], [0.15, 1.33], [0.06, 1.4], [0, 1.41]].map(([r, y]) => new THREE.Vector2(r, y)), 36);
   { const p = gTun.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(x, z), f = 1 + 0.07 * Math.sin(a * 10) * Math.max(0, 1 - y / 1.1); p.setX(i, x * f); p.setZ(i, z * f); } gTun.computeVertexNormals(); }
   const gCin = new THREE.TorusGeometry(0.205, 0.022, 6, 16); gCin.rotateX(Math.PI / 2);
-  const gCab = new THREE.SphereGeometry(0.105, 10, 8), gPelo = new THREE.SphereGeometry(0.11, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2.2);
+  const HTP = { actual: { ty: 1, hy: 1.5, hr: 0.105 }, casa: { ty: 0.72, hy: 1.18, hr: 0.25 }, playmobil: { ty: 0.92, hy: 1.42, hr: 0.16 }, barro: { ty: 1.02, hy: 1.55, hr: 0.11 } }[ESTILO];
+  gTun.scale(ESTILO === 'casa' ? 1.15 : 1, HTP.ty, ESTILO === 'casa' ? 1.15 : 1);
+  const gCab = new THREE.SphereGeometry(HTP.hr, 12, 10), gPelo = new THREE.SphereGeometry(HTP.hr * 1.05, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2.2);
+  HT_P = HTP;
   const gBrazo = new THREE.CylinderGeometry(0.05, 0.045, 1, 8); gBrazo.translate(0, 0.5, 0);
-  const matTun = M(0x3b1f4f, { roughness: 0.95 });
+  const matTun = M(0x3b1f4f, { roughness: ESTILO === 'playmobil' ? 0.3 : 0.95, flatShading: ESTILO === 'barro' });
   const partes = { tun: new THREE.InstancedMesh(gTun, matTun, n), cin: new THREE.InstancedMesh(gCin, M(0xe9dcb0, { roughness: 0.6 }), n), cab: new THREE.InstancedMesh(gCab, M(0xffffff, { roughness: 0.7 }), n), pelo: new THREE.InstancedMesh(gPelo, M(0xffffff, { roughness: 0.9 }), n), brazo: new THREE.InstancedMesh(gBrazo, matTun, n), mano: new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), M(0xc6976f, { roughness: 0.6 }), n) };
   const col = new THREE.Color(), piel = [0xc6976f, 0xd9b08a, 0xa97a55, 0xe3c2a0], pelo = [0x24160e, 0x3a2a1a, 0x111111, 0x6a5a4a, 0x9a9a9a];
   PORTADORES.forEach((p, i) => { partes.cab.setColorAt(i, col.setHex(piel[i % piel.length])); partes.pelo.setColorAt(i, col.setHex(pelo[(i * 3) % pelo.length])); });
@@ -1598,11 +1648,11 @@ function colocarHombres(t, alt, bajos, yVaral) {
     const y = (bajos ? -0.08 : 0) + bob;
     const put = (m, px, py, pz, sx, sy, sz) => { dmH.position.set(px, py, pz); dmH.rotation.set(0, 0, 0); dmH.scale.set(sx, sy, sz); dmH.updateMatrix(); m.setMatrixAt(i, dmH.matrix); };
     put(HT.tun, p.x, y, p.z, 1, 1, 1);
-    put(HT.cin, p.x, y + 0.92, p.z, 1, 1, 1);
-    put(HT.cab, p.x, y + 1.5, p.z, 1, 1.12, 1);
-    put(HT.pelo, p.x, y + 1.52, p.z - 0.01, 1, 1, 1);
+    put(HT.cin, p.x, y + 0.92 * HT_P.ty, p.z, ESTILO === 'casa' ? 1.15 : 1, 1, ESTILO === 'casa' ? 1.15 : 1);
+    put(HT.cab, p.x, y + HT_P.hy, p.z, 1, ESTILO === 'casa' ? 1 : 1.12, 1);
+    put(HT.pelo, p.x, y + HT_P.hy + HT_P.hr * 0.18, p.z - 0.01, 1, 1, 1);
     // brazo: del hombro a la mano apoyada en el varal, un poco por delante
-    vA.set(p.x + (p.vx > p.x ? 0.17 : -0.17), y + 1.3, p.z); vB.set(p.vx, yVaral + 0.08, p.z + 0.22);
+    vA.set(p.x + (p.vx > p.x ? 0.17 : -0.17), y + 1.3 * HT_P.ty, p.z); vB.set(p.vx, yVaral + 0.08, p.z + 0.22);
     const dir = vB.clone().sub(vA), L = dir.length();
     dmH.position.copy(vA); dmH.quaternion.setFromUnitVectors(Y1, dir.normalize()); dmH.scale.set(1, L, 1); dmH.updateMatrix(); HT.brazo.setMatrixAt(i, dmH.matrix);
     dmH.position.copy(vB); dmH.quaternion.identity(); dmH.scale.set(1, 1, 1); dmH.updateMatrix(); HT.mano.setMatrixAt(i, dmH.matrix);
@@ -1796,9 +1846,23 @@ function geoNazareno(capa) {
   const mangas = [-1, 1].map((sx) => { const g = new THREE.CylinderGeometry(0.055, 0.085, 0.4, 8); g.translate(0, -0.2, 0); g.rotateX(-0.75); g.translate(sx * 0.15, 1.1, 0.04); return g; });
   return { tunica: unirGeos([tun, ...mangas]), capirote, cint, capa: capaG };
 }
-const NAZ_GEO = geoNazareno(!!HERMANDAD.capa);
-const G_CIRIO = (() => { const g = new THREE.CylinderGeometry(0.022, 0.024, 1.05, 6); g.translate(0, 0.52, 0); g.rotateX(0.12); g.translate(0.2, 0.5, 0.17); return g; })();
-const G_LLAMA = (() => { const g = new THREE.SphereGeometry(0.03, 6, 5); g.scale(1, 2, 1); g.translate(0.2, 1.63, 0.3); return g; })();
+const NAZ_GEO = ESTILO === 'actual' ? geoNazareno(!!HERMANDAD.capa) : geoNazarenoEstilo(!!HERMANDAD.capa);
+function geoNazarenoEstilo(capa) {
+  const V = (p) => new THREE.LatheGeometry(V2(p), 16);
+  if (ESTILO === 'casa') return {   // cuerpo de campana y capirote grande
+    tunica: V([[0.001, 0.02], [0.3, 0.02], [0.27, 0.3], [0.21, 0.62], [0.001, 0.66]]), cint: (() => { const g = new THREE.TorusGeometry(0.23, 0.03, 6, 16); g.rotateX(Math.PI / 2); g.translate(0, 0.42, 0); return g; })(),
+    capirote: V([[0.001, 0.56], [0.29, 0.58], [0.26, 0.8], [0.17, 1.15], [0.001, 1.75]]), capa: capa ? (() => { const g = new THREE.CylinderGeometry(0.27, 0.33, 0.6, 14, 1, true, Math.PI * 0.6, Math.PI * 0.8); g.translate(0, 0.32, -0.02); return g; })() : null };
+  if (ESTILO === 'playmobil') return {   // túnica recta de plástico y capirote de cono
+    tunica: (() => { const g = new THREE.CylinderGeometry(0.19, 0.23, 1.05, 4); g.rotateY(Math.PI / 4); g.scale(1, 1, 0.7); g.translate(0, 0.525, 0); return g; })(), cint: (() => { const g = new THREE.BoxGeometry(0.34, 0.06, 0.26); g.translate(0, 0.62, 0); return g; })(),
+    capirote: V([[0.001, 0.98], [0.19, 1.0], [0.16, 1.2], [0.1, 1.45], [0.001, 1.9]]), capa: capa ? (() => { const g = new THREE.BoxGeometry(0.4, 0.95, 0.03); g.translate(0, 0.52, -0.17); return g; })() : null };
+  return {   // barro: alargado, con pliegues
+    tunica: (() => { const g = V([[0.001, 0.02], [0.26, 0.02], [0.23, 0.5], [0.19, 1.0], [0.17, 1.25], [0.001, 1.3]]); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const a = Math.atan2(p.getX(i), p.getZ(i)), f = 1 + 0.06 * Math.sin(a * 9) * Math.max(0, 1 - p.getY(i) / 1.1); p.setX(i, p.getX(i) * f); p.setZ(i, p.getZ(i) * f); } g.computeVertexNormals(); return g; })(),
+    cint: (() => { const g = new THREE.TorusGeometry(0.19, 0.025, 6, 16); g.rotateX(Math.PI / 2); g.translate(0, 0.98, 0); return g; })(),
+    capirote: V([[0.001, 1.05], [0.24, 1.07], [0.2, 1.25], [0.15, 1.4], [0.09, 1.7], [0.001, 2.4]]), capa: capa ? (() => { const g = new THREE.CylinderGeometry(0.22, 0.3, 1.2, 14, 1, true, Math.PI * 0.6, Math.PI * 0.8); g.translate(0, 0.66, -0.02); return g; })() : null };
+}
+const ESC_CIRIO = { actual: 1, casa: 0.55, playmobil: 0.75, barro: 1 }[ESTILO];
+const G_CIRIO = (() => { const g = new THREE.CylinderGeometry(0.022, 0.024, 1.05, 6); g.translate(0, 0.52, 0); g.rotateX(0.12); g.translate(0.2, 0.5, 0.17); g.scale(ESC_CIRIO > 0.9 ? 1 : 1.4, ESC_CIRIO, 1.2); return g; })();
+const G_LLAMA = (() => { const g = new THREE.SphereGeometry(0.03, 6, 5); g.scale(1, 2, 1); g.translate(ESC_CIRIO > 0.9 ? 0.2 : 0.28, 1.63 * ESC_CIRIO, 0.3 + (ESC_CIRIO > 0.9 ? 0 : 0.06)); return g; })();
 const G_VARA = (() => { const g = new THREE.CylinderGeometry(0.018, 0.018, 2.4, 6); g.translate(0.16, 1.2, 0.22); return g; })();
 const G_VARITA = (() => { const g = new THREE.CylinderGeometry(0.014, 0.014, 1.25, 6); g.translate(0.24, 0.62, 0.2); return g; })();
 // remates de las insignias, en lo alto de la vara
@@ -1816,8 +1880,8 @@ const REMATE = {
 };
 const COLOR_REMATE = { cruz: 0x3a2414, bandera: HERMANDAD.capirote, senatus: 0x6a1a24, libro: 0x5a1a24, guion: 0x6a1a24, simpecado: HERMANDAD.capirote, estandarte: 0x6a1a24, farol: 0xe2ac4a, cirial: 0xe2ac4a, incensario: 0xd0d0d8 };
 // banda: gorra, instrumento (cornetas y trompetas o tambores)
-const G_GORRA = (() => { const g = new THREE.CylinderGeometry(0.11, 0.105, 0.11, 10); g.translate(0, 1.76, 0); const v = new THREE.CylinderGeometry(0.115, 0.115, 0.012, 10, 1, false, -Math.PI / 2, Math.PI); v.translate(0, 1.71, 0.04); return unirGeos([g, v]); })();
-const G_METAL = (() => { const tubo = new THREE.CylinderGeometry(0.012, 0.012, 0.42, 6); tubo.rotateX(Math.PI / 2); tubo.translate(0, 1.58, 0.3); const pab = new THREE.ConeGeometry(0.075, 0.16, 10, 1, true); pab.rotateX(-Math.PI / 2); pab.translate(0, 1.58, 0.56); return unirGeos([tubo, pab]); })();
+const G_GORRA = (() => { const g = new THREE.CylinderGeometry(0.11, 0.105, 0.11, 10); g.translate(0, CABEZA_Y + 0.14, 0); const v = new THREE.CylinderGeometry(0.115, 0.115, 0.012, 10, 1, false, -Math.PI / 2, Math.PI); v.translate(0, CABEZA_Y + 0.09, 0.04); const k = { casa: 2.3, playmobil: 1.45, barro: 1, actual: 1 }[ESTILO]; const r = unirGeos([g, v]); r.translate(0, -CABEZA_Y, 0); r.scale(k, k * 0.8, k); r.translate(0, CABEZA_Y + (k - 1) * 0.06, 0); return r; })();
+const G_METAL = (() => { const tubo = new THREE.CylinderGeometry(0.012, 0.012, 0.42, 6); tubo.rotateX(Math.PI / 2); tubo.translate(0, 1.58, 0.3); const pab = new THREE.ConeGeometry(0.075, 0.16, 10, 1, true); pab.rotateX(-Math.PI / 2); pab.translate(0, 1.58, 0.56); const r = unirGeos([tubo, pab]); r.translate(0, CABEZA_Y - 0.04 - 1.58 + (ESTILO === 'casa' ? -0.12 : 0), ESTILO === 'casa' ? 0.12 : 0); return r; })();
 const G_TAMBOR = (() => { const g = new THREE.CylinderGeometry(0.19, 0.19, 0.2, 12); g.translate(0, 0.92, 0.22); return g; })();
 
 const CORTEJO = { grupos: [], miembros: [], humo: null };
