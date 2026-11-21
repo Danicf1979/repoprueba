@@ -827,12 +827,12 @@ for (const t of TRAMOS) {
     } else if (k.tipo === 'senal') {
       const f = Fr(t, u), px = f.x + f.nx * lado * (f.w / 2 - 0.35), pz = f.z + f.nz * lado * (f.w / 2 - 0.35);
       add({ kind: 'circle', x: px, z: pz, r: 0.1, minH: 0, maxH: 2.8, label: 'el poste de una señal' });
-      const hS = esPaso ? 1.9 : 2.1; add({ kind: 'poly', pts: quad(t, u - 0.35, u + 0.35, 0.1, 1.0, lado), minH: hS, maxH: hS + 0.7, label: 'una señal de tráfico', alto: true, aviso: 'Señal de tráfico' });
+      const hS = NIVEL.modo === 'ensayo' ? (esPaso ? 1.3 : 2.05) : esPaso ? 1.9 : 2.1; add({ kind: 'poly', pts: quad(t, u - 0.35, u + 0.35, 0.1, 1.0, lado), minH: hS, maxH: hS + 0.7, label: 'una señal de tráfico', alto: true, aviso: 'Señal de tráfico' });
       const y = Y(px, pz); const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, hS + 0.7, 6), matHierro); p2.position.set(px, y + (hS + 0.7) / 2, pz); scene.add(p2);
       const pl = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.05), M(0x1a4a9a)); const fx = f.x + f.nx * lado * (f.w / 2 - 0.75), fz = f.z + f.nz * lado * (f.w / 2 - 0.75); pl.position.set(fx, y + hS + 0.35, fz); pl.rotation.y = Math.atan2(f.tx, f.tz) + Math.PI / 2; scene.add(pl);
       hueco(t, lado, u - 1, u + 1);
     } else if (k.tipo === 'rama') {
-      const f = Fr(t, u), r = esPaso ? 1.4 : 2.2, x = f.x + f.nx * lado * (f.w / 2 - 0.4), z = f.z + f.nz * lado * (f.w / 2 - 0.4), h0 = esPaso ? 2.75 : 3.9;
+      const f = Fr(t, u), r = esPaso ? 1.4 : 2.2, x = f.x + f.nx * lado * (f.w / 2 - 0.4), z = f.z + f.nz * lado * (f.w / 2 - 0.4), h0 = NIVEL.modo === 'ensayo' ? (esPaso ? 1.3 : 2.1) : esPaso ? 2.75 : 3.9;
       add({ kind: 'circle', x, z, r, minH: h0, maxH: h0 + 2, label: 'una rama baja', alto: true, aviso: 'Rama baja' });
       const y = Y(x, z); const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, h0 + 1.5, 8), M(0x5b4a3a)); tr.position.set(f.x + f.nx * lado * (f.w / 2 + 0.6), y + (h0 + 1.5) / 2, f.z + f.nz * lado * (f.w / 2 + 0.6)); scene.add(tr);
       const co = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), M(0x2a4a26, { flatShading: true })); co.scale.set(1, 0.45, 1); co.position.set(x, y + h0 + 0.5, z); co.castShadow = true; scene.add(co);
@@ -840,6 +840,30 @@ for (const t of TRAMOS) {
       for (const ld of [-1, 1]) for (const d of esPaso ? [0.35] : [0.5, 1.4]) { const f = Fr(t, u), x = f.x + f.nx * ld * (f.w / 2 - d), z = f.z + f.nz * ld * (f.w / 2 - d);
         add({ kind: 'circle', x, z, r: 0.14, minH: 0, maxH: 0.95, label: 'un bolardo' }); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.9, 10), matHierro); b.position.set(x, Y(x, z) + 0.45, z); scene.add(b); hueco(t, ld, u - 1, u + 1); }
     } else if (k.tipo === 'farolas') { /* las de la calle ya están */ }
+  }
+}
+// Ensayos: como solo sale la estructura, los obstáculos que cuentan son los que quedan a su altura: toldos de
+// comercios y marquesinas de parada que salen de la fachada, además de ramas y señales más bajas (arriba)
+if (NIVEL.modo === 'ensayo') {
+  const hT = esPaso ? 1.35 : 2.15, tx = texCanvas(128, 64, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#e8e2d2' : ['#a8302a', '#2a5a8a', '#3a6a3a'][Math.floor(rnd() * 3)]; x.fillRect(i * 16, 0, 16, h); } });
+  const matT = new THREE.MeshStandardMaterial({ map: tx, side: THREE.DoubleSide, roughness: 0.8 });
+  let n = 0;
+  for (const t of TRAMOS) {
+    if (t.obras) continue;
+    let lado = (n++ % 2) ? 1 : -1;
+    for (let u = 14 + rnd() * 10; u < L_UTIL(t) - 10; u += 34 + rnd() * 18, lado = -lado) {
+      const f = Fr(t, u), fondo = Math.min(esPaso ? 1.0 : 1.9, (f.w - JUEGO.anchoNecesario - 1.4) / 2);
+      if (fondo < 0.7) continue;
+      const marquesina = !esPaso && rnd() < 0.3, largo = marquesina ? 4 : 3 + rnd() * 2;
+      if ((HUECOS[t.id] || []).some((h) => h[0] === lado && u + largo > h[1] - 1 && u < h[2] + 1)) continue;
+      const q = quad(t, u, u + largo, 0, fondo, lado);
+      add({ kind: 'poly', pts: q, minH: hT, maxH: hT + 0.5, label: marquesina ? 'la marquesina de la parada' : 'el toldo de un comercio', alto: true, aviso: marquesina ? 'Marquesina' : 'Toldo' });
+      const fm = Fr(t, u + largo / 2), cx = fm.x + fm.nx * lado * (fm.w / 2 - fondo / 2), cz = fm.z + fm.nz * lado * (fm.w / 2 - fondo / 2), y = Y(cx, cz);
+      const g = new THREE.Mesh(new THREE.BoxGeometry(largo, 0.06, fondo), marquesina ? M(0x6a7a86, { metalness: 0.5, roughness: 0.4 }) : matT);
+      g.position.set(cx, y + hT + 0.25, cz); g.rotation.y = Math.atan2(fm.tx, fm.tz) - Math.PI / 2; g.rotation.x = marquesina ? 0 : lado * 0.12; g.castShadow = true; scene.add(g);
+      if (marquesina) for (const s of [-1, 1]) { const px = cx + fm.tx * s * 1.7 - fm.nx * lado * (fondo / 2 - 0.15), pz = cz + fm.tz * s * 1.7 - fm.nz * lado * (fondo / 2 - 0.15); add({ kind: 'circle', x: px, z: pz, r: 0.07, minH: 0, maxH: hT + 0.3, label: 'un poste de la marquesina' }); const po = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, hT + 0.3, 6), matHierro); po.position.set(px, y + (hT + 0.3) / 2, pz); scene.add(po); }
+      hueco(t, lado, u - 1, u + largo + 1);
+    }
   }
 }
 // Plaza: tribuna en una esquina (lucimiento) y una fuente pequeña
