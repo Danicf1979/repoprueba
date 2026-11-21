@@ -296,7 +296,7 @@ section[data-panel] { display: grid; gap: 12px; }
         <kbd>B</kbd><span><em>¡Música!</em>: pedir a la banda que toque una marcha si está a tambor o en silencio. Su repertorio son 5 marchas; si bajas el trono, la banda corta la que esté tocando</span>
         <kbd>M · N · R</kbd><span>Quitar o poner el sonido de la banda · voz · volver a empezar</span>
       </div>
-      <p>El trono mide 4,4 m de ancho con los hombres de trono, 13 m de largo con varales y 4,6 m de alto con el palio. Los cuatro arbotantes de hojarasca dorada nacen en las esquinas del cajillo y se abren en diagonal hacia fuera: entre 3,15 y 4,75 m de alto, donde el palio solo mide 2,6 m, el trono llega a 5,1 m de ancho. Si un arbotante choca, se rompen y se apagan las tulipas que dan al golpe, y quedan apuntadas para reponer. El mapa marca con línea discontinua lo que está en alto.</p>
+      <p>El trono mide 4,4 m de ancho con los hombres de trono, 13 m de largo con varales y 5,35 m de alto con el palio. En los ensayos solo sale la estructura (varales y mesa con sacos), de 2,45 m. Los cuatro arbotantes de hojarasca dorada nacen en las esquinas del cajillo y se abren en diagonal hacia fuera: entre 3,15 y 4,75 m de alto, donde el palio solo mide 2,6 m, el trono llega a 5,1 m de ancho. Si un arbotante choca, se rompen y se apagan las tulipas que dan al golpe, y quedan apuntadas para reponer. El mapa marca con línea discontinua lo que está en alto.</p>
       <div class="acciones"><button class="btn" id="b-cerrar-ayuda" type="button">Seguir</button></div>
     </div>
   </div>
@@ -364,7 +364,7 @@ document.documentElement.style.setProperty('--retardo', CFG.retardoVoz + 's');
 const TIERS = [
   { nombre: 'los varales', hx: 2.2, hz: 6.5, y0: 0.0, y1: 1.9 },
   { nombre: 'la candelería', hx: 1.6, hz: 2.6, y0: 1.9, y1: 3.1 },
-  { nombre: 'el palio', hx: 1.3, hz: 1.9, y0: 3.1, y1: 4.6 },
+  { nombre: 'el palio', hx: 1.3, hz: 1.9, y0: 3.1, y1: 5.35 },
   // Los cuatro arbotantes de las esquinas: arriba, donde el palio solo mide 2,6 m, abren el trono hasta 5,1 m
   { nombre: 'un arbotante', arb: 3, hx: 0.6, hz: 0.55, ox: 1.95, oz: 2.95, y0: 3.15, y1: 4.75 },
   { nombre: 'un arbotante', arb: 1, hx: 0.6, hz: 0.55, ox: -1.95, oz: 2.95, y0: 3.15, y1: 4.75 },
@@ -373,12 +373,12 @@ const TIERS = [
   // La cola del manto: sale por detrás del cajillo y cae casi hasta el final de los varales traseros
   { nombre: 'el manto', hx: 1.15, hz: 1.6, oz: -4.3, y0: 1.95, y1: 3.1 },
 ];
-const ALTO = TIERS[2].y1;
+let ALTO = TIERS[2].y1;
 
 // Lo propio del trono frente al paso (el barrio y los niveles son comunes)
 const JUEGO = {
   tipo: 'trono', clave: 'capataz-trono', anchoMinimo: 5.6, velocidad: 0.42, altoPuerta: 6.5,
-  hCable: 4.95, hGuirnalda: 4.85, hBalcon: 4.4, fondoBalcon: 1.1, hFarolPared: 4.9,
+  hCable: 5.7, hGuirnalda: 5.6, hBalcon: 4.4, fondoBalcon: 1.1, hFarolPared: 4.9,
   federacion: 'la Agrupación de Cofradías', fedCorta: 'Agrupación', recorrido: 'el recorrido oficial', arco: 'RECORRIDO OFICIAL', centro: 'malaga',
   publico: (w) => (w >= 11 ? 1.7 : w >= 10 ? 1.4 : w >= 9 ? 1.0 : 0),
   coches: (w) => (w >= 13 ? [-1, 1] : w >= 9 ? [-1] : []),
@@ -397,6 +397,8 @@ let NIVEL_I = 0;
 try { NIVEL_I = Math.max(0, Math.min(NIVELES_J.length - 1, +(localStorage.getItem(JUEGO.clave + '-nivel') || 0))); } catch (e) {}
 const NIVEL = NIVELES_J[NIVEL_I];
 const CIU = { ...NIVEL, modo: NIVEL.modo };
+// En los ensayos solo sale la estructura del trono (varales, mesa y sacos de peso): sin cajillo, imagen, palio ni arbotantes
+if (NIVEL.modo === 'ensayo') { TIERS.length = 2; TIERS[1] = { nombre: 'la estructura', hx: 1.7, hz: 2.7, y0: 1.9, y1: 2.45 }; ALTO = TIERS[1].y1; }
 const CIUDAD = window.MotorCiudad.crear(CIU);
 const { NODOS, TRAMOS, TR, P, Fr, L_UTIL, libre, CONTORNOS, PLAZAS, enPlaza, zonaEn, tramoEntre, vecinos, dentroDe, NAVE, SALIDA } = CIUDAD;
 const Hs = CIUDAD.H;
@@ -1164,6 +1166,7 @@ const N_VARALES = 8, VARALES_X = Array.from({ length: N_VARALES }, (_, i) => -2 
 { for (const x of VARALES_X) { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 13, 8), matMadera); v.rotation.x = Math.PI / 2; v.position.set(x, 1.5, 0); cuerpo.add(v);
     for (const z of [-6.5, 6.5]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.3, 10), matOro); c.rotation.x = Math.PI / 2; c.position.set(x, 1.5, z + Math.sign(z) * 0.1); cuerpo.add(c); } }
   const mesa = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.35, 5.3), matMadera); mesa.position.y = 1.75; cuerpo.add(mesa);
+  cuerpo.children.forEach((o) => { o.userData.estructura = true; });
   const cajillo = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.9, 5.2), matCajillo); cajillo.position.y = 2.38; cuerpo.add(cajillo);
   for (const y of [1.95, 2.86]) { const mo = new THREE.Mesh(new THREE.BoxGeometry(3.36, 0.09, 5.36), matOro); mo.position.y = y; cuerpo.add(mo);
     // bocel: media caña redonda a lo largo de cada borde, y un listel más fino
@@ -1343,6 +1346,7 @@ function repararTulipas() {
 }
 // Imagen bajo palio. El palio (barras, techo y bambalinas) va aparte: se mueve con retraso respecto a los hombres de trono.
 const PALIO_Y = 2.88;
+const PALIO_ALZA = 0.75;   // el palio sube 0,75 m sobre la versión anterior: techo a 5,3 m, para que la imagen respire
 const palio = new THREE.Group(); palio.rotation.order = 'YXZ';
 const BAMBALINAS = [];
 const PAL = { rx: 0, vx: 0, rz: 0, vz: 0, lado: 0, ladoV: 0, v: 0, y: 0, yV: 0 };
@@ -1435,7 +1439,7 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
   // y al manto largo; si no carga (sin conexión, abierto como file://...), se queda todo lo procedural.
   // La ráfaga del modelo salía como un aro tosco: se quita y se pone la de la foto (modelos/rafaga.png) como plano.
   const VIRGEN_BASE = 2.9, VIRGEN_TOPE = 4.42;   // de la peana a la cruz de la ráfaga, por debajo del techo de palio (4,51)
-  if (THREE.GLTFLoader) new THREE.GLTFLoader().load('modelos/virgen.glb', (gltf) => {
+  if (THREE.GLTFLoader && NIVEL.modo !== 'ensayo') new THREE.GLTFLoader().load('modelos/virgen.glb', (gltf) => {
     const m = gltf.scene, caja = new THREE.Box3().setFromObject(m), tam = caja.getSize(new THREE.Vector3()), cen = caja.getCenter(new THREE.Vector3());
     const k = (VIRGEN_TOPE - VIRGEN_BASE) / tam.y;
     const vg = new THREE.Group(); vg.name = 'virgen-glb'; vg.scale.setScalar(k);
@@ -1503,8 +1507,8 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
   palio.position.y = PALIO_Y; cuerpo.add(palio);
   // Varales de palio cincelados: jarra en la base, nudos a lo largo de la caña y capitel arriba
   { const P = [[0, 0], [0.075, 0], [0.085, 0.04], [0.06, 0.08], [0.095, 0.16], [0.05, 0.25], [0.032, 0.28]];
-    for (const yn of [0.62, 1.02]) P.push([0.032, yn - 0.06], [0.062, yn - 0.02], [0.07, yn], [0.062, yn + 0.02], [0.032, yn + 0.06]);
-    P.push([0.032, 1.48], [0.07, 1.53], [0.09, 1.58], [0.06, 1.62], [0.1, 1.65], [0, 1.66]);
+    for (const yn of [0.62, 1.12, 1.62]) P.push([0.032, yn - 0.06], [0.062, yn - 0.02], [0.07, yn], [0.062, yn + 0.02], [0.032, yn + 0.06]);
+    P.push(...[[0.032, 1.48], [0.07, 1.53], [0.09, 1.58], [0.06, 1.62], [0.1, 1.65], [0, 1.66]].map(([r, y]) => [r, y + PALIO_ALZA]));
     const gVP = new THREE.LatheGeometry(P.map(([r, y]) => new THREE.Vector2(r, y)), 12);
     for (const x of [-1.25, 1.25]) for (let i = 0; i < 6; i++) { const z = -1.85 + i * 0.74; const v = new THREE.Mesh(gVP, matPlata); v.position.set(x, 3.7 - PALIO_Y - 0.83, z); palio.add(v); } }
   // Techo de palio bordado, con la gloria en el centro (vista desde abajo y desde arriba)
@@ -1518,7 +1522,7 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
     x.fillStyle = '#ffffff'; x.beginPath(); x.ellipse(w / 2, h / 2, 34, 14, 0, 0, Math.PI * 2); x.fill(); x.beginPath(); x.moveTo(w / 2 - 70, h / 2 - 20); x.quadraticCurveTo(w / 2 - 20, h / 2 + 10, w / 2, h / 2); x.quadraticCurveTo(w / 2 + 20, h / 2 + 10, w / 2 + 70, h / 2 - 20); x.quadraticCurveTo(w / 2, h / 2 + 30, w / 2 - 70, h / 2 - 20); x.fill();
   });
   const mTecho = new THREE.MeshStandardMaterial({ map: texTecho, roughness: 0.75, metalness: 0.1 });
-  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), [matPlata, matPlata, mTecho, mTecho, matPlata, matPlata]); techo.position.y = 4.55 - PALIO_Y; palio.add(techo);
+  const techo = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.08, 3.8), [matPlata, matPlata, mTecho, mTecho, matPlata, matPlata]); techo.position.y = 4.55 + PALIO_ALZA - PALIO_Y; palio.add(techo);
   const texBamb = texCanvas(512, 128, (x, w, h) => {
     x.clearRect(0, 0, w, h);
     x.fillStyle = '#123224'; x.beginPath(); x.moveTo(0, 0); x.lineTo(w, 0); x.lineTo(w, 86);
@@ -1536,11 +1540,11 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
   const mb = new THREE.MeshStandardMaterial({ map: texBamb, side: THREE.DoubleSide, transparent: true, alphaTest: 0.4, roughness: 0.8 });
   // Bambalinas: cuelgan del techo con holgura y se balancean por su cuenta (bisagra en el borde de arriba)
   for (const [w, x, z, ry, eje] of [[2.6, 0, 1.9, 0, 'x'], [2.6, 0, -1.9, 0, 'x'], [3.8, 1.3, 0, Math.PI / 2, 'z'], [3.8, -1.3, 0, Math.PI / 2, 'z']]) {
-    const piv = new THREE.Group(); piv.rotation.order = 'YXZ'; piv.position.set(x, 4.525 - PALIO_Y, z); piv.rotation.y = ry; palio.add(piv);
+    const piv = new THREE.Group(); piv.rotation.order = 'YXZ'; piv.position.set(x, 4.525 + PALIO_ALZA - PALIO_Y, z); piv.rotation.y = ry; palio.add(piv);
     const b = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.45), mb); b.position.y = -0.225; piv.add(b);
     BAMBALINAS.push({ piv, eje, a: 0, v: 0 });
   }
-  const campana = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.11, 0.16, 12, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.3, side: THREE.DoubleSide })); campana.position.set(0, 2.55, 2.68); cuerpo.add(campana);
+  const campana = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.11, 0.16, 12, 1, true), M(0xd8b04a, { metalness: 0.7, roughness: 0.3, side: THREE.DoubleSide })); campana.position.set(0, 2.55, 2.68); cuerpo.add(campana); campana.userData.estructura = true;
   const pl = new THREE.PointLight(0xffc27a, 1.1, 12, 2); pl.position.set(0, 3.5, 2.4); cuerpo.add(pl); }
 // Hombres de trono: por fuera en los varales exteriores; en los interiores, delante y detrás del cajillo.
 // Túnica de la hermandad hasta los pies, cíngulo a la cintura, cara descubierta y una mano en el varal.
@@ -2129,12 +2133,15 @@ function moverPalio(dt, lado, y) {
   const aVer = clamp((yV - PAL.yV) / dt, -8, 8);
   PAL.lado = lado; PAL.ladoV = ladoV; PAL.v = G.v; PAL.y = y; PAL.yV = yV;
   const h = Math.min(dt, 1 / 30);
+  // Con la mecida las barras de palio se balancean mucho más (menos amortiguadas); andando, apenas: van recogidas.
+  const meciendo = G.mecida || G.mecAmp > 0.05, andando = !meciendo && Math.abs(G.v) > 0.05;
+  const kF = meciendo ? 2.4 : andando ? 0.5 : 1, kD = meciendo ? 2.2 : andando ? 7 : 4;
   for (let n = 0, pasos = Math.ceil(dt / h); n < pasos; n++) {
-    PAL.vz += (-30 * PAL.rz - 4 * PAL.vz + 0.4 * aLat) * h; PAL.rz += PAL.vz * h;
-    PAL.vx += (-30 * PAL.rx - 4 * PAL.vx - 0.4 * aFwd) * h; PAL.rx += PAL.vx * h;
+    PAL.vz += (-30 * PAL.rz - kD * PAL.vz + 0.4 * kF * aLat) * h; PAL.rz += PAL.vz * h;
+    PAL.vx += (-30 * PAL.rx - kD * PAL.vx - 0.4 * kF * aFwd) * h; PAL.rx += PAL.vx * h;
     for (const b of BAMBALINAS) {
-      const empuje = (b.eje === 'x' ? aFwd : aLat) * 0.35 + aVer * 0.15 + (b.eje === 'x' ? -PAL.vx : PAL.vz) * 1.5;
-      b.v += (-16 * b.a - 2.2 * b.v + empuje) * h; b.a = clamp(b.a + b.v * h, -0.5, 0.5);
+      const empuje = ((b.eje === 'x' ? aFwd : aLat) * 0.35 + aVer * 0.15) * kF + (b.eje === 'x' ? -PAL.vx : PAL.vz) * 1.5;
+      b.v += (-16 * b.a - (meciendo ? 1.6 : andando ? 4 : 2.2) * b.v + empuje) * h; b.a = clamp(b.a + b.v * h, -0.5, 0.5);
     }
   }
   palio.rotation.z = REDUCIDO ? 0 : PAL.rz;
@@ -2762,6 +2769,16 @@ function resize() {
 }
 addEventListener('resize', resize);
 
+// Ensayo: se oculta todo lo que no es estructura y se carga la mesa con sacos de arena para dar el peso
+if (NIVEL.modo === 'ensayo') {
+  for (const o of cuerpo.children) if (!o.userData.estructura) o.visible = false;
+  const gS = new THREE.SphereGeometry(0.3, 10, 7); gS.scale(1, 0.42, 0.7);
+  const sacos = new THREE.InstancedMesh(gS, M(0xb8a47a, { roughness: 0.95 }), 60), dm = new THREE.Object3D();
+  let k = 0; for (let i = 0; i < 10; i++) for (let j = 0; j < 4; j++) for (let c = 0; c < (j % 3 ? 2 : 1); c++, k++) { if (k >= 60) break; dm.position.set(-1.2 + j * 0.8, 2.05 + c * 0.22, -2.3 + i * 0.51); dm.rotation.set(0, (k % 3) * 0.3, 0); dm.updateMatrix(); sacos.setMatrixAt(k, dm.matrix); }
+  sacos.count = k; cuerpo.add(sacos);
+  // barandilla de madera alrededor de la mesa, para sujetar los sacos
+  for (const [w, d, x, z] of [[3.3, 0.08, 0, 2.61], [3.3, 0.08, 0, -2.61], [0.08, 5.3, 1.61, 0], [0.08, 5.3, -1.61, 0]]) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, 0.25, d), matMadera); b.position.set(x, 2.05, z); cuerpo.add(b); }
+}
 // Sombras: todo el trono las proyecta
 trono.traverse((o) => { if (o.isMesh) o.castShadow = true; });
 // Halos de las farolas
