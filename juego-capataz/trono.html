@@ -1332,20 +1332,73 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
       if (!(k % 2)) { dm.position.set(Math.sin(a) * 0.31, Math.cos(a) * 0.31, 0); dm.rotation.set(0, 0, a); dm.scale.set(1, 1, 1); dm.updateMatrix(); est.setMatrixAt(k / 2, dm.matrix); } }
     g.add(rayos); g.add(est); }
   // Imagen modelada en 3D (modelos/virgen.glb, generada con TRELLIS a partir de las fotos de referencias/). Lleva su
-  // peana, saya, manto, rostrillo, corona y ráfaga: si carga, sustituye a la imagen procedural de arriba (y a la capa de
-  // los hombros); si no carga (sin conexión, abierto como file://, navegador sin WebGL2...), se queda la procedural.
+  // peana, saya, manto, rostrillo y corona: si carga, sustituye a la imagen procedural de arriba, a la capa de los hombros
+  // y al manto largo; si no carga (sin conexión, abierto como file://...), se queda todo lo procedural.
+  // La ráfaga del modelo salía como un aro tosco: se quita y se pone la de la foto (modelos/rafaga.png) como plano.
   const VIRGEN_BASE = 2.9, VIRGEN_TOPE = 4.42;   // de la peana a la cruz de la ráfaga, por debajo del techo de palio (4,51)
   if (THREE.GLTFLoader) new THREE.GLTFLoader().load('modelos/virgen.glb', (gltf) => {
     const m = gltf.scene, caja = new THREE.Box3().setFromObject(m), tam = caja.getSize(new THREE.Vector3()), cen = caja.getCenter(new THREE.Vector3());
     const k = (VIRGEN_TOPE - VIRGEN_BASE) / tam.y;
-    m.traverse((o) => { if (!o.isMesh) return;
-      if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
-      const mat = o.material; mat.flatShading = false; mat.roughness = 0.62; mat.metalness = 0.12; mat.envMapIntensity = 0.8; mat.needsUpdate = true;
-      o.castShadow = true; o.receiveShadow = true; });
     const vg = new THREE.Group(); vg.name = 'virgen-glb'; vg.scale.setScalar(k);
     m.position.set(-cen.x, -caja.min.y, -cen.z); vg.add(m); vg.position.set(0, VIRGEN_BASE, -0.04);
     IMG.children.slice().forEach((o) => { o.visible = false; }); capa.visible = false;
-    IMG.add(vg);
+    IMG.add(vg); trono.updateMatrixWorld(true);
+    const aIMG = new THREE.Matrix4().copy(IMG.matrixWorld).invert(), pts = [], v = new THREE.Vector3();
+    m.traverse((o) => { if (!o.isMesh) return;
+      const g = o.geometry, pa = g.attributes.position;
+      const P = g.attributes.position, rel = new THREE.Matrix4().multiplyMatrices(aIMG, o.matrixWorld);
+      const loc = (i) => v.fromBufferAttribute(P, i).applyMatrix4(rel);
+      // fuera el aro de la ráfaga: por encima de la corona, o a los lados de la cabeza a la altura de la corona
+      if (g.index) { const I = g.index.array, quedan = [];
+        for (let t = 0; t < I.length; t += 3) { let x = 0, y = 0; for (let q = 0; q < 3; q++) { loc(I[t + q]); x += v.x / 3; y += v.y / 3; }
+          if (y > 4.285 || (y > 4.1 && Math.abs(x) > 0.11)) continue; quedan.push(I[t], I[t + 1], I[t + 2]); }
+        g.setIndex(quedan); }
+      for (let i = 0; i < P.count; i++) { loc(i); if (v.y < 4.1 || Math.abs(v.x) < 0.11) pts.push(v.x, v.y, v.z); }
+      g.computeVertexNormals();
+      const mat = o.material; mat.flatShading = false; mat.roughness = 0.62; mat.metalness = 0.12; mat.envMapIntensity = 0.8; mat.needsUpdate = true;
+      o.castShadow = true; o.receiveShadow = true; });
+    // Ráfaga de la foto, recortada con transparencia, a la profundidad del centro de la cabeza (detrás de la corona 3D)
+    new THREE.TextureLoader().load('modelos/rafaga.png', (t) => { t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+      const mat = new THREE.MeshStandardMaterial({ map: t, emissiveMap: t, emissive: 0x6a4a1c, alphaTest: 0.45, side: THREE.DoubleSide, metalness: 0.35, roughness: 0.35 });
+      const raf = new THREE.Mesh(new THREE.PlaneGeometry(0.421, 0.421), mat); raf.position.set(-0.002, 4.225, -0.03); raf.castShadow = true;
+      raf.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: t, alphaTest: 0.45 });
+      IMG.add(raf); });
+    // Manto nuevo: nace en la cabeza, se ciñe a la espalda de la imagen siguiendo su forma real (radio máximo del modelo
+    // en cada altura y ángulo, más un grosor) y se abre en cola por la trasera del cajillo hasta casi el final de los varales.
+    const NB = 72, filas = [], yTop = 4.1, yBase = 2.96, NH = 30;
+    for (let j = 0; j <= NH; j++) filas.push(yTop - (yTop - yBase) * j / NH);
+    const rmax = filas.map(() => new Float32Array(NB));
+    for (let q = 0; q < pts.length; q += 3) { const x = pts[q], y = pts[q + 1], z = pts[q + 2];
+      const b = Math.floor(((Math.atan2(x, z) + Math.PI * 2) % (Math.PI * 2)) / (Math.PI * 2) * NB) % NB, r = Math.hypot(x, z);
+      filas.forEach((fy, j) => { if (Math.abs(y - fy) < 0.03 && r > rmax[j][b]) rmax[j][b] = r; }); }
+    const NU = 28, A = (y) => THREE.MathUtils.lerp(1.85, 1.45, THREE.MathUtils.clamp((y - 3.7) / (yTop - 3.7), 0, 1));
+    const th = (j, i) => Math.PI + (i / NU * 2 - 1) * A(filas[j]);
+    const R = filas.map((fy, j) => Array.from({ length: NU + 1 }, (_, i) => { const c = th(j, i) / (Math.PI * 2) * NB; let r = 0;
+      for (let d = -2; d <= 2; d++) r = Math.max(r, rmax[j][((Math.round(c) + d) % NB + NB) % NB]); return r; }));
+    for (let j = 0; j <= NH; j++) for (let i = 0; i <= NU; i++) if (!R[j][i]) R[j][i] = j ? R[j - 1][i] : 0.12;
+    for (let pasada = 0; pasada < 2; pasada++) for (let j = 0; j <= NH; j++) { const f = R[j].slice(); for (let i = 1; i < NU; i++) R[j][i] = (f[i - 1] + 2 * f[i] + f[i + 1]) / 4; }
+    for (let j = 1; j <= NH; j++) for (let i = 0; i <= NU; i++) R[j][i] = Math.max(R[j][i], R[j - 1][i]);   // cae, no se mete en la cintura
+    const pos = [], uv = [], idx = [], fila = [];
+    const pon = (row) => { fila.push(row); };
+    // copete sobre la nuca, por debajo de la corona
+    pon(Array.from({ length: NU + 1 }, (_, i) => { const t = th(0, i), r = R[0][i] * 0.7 + 0.025; return [r * Math.sin(t), yTop + 0.035, r * Math.cos(t) - 0.75]; }));
+    for (let j = 0; j <= NH; j++) pon(Array.from({ length: NU + 1 }, (_, i) => { const t = th(j, i), r = R[j][i] + 0.025; return [r * Math.sin(t), filas[j], r * Math.cos(t) - 0.75]; }));
+    const anillo = fila[fila.length - 1], zb = Math.min(...anillo.map((p) => p[2])), wr = Math.max(...anillo.map((p) => Math.abs(p[0])));
+    const cola = new THREE.CatmullRomCurve3([[yBase, zb], [2.99, zb - 0.35], [3.03, -2.2], [3.085, -2.6], [3.06, -2.85], [2.95, -3.5], [2.72, -4.6], [2.55, -5.4], [2.32, -5.85], [2.05, -5.95]].map(([y, z]) => new THREE.Vector3(0, y, z)));
+    const sst = (a) => { a = THREE.MathUtils.clamp(a, 0, 1); return a * a * (3 - 2 * a); };
+    for (let n = 1; n <= 48; n++) { const s = n / 48, C = cola.getPoint(s), dz = C.z - zb, b = sst(s / 0.18), W = wr + (1.12 - wr) * sst(s / 0.35);
+      pon(anillo.map((p, i) => { const u = i / NU * 2 - 1, cae = C.z < -2.65 ? Math.pow(Math.abs(u), 3) * 0.28 * THREE.MathUtils.clamp((-2.65 - C.z) / 0.6, 0, 1) : 0;
+        const sx = u * W, sy = C.y - cae + Math.sin(u * 9 + s * 4) * 0.012 * b, sz = C.z;
+        return [THREE.MathUtils.lerp(p[0], sx, b), THREE.MathUtils.lerp(C.y, sy, b), THREE.MathUtils.lerp(p[2] + dz, sz, b)]; })); }
+    const largo = [0]; for (let j = 1; j < fila.length; j++) { const a = fila[j - 1][NU >> 1], c = fila[j][NU >> 1]; largo.push(largo[j - 1] + Math.hypot(a[0] - c[0], a[1] - c[1], a[2] - c[2])); }
+    const L = largo[largo.length - 1];
+    fila.forEach((row, j) => row.forEach((p, i) => { pos.push(p[0], p[1], p[2]); uv.push(i / NU * 1.5, (1 - largo[j] / L) * L / 1.8); }));
+    for (let j = 0; j < fila.length - 1; j++) for (let i = 0; i < NU; i++) { const a = j * (NU + 1) + i, c = a + NU + 1; idx.push(a, c, a + 1, c, c + 1, a + 1); }
+    const gm = new THREE.BufferGeometry(); gm.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); gm.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); gm.setIndex(idx); gm.computeVertexNormals();
+    // bordado más menudo que el del manto procedural, a la escala del de la imagen (se repite a lo largo)
+    const texMV = texCanvas(512, 1024, (x, w, h) => { const mot = []; for (let fy = 0; fy < 8; fy++) for (let fx = 0; fx < 4; fx++) mot.push([w * (0.125 + fx * 0.25) + (fy % 2 ? 32 : 0) - 16, 64 + fy * 128, 40]); bordar(x, w, h, '#10301f', mot, 0); });
+    const mantoV = new THREE.Mesh(gm, new THREE.MeshStandardMaterial({ map: texMV, side: THREE.DoubleSide, roughness: 0.75, metalness: 0.15 })); mantoV.name = 'manto-virgen'; mantoV.castShadow = true; mantoV.receiveShadow = true;
+    manto.visible = false; cuerpo.add(mantoV);
   }, undefined, (e) => console.warn('Virgen 3D no disponible, se usa la procedural:', e && e.message || e));
   // varales de palio y techo: van en su propio grupo, con su base sobre el cajillo, para que oscilen con retraso
   palio.position.y = PALIO_Y; cuerpo.add(palio);
