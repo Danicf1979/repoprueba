@@ -48,6 +48,7 @@ Eres el mayordomo de trono y llevas un trono de palio desde la nave de la casa h
 - **Momentos:** parado delante de la iglesia de Santiago, alguien canta una saeta; delante del convento de las Clarisas, en silencio, cantan las monjas. La tribuna de la plaza y la peña de calle Císter dan lucimiento a la mecida y a la levantá a pulso.
 - **Puntos de guardado:** la partida se guarda al llegar a ciertos cruces, al terminar cada calle larga (marcados con un aro en el plano); en la pantalla de inicio aparece «Continuar la partida».
 - **Gráficos:** reflejos de entorno para que el oro y la plata parezcan metal, resplandor (bloom) de velas, tulipas y farolas, sombras, Virgen con rostro pintado, rostrillo, corona imperial y ráfaga, público con cuerpo, brazos y piernas. El botón «Gráficos» baja la calidad en móviles lentos (altos: todo; medios: sin sombras; bajos: sin resplandor).
+- **Virgen en 3D:** `modelos/virgen.glb` (0,95 MB) se generó con TRELLIS (Space `trellis-community/TRELLIS`) a partir de la foto de frente de `referencias/` y se optimizó con gltf-transform (textura JPEG de 1024 px y cuantización). Se carga con GLTFLoader bajo el palio, de la peana (2,9 m) a la cruz de la ráfaga (4,42 m), sin tocar el techo de palio (4,51 m). Si no carga (sin conexión o abierto como `file://`), queda la Virgen procedural. Para verla hay que servir la carpeta por HTTP (p. ej. `python3 -m http.server`).
 
 ## La procesión (etapa 3)
 

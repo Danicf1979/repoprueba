@@ -327,6 +327,7 @@ section[data-panel] { display: grid; gap: 12px; }
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 'use strict';
 (function () {
@@ -1330,6 +1331,22 @@ const texManto = texCanvas(512, 1024, (x, w, h) => {
     for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2, L = k % 2 ? 0.06 : 0.1; dm.position.set(Math.sin(a) * 0.2, Math.cos(a) * 0.2, 0); dm.rotation.set(0, 0, -a); dm.scale.set(1, L, 1); dm.updateMatrix(); rayos.setMatrixAt(k, dm.matrix);
       if (!(k % 2)) { dm.position.set(Math.sin(a) * 0.31, Math.cos(a) * 0.31, 0); dm.rotation.set(0, 0, a); dm.scale.set(1, 1, 1); dm.updateMatrix(); est.setMatrixAt(k / 2, dm.matrix); } }
     g.add(rayos); g.add(est); }
+  // Imagen modelada en 3D (modelos/virgen.glb, generada con TRELLIS a partir de las fotos de referencias/). Lleva su
+  // peana, saya, manto, rostrillo, corona y ráfaga: si carga, sustituye a la imagen procedural de arriba (y a la capa de
+  // los hombros); si no carga (sin conexión, abierto como file://, navegador sin WebGL2...), se queda la procedural.
+  const VIRGEN_BASE = 2.9, VIRGEN_TOPE = 4.42;   // de la peana a la cruz de la ráfaga, por debajo del techo de palio (4,51)
+  if (THREE.GLTFLoader) new THREE.GLTFLoader().load('modelos/virgen.glb', (gltf) => {
+    const m = gltf.scene, caja = new THREE.Box3().setFromObject(m), tam = caja.getSize(new THREE.Vector3()), cen = caja.getCenter(new THREE.Vector3());
+    const k = (VIRGEN_TOPE - VIRGEN_BASE) / tam.y;
+    m.traverse((o) => { if (!o.isMesh) return;
+      if (!o.geometry.attributes.normal) o.geometry.computeVertexNormals();
+      const mat = o.material; mat.flatShading = false; mat.roughness = 0.62; mat.metalness = 0.12; mat.envMapIntensity = 0.8; mat.needsUpdate = true;
+      o.castShadow = true; o.receiveShadow = true; });
+    const vg = new THREE.Group(); vg.name = 'virgen-glb'; vg.scale.setScalar(k);
+    m.position.set(-cen.x, -caja.min.y, -cen.z); vg.add(m); vg.position.set(0, VIRGEN_BASE, -0.04);
+    IMG.children.slice().forEach((o) => { o.visible = false; }); capa.visible = false;
+    IMG.add(vg);
+  }, undefined, (e) => console.warn('Virgen 3D no disponible, se usa la procedural:', e && e.message || e));
   // varales de palio y techo: van en su propio grupo, con su base sobre el cajillo, para que oscilen con retraso
   palio.position.y = PALIO_Y; cuerpo.add(palio);
   // Varales de palio cincelados: jarra en la base, nudos a lo largo de la caña y capitel arriba
@@ -1883,7 +1900,10 @@ function distLibre(dx, dz, max) {
   return d;
 }
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmpP = new THREE.Vector3(), tmpL = new THREE.Vector3();
+let VISTA = null;   // vista fija para pruebas (window.__trono.vista = { p: [x, y, z], l: [x, y, z] } relativos al trono)
 function updateCam(dt) {
+  if (VISTA) { const q = G.pose, c = Math.cos(q.a), sn = Math.sin(q.a), yS = Hs(q.x, q.z), w = ([a, b, d]) => new THREE.Vector3(q.x + a * c + d * sn, b + yS, q.z - a * sn + d * c);
+    mayordomo.visible = false; camera.up.set(0, 1, 0); camera.position.copy(w(VISTA.p)); camera.lookAt(w(VISTA.l)); return; }
   const p = G.pose, fx = Math.sin(p.a), fz = Math.cos(p.a), lx = Math.cos(p.a), lz = -Math.sin(p.a);
   let up = [0, 1, 0];
   mayordomo.visible = camModo !== 1;
@@ -2435,7 +2455,7 @@ function loop(t) {
 }
 requestAnimationFrame(loop);
 
-window.__trono = { puedeRapido, imprevisto, eventosEnsayo, get EVENTOS() { return EVENTOS; }, get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, prepararRuta, RUTAS_TIPO, TR, NODOS, TRAMOS, libre, zonaEn, CIUDAD, NIVEL, SALIDA, JUEGO, guardarPartida, leerGuardado, cargarPartida, get RUTA() { return RUTA; }, get composer() { return composer; }, elegirRuta, get rutaSel() { return rutaSel; }, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
+window.__trono = { puedeRapido, imprevisto, eventosEnsayo, get EVENTOS() { return EVENTOS; }, get G() { return G; }, PAL, BAMBALINAS, colisiona, OBS, press, release, TIERS, prepararRuta, RUTAS_TIPO, TR, NODOS, TRAMOS, libre, zonaEn, CIUDAD, NIVEL, SALIDA, JUEGO, guardarPartida, leerGuardado, cargarPartida, get RUTA() { return RUTA; }, get composer() { return composer; }, elegirRuta, get rutaSel() { return rutaSel; }, get vista() { return VISTA; }, set vista(v) { VISTA = v; }, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
 })();
 </script>
 </body>
