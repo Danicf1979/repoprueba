@@ -951,6 +951,26 @@ const ROPA = [0x1f2230, 0x2a2f45, 0x3a2a2a, 0x2b3a2e, 0x4a4036, 0x6b5d4c, 0x8a7a
 const PANT = [0x1a1a22, 0x23283a, 0x2e2a26, 0x3a3a40, 0x4a5a7a, 0x5a4a3a];
 const PIEL = [0xc6976f, 0xd9b08a, 0xa97a55, 0xe3c2a0, 0x8a5a3a, 0xf0d0b0];
 const PELO = [0x1a120c, 0x2a1d12, 0x111111, 0x5a4030, 0x8a6a40, 0x9a9a9a, 0xd0c0a0];
+
+// El público se mueve: cada persona se balancea y cambia el peso de pie a su ritmo, y aplaude (se agita más) en las
+// levantás y cuando suena la banda. Se hace en el shader, para que miles de personas no cuesten nada.
+const PUB_U = { t: { value: 0 }, animo: { value: 0 } };
+function matPublico(rough) {
+  const m = M(0xffffff, { roughness: rough });
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uT = PUB_U.t; sh.uniforms.uAnimo = PUB_U.animo;
+    sh.vertexShader = 'uniform float uT; uniform float uAnimo;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+      float semilla = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
+      float h = clamp(transformed.y / 1.7, 0.0, 1.0);
+      float vel = 0.6 + semilla * 0.8 + uAnimo * 4.0;
+      transformed.x += sin(uT * vel + semilla * 30.0) * (0.035 + uAnimo * 0.05) * h;
+      transformed.z += sin(uT * vel * 0.7 + semilla * 17.0) * 0.02 * h;
+      transformed.y += max(0.0, sin(uT * (7.0 + semilla * 3.0) + semilla * 50.0)) * uAnimo * 0.06 * step(0.5, semilla);
+      #endif`);
+  };
+  return m;
+}
 function crearPublico(lista) {
   const n = lista.length; if (!n) return;
   const r2 = rng(n * 13 + 7), pick = (a) => a[Math.floor(r2() * a.length)];
@@ -959,7 +979,7 @@ function crearPublico(lista) {
   for (const [tipo, l] of Object.entries(tipos)) {
     if (!l.length) continue;
     const G2 = PUB_GEO[tipo], k = l.length;
-    const mk = (geo, rough) => { const m = new THREE.InstancedMesh(geo, M(0xffffff, { roughness: rough }), k); m.castShadow = true; m.receiveShadow = true; scene.add(m); RUTA_OBJ.push(m); return m; };
+    const mk = (geo, rough) => { const m = new THREE.InstancedMesh(geo, matPublico(rough), k); m.castShadow = true; m.receiveShadow = true; scene.add(m); RUTA_OBJ.push(m); return m; };
     const mP = mk(G2.piernas, 0.8), mR = mk(G2.ropa, 0.85), mS = mk(G2.piel, 0.55), mH = mk(G2.pelo, 0.9);
     const dm = new THREE.Object3D(), col = new THREE.Color();
     l.forEach(([x, y, z, r, e], i) => {
@@ -986,6 +1006,61 @@ function franjaQ(q, dx, dz, lista) {
   }
 }
 const franja = (x0, z0, x1, z1, dx, dz, lista) => franjaQ(rect(x0, z0, x1, z1), dx, dz, lista);
+
+// ---- Calle vestida para la salida: colgaduras en los balcones, banderines cruzando la calle y cera en el suelo.
+// Cuantas más, más prestigio tiene la hermandad (el barrio se vuelca).
+const _hex = (c) => '#' + c.toString(16).padStart(6, '0');
+const TEX_COLG = [
+  texCanvas(128, 128, (x, w, h) => { x.fillStyle = '#7a1420'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(210,160,70,0.55)'; x.lineWidth = 2; for (let j = 0; j < 4; j++) for (let i = 0; i < 3; i++) { const cx = 22 + i * 42 + (j % 2) * 21, cy = 18 + j * 30; x.beginPath(); x.ellipse(cx, cy, 9, 13, 0, 0, Math.PI * 2); x.stroke(); x.beginPath(); x.moveTo(cx, cy - 13); x.lineTo(cx, cy + 13); x.stroke(); } x.fillStyle = '#d8b050'; x.fillRect(0, h - 12, w, 6); for (let i = 0; i < w; i += 6) x.fillRect(i, h - 6, 3, 6); }),
+  texCanvas(128, 128, (x, w, h) => { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#e8c040' : '#b01c24'; x.fillRect(i * 16, 0, 16, h); } x.fillStyle = '#d8b050'; for (let i = 0; i < w; i += 6) x.fillRect(i, h - 6, 3, 6); }),
+  texCanvas(128, 128, (x, w, h) => { x.fillStyle = _hex(HERMANDAD.capirote); x.fillRect(0, 0, w, h); x.strokeStyle = '#e0c060'; x.lineWidth = 5; x.strokeRect(8, 8, w - 16, h - 22); x.fillStyle = '#e0c060'; x.beginPath(); x.arc(w / 2, h / 2 - 6, 18, 0, Math.PI * 2); x.fill(); x.fillStyle = _hex(HERMANDAD.capirote); x.fillRect(w / 2 - 3, h / 2 - 20, 6, 28); x.fillRect(w / 2 - 11, h / 2 - 12, 22, 6); for (let i = 0; i < w; i += 6) { x.fillStyle = '#e0c060'; x.fillRect(i, h - 6, 3, 6); } }),
+];
+const MAT_COLG = TEX_COLG.map((t) => { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return new THREE.MeshStandardMaterial({ map: t, side: THREE.DoubleSide, roughness: 0.8 }); });
+function vestirCalle() {
+  const pres = HERMANDAD.prestigio, dm = new THREE.Object3D();
+  // colgaduras: cuelgan de la reja hacia la calle
+  const porTipo = [[], [], []];
+  for (const [x, y, z, r, tid, grande] of BALC) {
+    if (!RUTA.tramos.has(tid) || rnd() > 0.25 + 0.6 * pres) continue;
+    const k = rnd() < 0.3 ? 2 : rnd() < 0.55 ? 0 : 1, fondo = grande ? JUEGO.fondoBalcon : 0.75;
+    porTipo[k].push([x + Math.sin(r) * (fondo + 0.02), Y(x, z) + y + 0.9 - 0.95, z + Math.cos(r) * (fondo + 0.02), r]);
+  }
+  const gC = new THREE.PlaneGeometry(1.7, 1.9, 6, 1); { const p = gC.attributes.position; for (let i = 0; i < p.count; i++) { const yy = p.getY(i); p.setZ(i, Math.sin(p.getX(i) * 9) * 0.03 + (0.95 - yy) * 0.06); } gC.computeVertexNormals(); }
+  porTipo.forEach((l, k) => { if (!l.length) return; const m = new THREE.InstancedMesh(gC, MAT_COLG[k], l.length); l.forEach(([x, y, z, r], i) => { dm.position.set(x, y, z); dm.rotation.set(0, r, 0); dm.scale.set(1, 1, 1); dm.updateMatrix(); m.setMatrixAt(i, dm.matrix); }); m.receiveShadow = true; scene.add(m); RUTA_OBJ.push(m); });
+  // banderines de lado a lado, a 7,5 m (por encima del palio y de los arbotantes)
+  const banderas = [], cuerdas = [];
+  for (const t of TRAMOS) {
+    if (!RUTA.tramos.has(t.id) || EST === 'industrial') continue;
+    for (let u = 6; u < L_UTIL(t) - 4; u += 16 - 6 * pres) {
+      const f = Fr(t, u), w = f.w, y0 = Y(f.x, f.z) + 7.5;
+      const ax = f.x + f.nx * w / 2, az = f.z + f.nz * w / 2, n = Math.max(6, Math.round(w / 0.55));
+      cuerdas.push([ax, az, -f.nx * w, -f.nz * w, y0]);
+      for (let i = 0; i < n; i++) { const k = (i + 0.5) / n, sag = Math.sin(Math.PI * k) * 0.9; banderas.push([ax - f.nx * w * k, y0 - sag, az - f.nz * w * k, Math.atan2(f.tx, f.tz), i % 3]); }
+    }
+  }
+  if (banderas.length) {
+    const gB = new THREE.BufferGeometry(); gB.setAttribute('position', new THREE.Float32BufferAttribute([-0.18, 0, 0, 0.18, 0, 0, 0, -0.42, 0], 3)); gB.computeVertexNormals();
+    const cols = [HERMANDAD.capirote, 0xf2ead6, 0xd8b050];
+    const m = new THREE.InstancedMesh(gB, new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, roughness: 0.8 }), banderas.length), col = new THREE.Color();
+    banderas.forEach(([x, y, z, r, c], i) => { dm.position.set(x, y, z); dm.rotation.set(0, r + Math.PI / 2, 0); dm.scale.set(1, 1, 1); dm.updateMatrix(); m.setMatrixAt(i, dm.matrix); m.setColorAt(i, col.setHex(cols[c])); });
+    scene.add(m); RUTA_OBJ.push(m);
+    const pts = []; for (const [ax, az, dx, dz, y0] of cuerdas) for (let i = 0; i < 12; i++) { const k0 = i / 12, k1 = (i + 1) / 12; pts.push(ax + dx * k0, y0 - Math.sin(Math.PI * k0) * 0.9, az + dz * k0, ax + dx * k1, y0 - Math.sin(Math.PI * k1) * 0.9, az + dz * k1); }
+    const gL = new THREE.BufferGeometry(); gL.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const l = new THREE.LineSegments(gL, new THREE.LineBasicMaterial({ color: 0x2a2a2a })); scene.add(l); RUTA_OBJ.push(l);
+  }
+  // cera en el suelo y pétalos: donde pasan las filas de nazarenos
+  const manchas = [];
+  for (const t of TRAMOS) {
+    if (!RUTA.tramos.has(t.id)) continue;
+    for (let u = 1; u < L_UTIL(t); u += 0.7) { const f = Fr(t, u), sep = Math.min(1.7, Math.max(0.9, f.w * 0.19)); for (const ld of [-1, 1]) if (rnd() < 0.5) { const o = ld * sep + (rnd() - 0.5) * 0.5; manchas.push([f.x + f.nx * o, f.z + f.nz * o, 0.05 + rnd() * 0.09, 0]); } if (rnd() < 0.25 * pres) for (let q = 0; q < 4; q++) { const o = (rnd() - 0.5) * f.w * 0.5; manchas.push([f.x + f.nx * o + (rnd() - 0.5), f.z + f.nz * o + (rnd() - 0.5), 0.035, 1]); } }
+  }
+  if (manchas.length) {
+    const g = new THREE.CircleGeometry(1, 7); g.rotateX(-Math.PI / 2);
+    const m = new THREE.InstancedMesh(g, new THREE.MeshStandardMaterial({ roughness: 0.3, polygonOffset: true, polygonOffsetFactor: -2 }), manchas.length), col = new THREE.Color();
+    manchas.forEach(([x, z, r, tipo], i) => { dm.position.set(x, Y(x, z) + 0.012, z); dm.rotation.set(0, rnd() * 6, 0); dm.scale.set(r, 1, r * (tipo ? 0.6 : 0.8 + rnd() * 0.4)); dm.updateMatrix(); m.setMatrixAt(i, dm.matrix); m.setColorAt(i, col.setHex(tipo ? (rnd() < 0.5 ? 0xb0182a : 0xe8dcc8) : 0xf0e6cc)); });
+    m.receiveShadow = true; scene.add(m); RUTA_OBJ.push(m);
+  }
+}
 const COCHES = [0x8a1a1a, 0x1a3a6a, 0xd8d8d8, 0x1a1a1a, 0x6a6a72, 0x2a5a3a, 0xc8b070, 0x5a1a4a];
 function prepararRuta(nodos) {
   for (const m of RUTA_OBJ) scene.remove(m);
@@ -1041,6 +1116,7 @@ function prepararRuta(nodos) {
   }
   // tribunas del recorrido oficial
   if (META) { const t = META.t, uM = NIVEL.meta.u - t.s0; for (const ld of [-1, 1]) for (let v = uM + 3; v < Math.min(L_UTIL(t), uM + 25); v += 0.5) for (let i = 0; i < 3; i++) if (rnd() > 0.15) { const f = Fr(t, v), dd = 0.3 + i * 0.5, x = f.x + f.nx * ld * (f.w / 2 - dd), z = f.z + f.nz * ld * (f.w / 2 - dd); gente.push([x, 1 + i * 0.6, z, Math.atan2(-f.nx * ld, -f.nz * ld), 0.66]); } }
+  if (NIVEL.modo !== 'ensayo') vestirCalle();
   crearPublico(gente);
   if (coches.length) {
     const body = new THREE.BoxGeometry(1.75, 0.75, 4.2); body.translate(0, 0.6, 0);
@@ -2175,7 +2251,7 @@ function updateCam(dt) {
   mayordomo.visible = camModo !== 1;
   if (camModo === 0) { const want = 20 * zoom, d = distLibre(-fx, -fz, want); tmpP.set(p.x - fx * d, 6 + 5 * zoom + (want - d) * 0.5, p.z - fz * d); tmpL.set(p.x + fx * 5, 2.6, p.z + fz * 5); }
   else if (camModo === 1) { const d = distLibre(fx, fz, 12 * zoom); tmpP.set(p.x + fx * d, 1.7, p.z + fz * d); tmpL.set(p.x, 3.2, p.z); }
-  else if (camModo === 2) { tmpP.set(p.x, 38 * zoom, p.z); tmpL.set(p.x, 0, p.z); up = [fx, 0, fz]; }
+  else if (camModo === 2) { tmpP.set(p.x - fx * 5 * zoom, 26 * zoom, p.z - fz * 5 * zoom); tmpL.set(p.x + fx * 7, 0, p.z + fz * 7); }
   else { tmpP.set(p.x + fx * 7.1 + lx * 3.0, 1.75, p.z + fz * 7.1 + lz * 3.0); tmpL.set(p.x + fx * 18 + lx * 2.4, 2.0, p.z + fz * 16 + lz * 2.4); }
   { const yS = Hs(p.x, p.z); tmpP.y += Math.max(yS, Hs(tmpP.x, tmpP.z)); tmpL.y += yS; }
   const s = camSnap ? 1 : 1 - Math.exp(-dt * 4);
@@ -2713,6 +2789,7 @@ function loop(t) {
   if (!pausa) eventosEnsayo(dt * ff);
   $('#b-rapido').classList.toggle('on', RAPIDO); $('#b-rapido').textContent = RAPIDO ? (ff > 1 ? '⏩ ×3' : '⏩ espera') : '⏩ Rápido';
   actualizarCortejo(dt);
+  PUB_U.t.value = t / 1000; { const B = G.banda, obj = G.estado === 'levantando' || G.estado === 'pulso' ? 1 : B && B.estado === 'marcha' ? 0.35 : 0; PUB_U.animo.value += (obj - PUB_U.animo.value) * Math.min(1, dt * 2); }
   updateCam(dt);
   if (t - ultimoHud > 100) { hud(); ultimoHud = t; }
   dibujarMapa();
