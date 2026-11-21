@@ -7,6 +7,7 @@ Repositorio de trabajo organizado por temas: cada tema tiene su propia carpeta c
 | Carpeta | Contenido |
 |---|---|
 | [gestion-documentacion](gestion-documentacion/) | Guía de estudio de gestión de la documentación |
+| [juego-capataz](juego-capataz/) | Prototipo de juego: mandar un paso de Semana Santa como capataz |
 
 ## Cómo trabajamos
 
