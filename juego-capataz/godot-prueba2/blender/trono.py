@@ -109,6 +109,8 @@ for sx in (-1, 1):                                          # cantoneras en los 
         ob.location = (sx * (W2 - 0.07), sy * (L2 - 0.07), 0)
 
 # ---------------------------------------------------------------- faldones con flecos
+# En los tronos el faldón es terciopelo liso con galón dorado en paños (el bordado y el respiradero son de los pasos).
+faldon_m = material('faldon', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('faldon', TERCIOPELO, nivel='liso'), escala_nor=0.5)
 def lado(nombre, ancho, pos, rz, alto, mat, nx=60, nz=8, f=None, rep=(1, 1)):
     o = objeto(nombre, rejilla(ancho, alto, nx, nz, f, rep), mat); o.location = pos; o.rotation_euler = (0, 0, rz)
     return o
@@ -116,7 +118,13 @@ ondas = lambda x, z, i, j: (0, 0.012 * math.sin(x * 9) * (-z / 0.7), 0)
 alto_f = Z_MESA - 0.24
 for nombre, ancho, pos, rz in (('faldon_frente', 2 * W2, (0, -L2 - 0.03, Z_MESA), 0), ('faldon_detras', 2 * W2, (0, L2 + 0.03, Z_MESA), math.pi),
                                ('faldon_dcha', 2 * L2, (W2 + 0.03, 0, Z_MESA), math.pi / 2), ('faldon_izda', 2 * L2, (-W2 - 0.03, 0, Z_MESA), -math.pi / 2)):
-    lado(nombre, ancho, pos, rz, alto_f, tercio, f=ondas, rep=(ancho / 0.55, alto_f / 0.55))
+    fd = lado(nombre, ancho, pos, rz, alto_f, faldon_m, f=ondas, rep=(ancho / 0.55, alto_f / 0.55))
+    paños = max(2, round(ancho / 0.75))
+    galon = [[(-ancho / 2 + 0.02, -0.008, -0.05), (ancho / 2 - 0.02, -0.008, -0.05)],
+             [(-ancho / 2 + 0.02, -0.008, -alto_f + 0.06), (ancho / 2 - 0.02, -0.008, -alto_f + 0.06)]]
+    galon += [[(-ancho / 2 + ancho * k / paños, -0.008, -0.05), (-ancho / 2 + ancho * k / paños, -0.008, -alto_f + 0.06)] for k in range(1, paños)]
+    for g in galon:
+        o = objeto('faldon_galon', tubo(g, 0.012, segs=6), oro); o.parent = fd
     fl = lado('flecos', ancho, (pos[0], pos[1], Z_MESA - alto_f), rz, 0.07, flecos, nx=20, nz=1, rep=(ancho / 0.3, 1))
 
 # ---------------------------------------------------------------- candelería: el «monte» de cera

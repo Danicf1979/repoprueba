@@ -33,7 +33,7 @@ hermandad**.
 | Mesa y estructura | Cajón con patas; en los ensayos sale solo la estructura con los sacos (como ahora) | Tamaño: nº de varales y largo |
 | Varales | Torneados, con cabezas de varal y remates delanteros | Nº de varales (4–6), metal |
 | Cajillo / canastilla | Molduras, cartelas y cantoneras repetidas, relieve en la textura (mapa de normales) | Oro / plata, nivel de talla |
-| Faldones | Terciopelo con bordado en textura y caída | Color del terciopelo, bordado sí/no |
+| Faldones | Terciopelo liso con galón en paños y flecos (sin bordar: el bordado y el respiradero son de los pasos) | Color del terciopelo |
 | Candelería | Un candelero y un cirio repetidos cientos de veces (MultiMesh), llama animada en el shader | Nº de tandas, cera blanca / tiniebla |
 | Jarras y flores | Una jarra y un ramo repetidos | Tipo y color de flor |
 | Arbotantes y faroles | Con tulipas que se rompen al chocar (ya existe en la web) | Nº de arbotantes |
@@ -47,7 +47,7 @@ hermandad**.
 - **Manto de cola**: nace en punta detrás de la corona, baja en rampa abombada, cada vez más ancho, y acaba
   redondeado sobre los varales traseros, con los bordes caídos. Varía el color del terciopelo (granate, morado, azul,
   negro, blanco, rojo) y el bordado: un gran dibujo simétrico con motivo central (escudo, paloma, anagrama) y cenefa.
-- **Bordado** (palio, faldones y manto, por separado): cinco niveles, del más barato al más caro, con su plazo de
+- **Bordado** (palio —techo y bambalinas— y manto, por separado; los faldones del trono van lisos con galón): cinco niveles, del más barato al más caro, con su plazo de
   taller orientativo: liso (solo galón, una temporada), sencillo (motivos sueltos, un año), medio (dos años),
   cargado (roleos gruesos y filigrana, tres o cuatro años) y riquísimo (casi todo oro, a realce, cinco años o más).
   Cuanto más cargado, más prestigio al estrenarlo.
