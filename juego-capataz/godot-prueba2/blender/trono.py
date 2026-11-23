@@ -304,22 +304,26 @@ ab = 0.62                                                 # medio ancho de la ab
 mt = objeto('manto', torno([(0.43, 0.0), (0.41, 0.1), (0.36, 0.32), (0.27, 0.52), (0.2, 0.66), (0.165, 0.76), (0.155, 0.84), (0.158, 0.93),
                             (0.14, 1.01), (0.09, 1.07), (0.0, 1.09)], 40, rep_u=4, rep_v=2, tapa=False, arco=(ab, 2 * math.pi - ab)), manto_m)
 mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickness = 0.012
-# cola del manto: cae por detrás de la imagen sobre la cubierta y por la trasera del trono
-ruta_c = [(0.3, 0.62), (0.45, 0.42), (0.62, 0.12), (0.85, -0.02), (1.3, -0.04), (1.75, -0.04), (1.86, -0.12), (1.9, -0.45)]
-def cola_f(x, z, i, j):
-    return (0, 0, 0)
-bm = bmesh.new(); vs = []; nx = 12
+# cola del manto: baja por la espalda de la imagen, se apoya en la cubierta, sale por la trasera del cajillo y se
+# extiende casi hasta el final de los varales traseros (como en el trono web), abriéndose y bajando muy poco para
+# pasar por encima de las cabezas de los hombres de trono.
+ruta_c = [(0.3, 0.62), (0.42, 0.42), (0.55, 0.1), (0.7, -0.2), (0.9, -0.33), (1.2, -0.355), (1.6, -0.355), (1.8, -0.35),
+          (2.1, -0.36), (2.5, -0.38), (2.9, -0.4), (3.15, -0.42), (3.22, -0.47)]
+anchos = [0.22, 0.4, 0.55, 0.68, 0.78, 0.82, 0.84, 0.85, 0.9, 0.95, 0.99, 1.0, 1.0]
+bm = bmesh.new(); vs = []; nx = 16
 for j, (dy, dz) in enumerate(ruta_c):
-    w = 0.22 + 0.68 * min(1, j / 4)
-    vs.append([bm.verts.new(T((-w + 2 * w * i / nx, dy, dz - 0.002 * math.sin(i)))) for i in range(nx + 1)])
+    w = anchos[j]
+    vs.append([bm.verts.new(T((-w + 2 * w * i / nx, dy, dz + 0.006 * math.sin(i * 1.3) * (j > 7)))) for i in range(nx + 1)])
 capa = bm.loops.layers.uv.verify()
 for j in range(len(vs) - 1):
     for i in range(nx):
         f = bm.faces.new((vs[j][i], vs[j][i + 1], vs[j + 1][i + 1], vs[j + 1][i]))
-        for lp, uv in zip(f.loops, [(i / nx * 3, j * 0.6), ((i + 1) / nx * 3, j * 0.6), ((i + 1) / nx * 3, (j + 1) * 0.6), (i / nx * 3, (j + 1) * 0.6)]):
+        for lp, uv in zip(f.loops, [(i / nx * 4, j * 0.6), ((i + 1) / nx * 4, j * 0.6), ((i + 1) / nx * 4, (j + 1) * 0.6), (i / nx * 4, (j + 1) * 0.6)]):
             lp[capa].uv = uv
+borde = [v.co.copy() for v in [f[0] for f in vs]][::-1] + [v.co.copy() for v in vs[-1]] + [f[-1].co.copy() for f in vs]
 cola = objeto('manto_cola', bm, manto_m, subdiv=1)
 cola.modifiers.new('grosor', 'SOLIDIFY').thickness = 0.012
+objeto('cola_galon', tubo([p + Vector((0, 0, 0.008)) for p in borde], 0.014, segs=6, tapas=False), oro)
 objeto('manto_galon', tubo([T((math.sin(a) * 0.43, -math.cos(a) * 0.43, 0.005)) for a in [ab + (2 * math.pi - 2 * ab) * i / 40 for i in range(41)]],
                            0.012, segs=6, tapas=False), oro)
 
