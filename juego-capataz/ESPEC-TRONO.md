@@ -44,13 +44,16 @@ hermandad**.
 
 **Catálogo para la gestión** (cada trono cambia; según las fotos de tronos de Málaga):
 
-- **Manto de cola**: nace en punta detrás de la corona, baja en rampa abombada, cada vez más ancho, y acaba
+- **Manto de cola**: nace en punta detrás de la corona y cae por los lados hasta la cubierta (sin dejar hueco debajo); baja en rampa abombada, cada vez más ancho, y acaba
   redondeado sobre los varales traseros, con los bordes caídos. Varía el color del terciopelo (granate, morado, azul,
   negro, blanco, rojo) y el bordado: un gran dibujo simétrico con motivo central (escudo, paloma, anagrama) y cenefa.
 - **Bordado** (palio —techo y bambalinas— y manto, por separado; los faldones del trono van lisos con galón): cinco niveles, del más barato al más caro, con su plazo de
   taller orientativo: liso (solo galón, una temporada), sencillo (motivos sueltos, un año), medio (dos años),
   cargado (roleos gruesos y filigrana, tres o cuatro años) y riquísimo (casi todo oro, a realce, cinco años o más).
   Cuanto más cargado, más prestigio al estrenarlo.
+- **Ajuar de la imagen**: tocado (corona con ráfaga —una sola pieza: el aro y los rayos nacen alrededor de la corona—,
+  corona sola, solo ráfaga, diadema o aro de estrellas); bordado de la saya en los cinco niveles; toca, rostrillo,
+  corazón o puñal, rosario, joyas. Muchas piezas llegan como donación.
 - **Cabezas de varal**: tallas doradas de hojarasca, madera tallada, plata cincelada.
 - **Varales**: forrados de plata o metal, o de madera.
 - **Arbotantes**: árboles de hojarasca dorada (como la Paloma) o de plata con brazos en voluta; nº de tulipas;

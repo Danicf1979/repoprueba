@@ -18,7 +18,7 @@ TELAS = {'granate': (0.32, 0.01, 0.04), 'verde': (0.005, 0.16, 0.05), 'azul': (0
          'morado': (0.17, 0.01, 0.3), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.55, 0.01, 0.015)}
 FLORES = {'blanco': (0.98, 0.95, 0.95), 'rosa': (0.95, 0.35, 0.55), 'rojo': (0.7, 0.02, 0.04), 'morado': (0.38, 0.1, 0.6)}
 V = {'orfebreria': 'oro', 'terciopelo': 'granate', 'manto': 'granate', 'flor': 'blanco', 'arbotantes': 'cuatro', 'varales': 'plata',
-     'bordado': 'medio', 'bordado_manto': 'cargado'}
+     'bordado': 'medio', 'bordado_manto': 'cargado', 'bordado_saya': 'medio', 'tocado': 'corona_rafaga'}
 V.update(json.loads(os.environ.get('VARIANTE', '{}')))
 ORFEBRERIA = METALES[V['orfebreria']]
 TERCIOPELO = TELAS[V['terciopelo']]
@@ -339,7 +339,7 @@ for nombre, ancho, pos, rz in (('bambalina_frente', 2 * W2 - 0.04, (0, Y0 - 0.00
 # Serena, con la mirada baja; proporciones algo suaves (la cabeza un poco mayor de lo real) pero sin caricatura.
 piel = material('piel', (0.93, 0.76, 0.66), 0.5, sheen=0.2)
 encaje = material('encaje', (0.97, 0.96, 0.93), 0.6, tex=textura_bordado('encaje', (0.95, 0.94, 0.9), (1.0, 1.0, 0.98), N=256, grosor=0.8))
-saya = material('saya', (0.95, 0.9, 0.78), 0.6, tex=textura_bordado('saya', (0.93, 0.88, 0.76)), escala_nor=0.8)
+saya = material('saya', (0.95, 0.9, 0.78), 0.6, tex=textura_bordado('saya', (0.93, 0.88, 0.76), nivel=V['bordado_saya']), escala_nor=0.8)
 manto_m = material('manto', MANTO, 0.65, sheen=0.25, tex=textura_bordado('manto', MANTO, grosor=1.2), escala_nor=0.8)
 rasgo = material('rasgo', (0.2, 0.11, 0.08), 0.6)
 labio = material('labio', (0.72, 0.36, 0.36), 0.5)
@@ -358,6 +358,7 @@ mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickn
 # ancha, con los bordes caídos, y acaba redondeada sobre los varales traseros, por encima de las cabezas de los
 # hombres de trono. Bordado simétrico propio (textura_manto) y galón dorado alrededor.
 cola_m = material('manto_cola', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', MANTO, nivel=V['bordado_manto']), escala_nor=0.8)
+def smooth(t): return t * t * (3 - 2 * t)
 A = Vector((0.0, Y_IMG + 0.17, Z_IMG + 0.98))
 E_y, E_z = L2 + 1.33, Z_CUB - 0.02
 NS, NT = 44, 28
@@ -369,7 +370,13 @@ for j in range(NS + 1):
         sr = s_ * (1 - 0.22 * (1 - math.sqrt(max(0.0, 1 - t * t))))        # final redondeado
         w = min(1.15, 0.05 + 1.1 * sr ** 0.8)
         y = A.y + (E_y - A.y) * sr
-        z = A.z + (E_z - A.z) * (1 - (1 - sr) ** 1.5) + 0.1 * sr * (1 - t * t) - 0.36 * sr * abs(t) ** 4
+        zc_ = A.z + (E_z - A.z) * (1 - (1 - sr) ** 1.5) + 0.1 * sr * (1 - t * t)
+        # los lados caen: sobre la cubierta llegan hasta ella (no queda hueco por debajo); pasada la mesa cuelgan
+        d = smooth(min(1, max(0, (y - Y_IMG - 0.25) / 0.5)))
+        g = smooth(min(1, max(0, (y - L2 + 0.1) / 0.35)))
+        caida_cub = d * (zc_ - Z_CUB - 0.01) * abs(t) ** 2.2 + (1 - d) * 0.36 * sr * abs(t) ** 4
+        caida_fuera = (0.36 * sr + 0.12) * abs(t) ** 3
+        z = zc_ - ((1 - g) * caida_cub + g * caida_fuera)
         fila.append(bm.verts.new((t * w, y, z)))
     filas.append(fila)
 for j in range(NS):
@@ -412,29 +419,58 @@ for s_ in (-1, 1):
     objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.215, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
 objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.228, 0.55))), encaje)
 
-# corona y ráfaga
+# tocado (opción de gestión): corona con ráfaga, corona sola, solo ráfaga, diadema o aro de estrellas
+TOC = V['tocado']
 cc = T(HC + Vector((0, 0.01, 0.168)))
-objeto('corona', torno([(0.075, 0), (0.08, 0.012), (0.072, 0.04), (0.092, 0.075), (0.088, 0.08)], 32, tapa=False), oro).location = cc
-for a in (0, math.pi / 2):
-    arco_c = [cc + Vector((math.cos(a) * 0.085 * math.cos(t), math.sin(a) * 0.085 * math.cos(t), 0.075 + 0.07 * math.sin(t)))
-              for t in [math.pi * i / 16 for i in range(17)]]
-    objeto('corona_imperial', tubo(arco_c, 0.007, segs=6), oro)
-objeto('corona_cruz', tubo([cc + Vector((0, 0, 0.145)), cc + Vector((0, 0, 0.2))], 0.006, segs=6), oro)
-objeto('corona_cruz2', tubo([cc + Vector((-0.018, 0, 0.18)), cc + Vector((0.018, 0, 0.18))], 0.005, segs=6), oro)
-rc = T(HC + Vector((0, 0.13, 0.04)))                       # centro de la ráfaga, detrás de la cabeza
-objeto('rafaga_aro', tubo([rc + Vector((math.cos(t) * 0.22, 0, math.sin(t) * 0.22)) for t in [-0.45 + (math.pi + 0.9) * i / 40 for i in range(41)]],
-                          0.012, segs=6, tapas=False), oro)
-for i in range(31):
-    t = -0.6 + (math.pi + 1.2) * i / 30
-    lg = 0.42 if i % 2 == 0 else 0.33
-    d = Vector((math.cos(t), 0, math.sin(t)))
-    objeto('rayo', tubo([rc + d * 0.2, rc + d * (lg * 0.7), rc + d * lg], [0.016, 0.01, 0.0], segs=4), oro)
-for i in range(12):
-    t = -0.3 + (math.pi + 0.6) * i / 11
-    c = rc + Vector((math.cos(t), 0, math.sin(t))) * 0.47
-    estrella = [c + Vector((math.cos(a) * (0.028 if k % 2 == 0 else 0.012), -0.003, math.sin(a) * (0.028 if k % 2 == 0 else 0.012)))
-                for k, a in enumerate([math.pi / 2 + math.pi * k / 5 for k in range(11)])]
-    objeto('estrella', tubo(estrella, 0.004, segs=4, tapas=False), oro)
+def corona():
+    objeto('corona', torno([(0.075, 0), (0.08, 0.012), (0.072, 0.04), (0.092, 0.075), (0.088, 0.08)], 32, tapa=False), oro).location = cc
+    for a in (0, math.pi / 2):
+        arco_c = [cc + Vector((math.cos(a) * 0.085 * math.cos(t), math.sin(a) * 0.085 * math.cos(t), 0.075 + 0.07 * math.sin(t)))
+                  for t in [math.pi * i / 16 for i in range(17)]]
+        objeto('corona_imperial', tubo(arco_c, 0.007, segs=6), oro)
+    objeto('corona_cruz', tubo([cc + Vector((0, 0, 0.145)), cc + Vector((0, 0, 0.2))], 0.006, segs=6), oro)
+    objeto('corona_cruz2', tubo([cc + Vector((-0.018, 0, 0.18)), cc + Vector((0.018, 0, 0.18))], 0.005, segs=6), oro)
+def estrellas(centro, radio, n, t0, t1, tam):
+    for i in range(n):
+        t = t0 + (t1 - t0) * i / max(n - 1, 1) if t1 - t0 < 2 * math.pi - 1e-3 else t0 + 2 * math.pi * i / n
+        c = centro + Vector((math.cos(t), 0, math.sin(t))) * radio
+        estrella = [c + Vector((math.cos(a) * (tam if k % 2 == 0 else tam * 0.42), -0.003, math.sin(a) * (tam if k % 2 == 0 else tam * 0.42)))
+                    for k, a in enumerate([math.pi / 2 + math.pi * k / 5 for k in range(11)])]
+        objeto('estrella', tubo(estrella, 0.004, segs=4, tapas=False), oro)
+def rafaga(centro, aro, largo, corto, n=29, abre=0.3, con_estrellas=True):
+    objeto('rafaga_aro', tubo([centro + Vector((math.cos(t) * aro, 0, math.sin(t) * aro)) for t in [-abre + (math.pi + 2 * abre) * i / 40 for i in range(41)]],
+                              0.01, segs=6, tapas=False), oro)
+    for i in range(n):
+        t = -abre + (math.pi + 2 * abre) * i / (n - 1)
+        lg = largo if i % 2 == 0 else corto
+        d = Vector((math.cos(t), 0, math.sin(t)))
+        objeto('rayo', tubo([centro + d * aro, centro + d * (aro + (lg - aro) * 0.6), centro + d * lg], [0.014, 0.009, 0.0], segs=4), oro)
+    if con_estrellas: estrellas(centro, largo + 0.04, 11, -abre * 0.5, math.pi + abre * 0.5, 0.024)
+if TOC in ('corona_rafaga', 'corona'):
+    corona()
+if TOC == 'corona_rafaga':
+    # la ráfaga forma una sola pieza con la corona: el aro y los rayos nacen alrededor de la propia corona
+    rc = cc + Vector((0, 0.03, 0.085)); ARO = 0.13
+    rafaga(rc, ARO, 0.33, 0.25)
+    for sx_ in (-1, 1):
+        objeto('rafaga_union', tubo([cc + Vector((sx_ * 0.088, 0.0, 0.06)), rc + Vector((sx_ * ARO * math.cos(0.3), 0, -ARO * math.sin(0.3)))], 0.008, segs=6), oro)
+elif TOC == 'rafaga':
+    # resplandor solo, sin corona, sobre el manto detrás de la cabeza
+    rafaga(T(HC + Vector((0, 0.07, 0.07))), 0.16, 0.36, 0.28, n=33, abre=0.45)
+elif TOC == 'diadema':
+    # diadema: media luna de metal sobre la frente con rayos cortos
+    dc = T(HC + Vector((0, -0.01, 0.07)))
+    objeto('diadema', tubo([dc + Vector((math.cos(t) * 0.125, 0, math.sin(t) * 0.125)) for t in [-0.15 + (math.pi + 0.3) * i / 30 for i in range(31)]],
+                           0.012, segs=6, tapas=False), oro)
+    for i in range(17):
+        t = -0.1 + (math.pi + 0.2) * i / 16; d = Vector((math.cos(t), 0, math.sin(t)))
+        objeto('rayo', tubo([dc + d * 0.125, dc + d * (0.17 if i % 2 == 0 else 0.15)], [0.01, 0.0], segs=4), oro)
+elif TOC == 'aureola':
+    # aro (nimbo) de doce estrellas alrededor de la cabeza
+    ac = T(HC + Vector((0, 0.07, 0.05)))
+    objeto('aureola_aro', tubo([ac + Vector((math.cos(t) * 0.2, 0, math.sin(t) * 0.2)) for t in [2 * math.pi * i / 48 for i in range(49)]],
+                               0.005, segs=6, tapas=False), oro)
+    estrellas(ac, 0.2, 12, math.pi / 2, math.pi / 2 + 2 * math.pi, 0.026)
 
 # ---------------------------------------------------------------- puntos de luz para Godot (nodos vacíos)
 for nombre, pts in (('luz_vela', VELAS[::9]), ('luz_tulipa', TULIPAS[::11])):
@@ -460,6 +496,8 @@ if os.environ.get('FOTOS'):
     scn.render.image_settings.file_format = 'JPEG'; scn.render.image_settings.quality = 86
     for f in json.loads(os.environ['FOTOS']):
         cam.lens = f.get('lente', 40)
+        for o in scn.objects:                                 # piezas que se quitan en esa foto (p. ej. la candelería para ver la saya)
+            o.hide_render = any(o.name.startswith(p) for p in f.get('ocultar', []))
         co.location = Vector(f['cam']); co.rotation_euler = (Vector(f['mira']) - co.location).to_track_quat('-Z', 'Y').to_euler()
         scn.render.filepath = os.path.join(os.environ['CARPETA'], f['nombre'] + '.jpg')
         bpy.ops.render.render(write_still=True)
