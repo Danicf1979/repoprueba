@@ -155,7 +155,7 @@ for k in range(1, 8):                                       # caída: babero del
     zf = cuelloz - (cuelloz - (h + 0.02)) * min(1, t * 1.6) * 0.9
     def r(th, t=t, zf=zf):
         base = cr * 1.08 + (P['capa_r'] - cr * 1.08) * smooth(min(1, t * 1.6)) + 0.01 * math.sin(7 * th) * t
-        return max(base, r_tun(zf + dz(th)) + 0.04)
+        return max(base, r_tun(zf + dz(th)) + 0.04 + abs(math.sin(th)) ** 2 * P['brazo'] * 2.3)   # tapa los hombros
     def dz(th, t=t):
         f = math.cos(th)                                     # 1 delante, -1 detrás
         caida = P['babero'] * max(f, 0) ** 1.5 + P['espalda'] * max(-f, 0) ** 1.2 + 0.12 * (1 - abs(f))
@@ -179,7 +179,7 @@ ez = h + 0.02 - P['babero'] * (0.35 if estilo == 'realista' else 0.05)
 # el escudo va justo sobre la tela: se busca la superficie del antifaz con un rayo desde delante
 dg = bpy.context.evaluated_depsgraph_get()
 golpe, punto, *_ = capi.evaluated_get(dg).ray_cast(Vector((0, -2, ez)), Vector((0, 1, 0)))
-ey = (punto.y if golpe else -(P['capa_r'] * 0.8)) - 0.012
+ey = (punto.y if golpe else -(P['capa_r'] * 0.8)) - 0.02
 esc_r = 0.05 if estilo == 'realista' else 0.07
 bm = bmesh.new(); bmesh.ops.create_circle(bm, cap_ends=True, segments=24, radius=esc_r)
 for v in bm.verts: v.co = Vector((v.co.x, 0, v.co.y * 1.25))
@@ -209,13 +209,17 @@ for s, largo in ((-1, 0.42), (-1, 0.36)):
 # cirio apoyado en la cadera derecha, por debajo del babero.
 sx = P['r_hombro'] * 0.95
 dirc = Vector((0.18, -0.16, 1)).normalized()                              # eje del cirio
-mano_d = Vector((P['r_cin'] * 0.75, -P['r_cin'] * 0.78 - P['mano'] * 0.9, ci - 0.07))   # por debajo del babero
+mano_d = Vector((P['r_cin'] * 0.75, -(r_tun(ci) * 0.78 + P['manga'] * 0.6 + 0.012), ci - 0.07))   # por debajo del babero
 mano_i = mano_d - dirc * P['mano'] * 2.4 + Vector((-0.012, 0, 0))                   # la izquierda, más abajo
 for nom, lado, mano in (('brazo_d', 1, mano_d), ('brazo_i', -1, mano_i)):
-    hombro = Vector((lado * sx, 0.01, h - 0.05))
-    codo = Vector((lado * (P['r_cin'] + P['brazo'] * 1.1), 0.03, ci - (0.02 if lado > 0 else 0.08)))
+    # el brazo va por fuera de la túnica: a cada altura, radio del cuerpo más el grosor de la manga
+    hombro = Vector((lado * (r_tun(h - 0.05) + P['brazo'] * 0.4), 0.01, h - 0.05))
+    cz_ = ci - (0.02 if lado > 0 else 0.08)
+    codo = Vector((lado * (r_tun(cz_) + P['brazo'] * 1.3), -0.01, cz_))
+    zm = (hombro.z + codo.z) / 2
+    medio = Vector((lado * (r_tun(zm) + P['brazo'] * 1.15), 0.0, zm))
     muneca = mano + (codo - mano).normalized() * P['mano'] * 1.1
-    pts = [hombro, hombro.lerp(codo, 0.5), codo, codo.lerp(muneca, 0.45), codo.lerp(muneca, 0.8), muneca]
+    pts = [hombro, medio, codo, codo.lerp(muneca, 0.45), codo.lerp(muneca, 0.8), muneca]
     rad = [P['brazo'], P['brazo'] * 1.08, P['brazo'] * 1.2, P['manga'] * 0.72, P['manga'] * 0.68, P['manga'] * 0.6]
     # la manga cuelga: el centro de cada anillo baja según lo ancho que es
     pts = [p + Vector((0, 0, -(r - P['brazo']) * 0.3)) for p, r in zip(pts, rad)]
@@ -234,7 +238,7 @@ for nom, lado, mano in (('brazo_d', 1, mano_d), ('brazo_i', -1, mano_i)):
     objeto('pulgar', tubo(pulgar, [P['mano'] * 0.26, P['mano'] * 0.22], segs=10), M['guante'], subdiv=1)
 
 # cirio apoyado en la cadera: sale de la mano derecha hacia arriba y algo hacia fuera y delante
-base = mano_d - dirc * (0.1 if estilo == 'realista' else 0.06)
+base = mano_d - dirc * (P['mano'] * 2.4 + P['mano'] * 1.6)        # por debajo de la mano de abajo
 punta = base + dirc * P['cirio_l']
 objeto('cirio', tubo([base, base.lerp(punta, 0.5), punta], [P['cirio_r']] * 3, segs=16), M['cera'], subdiv=0)
 for k, t in enumerate((0.9, 0.8, 0.95, 0.72)):                           # chorreones de cera
