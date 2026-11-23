@@ -81,7 +81,7 @@ def textura_bordado(nombre, fondo, oro=(1.0, 0.74, 0.3), N=512, grosor=1.0, nive
     elif nivel == 'cargado':                                   # roleos gruesos y relleno de filigrana
         m = np.maximum(patron(N, grosor * 1.6), np.tile(patron(N // 2, 1.0), (2, 2)) * 0.85)
     else:                                                      # riquísimo: casi todo oro, a realce
-        m = np.maximum.reduce([patron(N, grosor * 2.2), np.tile(patron(N // 2, 1.6), (2, 2)), np.tile(patron(N // 4, 1.4), (4, 4)) * 0.9])
+        m = np.maximum.reduce([patron(N, grosor * 3.4), np.tile(patron(N // 2, 2.8), (2, 2)), np.tile(patron(N // 4, 2.6), (4, 4))])
     m = _desenfoque(m, 1)
     rng = np.random.default_rng(3)
     ruido = _desenfoque(rng.random((N, N)), 3)
@@ -186,7 +186,7 @@ def textura_manto(nombre, fondo, oro=(1.0, 0.74, 0.3), N=1024, nivel='cargado'):
           m = np.maximum(m, _linea(np.hypot((xm - 0.53) / 0.035, (v - cy - (xm - 0.5) * 0.6) / 0.012) - 1, 0.25))
     if n_ >= 3:                                            # filigrana de relleno (más tupida en el riquísimo)
         fondo_f = np.tile(patron(N // 4, 1.5), (4, 4)) * 0.8
-        if n_ == 4: fondo_f = np.maximum(np.tile(patron(N // 4, 2.4), (4, 4)), np.tile(patron(N // 8, 1.8), (8, 8)) * 0.9)
+        if n_ == 4: fondo_f = np.maximum(np.tile(patron(N // 4, 3.4), (4, 4)), np.tile(patron(N // 8, 2.8), (8, 8)))
         m = np.maximum(m, fondo_f * (np.abs(u - 0.5) < 0.45) * (v < 0.95))
     ancho_c = 0.465 if n_ < 4 else 0.44
     m = np.maximum(m, (np.abs(u - 0.5) > ancho_c).astype(float) * (1.0 if n_ else 0.0))                 # cenefa
