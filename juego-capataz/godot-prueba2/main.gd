@@ -59,64 +59,7 @@ func _ready() -> void:
 	rng.seed = 2027
 	for n in ["male-a", "male-b", "male-c", "male-d", "male-e", "male-f", "female-a", "female-b", "female-c", "female-d", "female-e", "female-f"]:
 		PERSONAJES.append(load("res://personajes/character-" + n + ".glb"))
-	# --- Entorno de noche
-	var env = Environment.new()
-	var sky = Sky.new(); var psm := ProceduralSkyMaterial.new()
-	psm.sky_top_color = Color(0.03, 0.035, 0.1); psm.sky_horizon_color = Color(0.22, 0.14, 0.2)
-	psm.ground_bottom_color = Color(0.02, 0.02, 0.03); psm.ground_horizon_color = Color(0.22, 0.14, 0.2)
-	sky.sky_material = psm
-	env.background_mode = Environment.BG_SKY; env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; env.ambient_light_energy = 0.55
-	env.tonemap_mode = Environment.TONE_MAPPER_ACES; env.tonemap_exposure = 1.1
-	env.glow_enabled = true; env.glow_intensity = 0.8; env.glow_bloom = 0.06; env.glow_hdr_threshold = 1.3
-	env.ssao_enabled = true; env.ssao_intensity = 1.5
-	env.sdfgi_enabled = true; env.sdfgi_use_occlusion = true
-	env.volumetric_fog_enabled = true; env.volumetric_fog_density = 0.012; env.volumetric_fog_albedo = Color(0.9, 0.85, 0.8)
-	var we = WorldEnvironment.new(); we.environment = env; add_child(we)
-	var luna = DirectionalLight3D.new(); luna.light_color = Color(0.6, 0.66, 0.95); luna.light_energy = 0.3
-	luna.rotation_degrees = Vector3(-60, 25, 0); luna.shadow_enabled = true; add_child(luna)
-
-	# --- Calle de adoquín, fachadas encaladas y de albero con balcones, colgaduras y banderines
-	var adoq = StandardMaterial3D.new()
-	adoq.albedo_texture = load("res://tex/adoq_diff.jpg"); adoq.normal_enabled = true; adoq.normal_texture = load("res://tex/adoq_nor.jpg")
-	adoq.uv1_scale = Vector3(6, 45, 1); adoq.roughness = 0.75
-	var suelo = PlaneMesh.new(); suelo.size = Vector2(13, 130)
-	add_mesh(suelo, adoq, Vector3(0, 0, 0))
-	var colores = [Color(0.96, 0.93, 0.86), Color(0.93, 0.78, 0.5), Color(0.96, 0.93, 0.86), Color(0.86, 0.55, 0.42)]
-	var colg = [mat(Color(0.5, 0.06, 0.1), 0, 0.8), mat(Color(0.12, 0.32, 0.2), 0, 0.8), mat(Color(0.75, 0.6, 0.15), 0.2, 0.6)]
-	var hierro = mat(Color(0.06, 0.06, 0.07), 0.6, 0.4)
-	for lado in [-1, 1]:
-		for k in range(12):
-			var z = -60.0 + k * 10.0
-			var h = 11.0 + rng.randf() * 5.0
-			box(Vector3(0.5, h, 10.0), mat(colores[(k + (1 if lado > 0 else 0)) % 4], 0.0, 0.92), Vector3(lado * 6.75, h / 2.0, z))
-			box(Vector3(0.9, 0.5, 10.0), mat(Color(0.55, 0.42, 0.3)), Vector3(lado * 6.55, 0.25, z))
-			box(Vector3(0.8, 0.3, 10.0), mat(Color(0.85, 0.81, 0.74)), Vector3(lado * 6.6, h, z))
-			for fl in range(3):
-				for w in range(3):
-					var wz = z - 3.2 + w * 3.2
-					var y = 3.9 + fl * 3.1
-					var luz = rng.randf() < 0.45
-					box(Vector3(0.1, 1.8, 1.1), mat(Color(0.06, 0.05, 0.07), 0, 0.5, Color(1.0, 0.68, 0.38), 2.2 if luz else 0.0), Vector3(lado * 6.48, y + 0.9, wz))
-					box(Vector3(0.7, 0.1, 1.7), mat(Color(0.62, 0.58, 0.52)), Vector3(lado * 6.15, y - 0.05, wz))
-					box(Vector3(0.04, 0.9, 1.7), hierro, Vector3(lado * 5.82, y + 0.45, wz))
-					if fl == 0 and rng.randf() < 0.6:   # colgadura del balcón
-						var c = box(Vector3(0.03, 1.5, 1.5), colg[rng.randi() % 3], Vector3(lado * 5.78, y - 0.3, wz))
-						box(Vector3(0.035, 0.08, 1.52), mat(Color(0.9, 0.72, 0.3), 0.6, 0.4), Vector3(lado * 5.77, y - 1.0, wz))
-			if k % 2 == 0:   # farol de pared
-				var fp = Vector3(lado * 6.0, 4.6, z + 2.0)
-				cyl(0.2, 0.13, 0.5, hierro, fp)
-				sph(0.12, mat(Color(1, 0.8, 0.5), 0, 0.5, Color(1.0, 0.75, 0.45), 6.0), fp)
-				omni(fp + Vector3(-lado * 0.3, -0.3, 0), Color(1.0, 0.72, 0.45), 2.4, 14.0, k == 6)
-	# banderines de lado a lado
-	var bmats = [mat(Color(0.12, 0.32, 0.2), 0, 0.8), mat(Color(0.95, 0.92, 0.84), 0, 0.8), mat(Color(0.85, 0.68, 0.3), 0, 0.8)]
-	for zb in range(-50, 50, 12):
-		for i in range(20):
-			var t = (i + 0.5) / 20.0
-			var x = -5.8 + 11.6 * t
-			var y = 7.0 - sin(PI * t) * 0.8
-			var tri = PrismMesh.new(); tri.size = Vector3(0.36, 0.42, 0.02)
-			add_mesh(tri, bmats[i % 3], Vector3(x, y - 0.21, zb), null, Vector3(PI, 0, 0))
+	montar_calle()
 
 	# --- Público: personajes de pie a los dos lados, mirando a la calle
 	for lado in [-1, 1]:
@@ -237,3 +180,66 @@ func _ready() -> void:
 		img.save_png("res://captura_" + t[0] + ".png")
 		print("captura ", t[0])
 	get_tree().quit()
+
+
+# Noche, calle de adoquín con fachadas, balcones, colgaduras, faroles y banderines (la usan main.gd y nazarenos.gd)
+func montar_calle() -> void:
+	# --- Entorno de noche
+	var env = Environment.new()
+	var sky = Sky.new(); var psm := ProceduralSkyMaterial.new()
+	psm.sky_top_color = Color(0.03, 0.035, 0.1); psm.sky_horizon_color = Color(0.22, 0.14, 0.2)
+	psm.ground_bottom_color = Color(0.02, 0.02, 0.03); psm.ground_horizon_color = Color(0.22, 0.14, 0.2)
+	sky.sky_material = psm
+	env.background_mode = Environment.BG_SKY; env.sky = sky
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY; env.ambient_light_energy = 0.55
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES; env.tonemap_exposure = 1.1
+	env.glow_enabled = true; env.glow_intensity = 0.8; env.glow_bloom = 0.06; env.glow_hdr_threshold = 1.3
+	env.ssao_enabled = true; env.ssao_intensity = 1.5
+	env.sdfgi_enabled = true; env.sdfgi_use_occlusion = true
+	env.volumetric_fog_enabled = true; env.volumetric_fog_density = 0.012; env.volumetric_fog_albedo = Color(0.9, 0.85, 0.8)
+	var we = WorldEnvironment.new(); we.environment = env; add_child(we)
+	var luna = DirectionalLight3D.new(); luna.light_color = Color(0.6, 0.66, 0.95); luna.light_energy = 0.3
+	luna.rotation_degrees = Vector3(-60, 25, 0); luna.shadow_enabled = true; add_child(luna)
+
+	# --- Calle de adoquín, fachadas encaladas y de albero con balcones, colgaduras y banderines
+	var adoq = StandardMaterial3D.new()
+	adoq.albedo_texture = load("res://tex/adoq_diff.jpg"); adoq.normal_enabled = true; adoq.normal_texture = load("res://tex/adoq_nor.jpg")
+	adoq.uv1_scale = Vector3(6, 45, 1); adoq.roughness = 0.75
+	var suelo = PlaneMesh.new(); suelo.size = Vector2(13, 130)
+	add_mesh(suelo, adoq, Vector3(0, 0, 0))
+	var colores = [Color(0.96, 0.93, 0.86), Color(0.93, 0.78, 0.5), Color(0.96, 0.93, 0.86), Color(0.86, 0.55, 0.42)]
+	var colg = [mat(Color(0.5, 0.06, 0.1), 0, 0.8), mat(Color(0.12, 0.32, 0.2), 0, 0.8), mat(Color(0.75, 0.6, 0.15), 0.2, 0.6)]
+	var hierro = mat(Color(0.06, 0.06, 0.07), 0.6, 0.4)
+	for lado in [-1, 1]:
+		for k in range(12):
+			var z = -60.0 + k * 10.0
+			var h = 11.0 + rng.randf() * 5.0
+			box(Vector3(0.5, h, 10.0), mat(colores[(k + (1 if lado > 0 else 0)) % 4], 0.0, 0.92), Vector3(lado * 6.75, h / 2.0, z))
+			box(Vector3(0.9, 0.5, 10.0), mat(Color(0.55, 0.42, 0.3)), Vector3(lado * 6.55, 0.25, z))
+			box(Vector3(0.8, 0.3, 10.0), mat(Color(0.85, 0.81, 0.74)), Vector3(lado * 6.6, h, z))
+			for fl in range(3):
+				for w in range(3):
+					var wz = z - 3.2 + w * 3.2
+					var y = 3.9 + fl * 3.1
+					var luz = rng.randf() < 0.45
+					box(Vector3(0.1, 1.8, 1.1), mat(Color(0.06, 0.05, 0.07), 0, 0.5, Color(1.0, 0.68, 0.38), 2.2 if luz else 0.0), Vector3(lado * 6.48, y + 0.9, wz))
+					box(Vector3(0.7, 0.1, 1.7), mat(Color(0.62, 0.58, 0.52)), Vector3(lado * 6.15, y - 0.05, wz))
+					box(Vector3(0.04, 0.9, 1.7), hierro, Vector3(lado * 5.82, y + 0.45, wz))
+					if fl == 0 and rng.randf() < 0.6:   # colgadura del balcón
+						var c = box(Vector3(0.03, 1.5, 1.5), colg[rng.randi() % 3], Vector3(lado * 5.78, y - 0.3, wz))
+						box(Vector3(0.035, 0.08, 1.52), mat(Color(0.9, 0.72, 0.3), 0.6, 0.4), Vector3(lado * 5.77, y - 1.0, wz))
+			if k % 2 == 0:   # farol de pared
+				var fp = Vector3(lado * 6.0, 4.6, z + 2.0)
+				cyl(0.2, 0.13, 0.5, hierro, fp)
+				sph(0.12, mat(Color(1, 0.8, 0.5), 0, 0.5, Color(1.0, 0.75, 0.45), 6.0), fp)
+				omni(fp + Vector3(-lado * 0.3, -0.3, 0), Color(1.0, 0.72, 0.45), 2.4, 14.0, k == 6)
+	# banderines de lado a lado
+	var bmats = [mat(Color(0.12, 0.32, 0.2), 0, 0.8), mat(Color(0.95, 0.92, 0.84), 0, 0.8), mat(Color(0.85, 0.68, 0.3), 0, 0.8)]
+	for zb in range(-50, 50, 12):
+		for i in range(20):
+			var t = (i + 0.5) / 20.0
+			var x = -5.8 + 11.6 * t
+			var y = 7.0 - sin(PI * t) * 0.8
+			var tri = PrismMesh.new(); tri.size = Vector3(0.36, 0.42, 0.02)
+			add_mesh(tri, bmats[i % 3], Vector3(x, y - 0.21, zb), null, Vector3(PI, 0, 0))
+
