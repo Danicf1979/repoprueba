@@ -350,10 +350,25 @@ X, Y, Z = 0.0, Y_IMG, Z_IMG
 def T(v): return Vector((X + v[0], Y + v[1], Z + v[2]))
 sy = objeto('saya', torno([(0.34, 0), (0.33, 0.08), (0.28, 0.3), (0.21, 0.5), (0.15, 0.62), (0.11, 0.72), (0.0, 0.74)], 36, rep_u=3, rep_v=1.5), saya)
 sy.location = T((0, 0, 0))
-ab = 0.62                                                 # medio ancho de la abertura del manto (rad)
-mt = objeto('manto', torno([(0.43, 0.0), (0.41, 0.1), (0.36, 0.32), (0.27, 0.52), (0.2, 0.66), (0.165, 0.76), (0.155, 0.84), (0.158, 0.93),
-                            (0.14, 1.01), (0.09, 1.07), (0.0, 1.09)], 40, rep_u=4, rep_v=2, tapa=False, arco=(ab, 2 * math.pi - ab)), manto_m)
-mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickness = 0.012
+# Manto sobre la cabeza (la corona va encima) que cae cubriendo los hombros y se abre en triángulo hasta la peana.
+# Cada fila: (radio, altura, media abertura delantera en rad): estrecha junto a la cara, más abierta abajo (se ve la saya).
+FILAS_M = [(0.46, 0.0, 0.95), (0.44, 0.1, 0.92), (0.4, 0.3, 0.85), (0.345, 0.5, 0.78), (0.295, 0.64, 0.72), (0.25, 0.74, 0.66),
+           (0.205, 0.84, 0.6), (0.178, 0.92, 0.56), (0.162, 0.98, 0.52), (0.135, 1.03, 0.45), (0.085, 1.075, 0.3), (0.012, 1.095, 0.1)]
+SEG_M = 40
+bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); anillos_m = []
+for (r, z, a_) in FILAS_M:
+    anillos_m.append([bm.verts.new(T((r * math.sin(a_ + (2 * math.pi - 2 * a_) * i / SEG_M), -r * math.cos(a_ + (2 * math.pi - 2 * a_) * i / SEG_M), z)))
+                      for i in range(SEG_M + 1)])
+for k in range(len(anillos_m) - 1):
+    for i in range(SEG_M):
+        f = bm.faces.new((anillos_m[k][i], anillos_m[k][i + 1], anillos_m[k + 1][i + 1], anillos_m[k + 1][i]))
+        for lp, uv in zip(f.loops, [(i / SEG_M * 4, k / 6), ((i + 1) / SEG_M * 4, k / 6), ((i + 1) / SEG_M * 4, (k + 1) / 6), (i / SEG_M * 4, (k + 1) / 6)]):
+            lp[capa].uv = uv
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+borde_m = [anillos_m[k][0].co.copy() for k in range(len(anillos_m) - 2, -1, -1)] + [v.co.copy() for v in anillos_m[0][1:]] + \
+          [anillos_m[k][-1].co.copy() for k in range(1, len(anillos_m) - 1)]
+mt = objeto('manto', bm, manto_m, subdiv=1)
+s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickness = 0.012; mt.modifiers.move(1, 0)
 # cola del manto, como los de Málaga: nace en punta detrás de la corona, baja en rampa abombada, cada vez más
 # ancha, con los bordes caídos, y acaba redondeada sobre los varales traseros, por encima de las cabezas de los
 # hombres de trono. Bordado simétrico propio (textura_manto) y galón dorado alrededor.
@@ -388,8 +403,7 @@ borde = [f[0].co.copy() for f in filas][::-1] + [v.co.copy() for v in filas[-1]]
 cola = objeto('manto_cola', bm, cola_m)
 cola.modifiers.new('grosor', 'SOLIDIFY').thickness = 0.012
 objeto('cola_galon', tubo([p + Vector((0, 0, 0.006)) for p in borde[1:-1]], 0.016, segs=6, tapas=False), oro)
-objeto('manto_galon', tubo([T((math.sin(a) * 0.43, -math.cos(a) * 0.43, 0.005)) for a in [ab + (2 * math.pi - 2 * ab) * i / 40 for i in range(41)]],
-                           0.012, segs=6, tapas=False), oro)
+objeto('manto_galon', tubo(borde_m, 0.011, segs=6, tapas=False), oro)       # galón por la abertura y el bajo
 
 # cabeza, toca y rostrillo
 HC = Vector((0, -0.015, 0.9)); HR = (0.098, 0.092, 0.115)
@@ -416,8 +430,8 @@ objeto('boca', tubo([sup(-0.009 + 0.018 * t, -0.056 + 0.0025 * math.sin(math.pi 
 
 # manos juntas sobre el pecho con el pañuelo
 for s_ in (-1, 1):
-    objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.215, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
-objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.228, 0.55))), encaje)
+    objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.232, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
+objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.245, 0.55))), encaje)
 
 # tocado (opción de gestión): corona con ráfaga, corona sola, solo ráfaga, diadema o aro de estrellas
 TOC = V['tocado']
