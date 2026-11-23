@@ -33,7 +33,7 @@ func _ready() -> void:
 		["trono_lado", Vector3(6.2, 2.0, 0.6), Vector3(0, 1.6, 0.2)],
 		["trono_cenital", Vector3(0.5, 10.5, 3.0), Vector3(0, 0.5, -0.6)],
 		["trono_detras", Vector3(-0.8, 3.6, -7.2), Vector3(0, 1.5, -1.5)],
-		["trono_varal", Vector3(2.4, 1.3, 5.2), Vector3(1.38, 0.8, 3.75)],
+		["trono_varal", Vector3(0.25, 1.25, 4.9), Vector3(0.0, 0.95, 3.4)],
 		["trono_virgen", Vector3(0.35, 2.62, 0.95), Vector3(0, 2.62, -0.5)],
 		["trono_calle", Vector3(-2.6, 1.9, 15.5), Vector3(0.3, 1.5, 2.0)],
 	]

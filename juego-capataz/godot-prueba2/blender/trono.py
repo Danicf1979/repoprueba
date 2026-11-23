@@ -269,10 +269,15 @@ for x in (-1.38, -0.55, 0.55, 1.38):
         objeto('cabeza_varal_hojas', bm_h, hoja_m)
 
 # ---------------------------------------------------------------- campana
-objeto('campana_soporte', tubo([(0, -L2 - 0.1, Z_CUB - 0.05), (0, -L2 - 0.2, Z_CUB + 0.02), (0, -L2 - 0.26, Z_CUB - 0.02)], 0.012, segs=8), oro)
-objeto('campana', torno([(0.07, -0.13), (0.065, -0.11), (0.045, -0.06), (0.04, -0.02), (0.02, 0.0), (0.0, 0.01)], 20), oro).location = (0, -L2 - 0.26, Z_CUB - 0.03)
-objeto('campana_mazo', tubo([(0, -L2 - 0.26, Z_CUB - 0.05), (0, -L2 - 0.26, Z_CUB - 0.2)], [0.005, 0.005], segs=6), oro)
-objeto('campana_bola', elipsoide((0.015, 0.015, 0.015), (0, -L2 - 0.26, Z_CUB - 0.2)), oro)
+# Va delante, a la altura de las cabezas de varal, entre los dos varales centrales: un travesaño que los une y, encima,
+# la campana en su soporte. (Encima del cajillo iría el llamador de un paso de Sevilla, no la campana de un trono.)
+YC = -3.45; ZC = Z_VARAL - 0.065
+objeto('campana_traviesa', tubo([(-0.55, YC, ZC), (0.55, YC, ZC)], 0.03, segs=10), talla)
+objeto('campana_pie', torno([(0.05, 0), (0.05, 0.02), (0.02, 0.05), (0.016, 0.22), (0.03, 0.24), (0.0, 0.25)], 14), talla).location = (0, YC, ZC + 0.02)
+objeto('campana_brazo', tubo([(0, YC, ZC + 0.26), (0, YC - 0.06, ZC + 0.3), (0, YC - 0.12, ZC + 0.28)], 0.01, segs=8), oro)
+objeto('campana', torno([(0.08, -0.15), (0.075, -0.13), (0.052, -0.07), (0.046, -0.025), (0.024, 0.0), (0.0, 0.012)], 22), oro).location = (0, YC - 0.12, ZC + 0.27)
+objeto('campana_badajo', tubo([(0, YC - 0.12, ZC + 0.25), (0, YC - 0.12, ZC + 0.14)], 0.005, segs=6), oro)
+objeto('campana_bola', elipsoide((0.016, 0.016, 0.016), (0, YC - 0.12, ZC + 0.13)), oro)
 
 # ---------------------------------------------------------------- peana
 objeto('peana', torno([(0.5, Z_CUB), (0.5, Z_CUB + 0.06), (0.44, Z_CUB + 0.09), (0.36, Z_CUB + 0.2), (0.41, Z_CUB + 0.24), (0.33, Z_CUB + 0.3),
