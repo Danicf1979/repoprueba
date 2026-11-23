@@ -29,3 +29,15 @@ Cada estilo tiene su versión espejada (`*_espejo.glb`) para que el cirio vaya s
 `video.tscn` (script `video.gd`) graba un tramo de cabezones andando; a los 5 s para la cabeza del tramo y la parada
 corre hacia atrás pareja a pareja, y a los 9,5 s arrancan igual:
 `godot --path . --write-movie salida.avi --fixed-fps 30 --quit-after 450 res://video.tscn`
+
+## Trono de palio (fase 1 de ESPEC-TRONO.md)
+
+`blender/trono.py` modela el trono de palio cabezón con el juego de piezas de `blender/kit.py` (formas torneadas, tubos
+y texturas de bordado, talla y flores generadas por código) y lo exporta a `modelos/trono_palio.glb`: mesa y patas,
+4 varales con sus cabezas, cajillo tallado con cartelas y cantoneras, faldones bordados con flecos, candelería en
+7 tandas (84 velas), jarras con flores, 4 arbotantes con tulipas, campana, peana, 12 varales de palio, techo y
+bambalinas con festones (cada bambalina es un objeto aparte, para moverlas) y la Dolorosa estilizada con manto, cola,
+saya, toca, rostrillo, corona y ráfaga. Arriba del script están los parámetros de gestión (orfebrería, terciopelo, flor).
+
+`trono_escena.tscn` lo pone en la calle de noche con la luz de las velas (parpadeando) y un tramo de nazarenos delante,
+y saca cinco capturas (`captura_trono_*.png`).

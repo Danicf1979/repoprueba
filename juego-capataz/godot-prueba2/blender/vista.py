@@ -27,6 +27,10 @@ cx = 0.45 * (len(glbs) - 1)
 import os; zz = float(os.environ.get("ZOOM", "1"))
 c.location = (cx + 1.2 * zz, -4.2 * zz, 1.5 if zz == 1 else float(os.environ.get('ALTO', '1.25')))
 c.rotation_euler = (Vector((cx, 0, 1.0 if zz == 1 else float(os.environ.get('ALTO', '1.25')) - 0.05)) - c.location).to_track_quat('-Z', 'Y').to_euler()
+if os.environ.get('CAM'):
+    c.location = Vector([float(v) for v in os.environ['CAM'].split(',')])
+    c.rotation_euler = (Vector([float(v) for v in os.environ['MIRA'].split(',')]) - c.location).to_track_quat('-Z', 'Y').to_euler()
+    for l in [o for o in scn.objects if o.type == 'LIGHT']: l.data.energy *= float(os.environ.get('LUZ', '1'))
 scn.render.engine = 'CYCLES'; scn.cycles.samples = 24; scn.cycles.use_denoising = True
 scn.render.resolution_x, scn.render.resolution_y = 900, 900
 scn.render.filepath = salida
