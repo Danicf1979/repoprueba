@@ -206,11 +206,11 @@ for s, largo in ((-1, 0.42), (-1, 0.36)):
 # cirio apoyado en la cadera derecha, por debajo del babero.
 sx = P['r_hombro'] * 0.95
 dirc = Vector((0.18, -0.16, 1)).normalized()                              # eje del cirio
-mano_d = Vector((P['r_cin'] * 0.75, -P['r_cin'] * 0.78 - P['mano'] * 0.9, ci - 0.04))
-mano_i = mano_d + dirc * P['mano'] * 2.6 + Vector((-0.012, 0, 0))
+mano_d = Vector((P['r_cin'] * 0.75, -P['r_cin'] * 0.78 - P['mano'] * 0.9, ci - 0.07))   # por debajo del babero
+mano_i = mano_d - dirc * P['mano'] * 2.4 + Vector((-0.012, 0, 0))                   # la izquierda, más abajo
 for nom, lado, mano in (('brazo_d', 1, mano_d), ('brazo_i', -1, mano_i)):
     hombro = Vector((lado * sx, 0.01, h - 0.05))
-    codo = Vector((lado * (P['r_cin'] + P['brazo'] * 1.1), 0.03, ci + 0.03 * (1 if lado > 0 else 1.6)))
+    codo = Vector((lado * (P['r_cin'] + P['brazo'] * 1.1), 0.03, ci - (0.02 if lado > 0 else 0.08)))
     muneca = mano + (codo - mano).normalized() * P['mano'] * 1.1
     pts = [hombro, hombro.lerp(codo, 0.5), codo, codo.lerp(muneca, 0.45), codo.lerp(muneca, 0.8), muneca]
     rad = [P['brazo'], P['brazo'] * 1.08, P['brazo'] * 1.2, P['manga'] * 0.72, P['manga'] * 0.68, P['manga'] * 0.6]

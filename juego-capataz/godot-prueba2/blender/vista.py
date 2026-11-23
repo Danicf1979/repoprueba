@@ -11,7 +11,8 @@ for i, g in enumerate(glbs):
     antes = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=g)
     for o in set(bpy.data.objects) - antes:
-        if o.parent is None: o.location.x += i * 0.9
+        if o.parent is None:
+            o.rotation_mode = 'XYZ'; o.location.x += i * 0.9; o.rotation_euler.z += float(__import__('os').environ.get('GIRO', '0'))
 w = bpy.data.worlds.new('w'); scn.world = w; w.use_nodes = True
 w.node_tree.nodes['Background'].inputs[0].default_value = (0.05, 0.05, 0.08, 1)
 bpy.ops.mesh.primitive_plane_add(size=20)
