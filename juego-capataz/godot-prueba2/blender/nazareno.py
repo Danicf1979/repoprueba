@@ -175,8 +175,11 @@ for s in (-1, 1):
                   rot=(0, 0, th))
 
 # escudo sobre el babero
-ez = h + 0.02 - P['babero'] * 0.35
-ey = -(P['capa_r'] * 0.8) - 0.012
+ez = h + 0.02 - P['babero'] * (0.35 if estilo == 'realista' else 0.05)
+# el escudo va justo sobre la tela: se busca la superficie del antifaz con un rayo desde delante
+dg = bpy.context.evaluated_depsgraph_get()
+golpe, punto, *_ = capi.evaluated_get(dg).ray_cast(Vector((0, -2, ez)), Vector((0, 1, 0)))
+ey = (punto.y if golpe else -(P['capa_r'] * 0.8)) - 0.012
 esc_r = 0.05 if estilo == 'realista' else 0.07
 bm = bmesh.new(); bmesh.ops.create_circle(bm, cap_ends=True, segments=24, radius=esc_r)
 for v in bm.verts: v.co = Vector((v.co.x, 0, v.co.y * 1.25))

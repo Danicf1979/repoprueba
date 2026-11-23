@@ -25,8 +25,8 @@ cam = bpy.data.cameras.new('c'); cam.lens = 50
 c = bpy.data.objects.new('c', cam); scn.collection.objects.link(c); scn.camera = c
 cx = 0.45 * (len(glbs) - 1)
 import os; zz = float(os.environ.get("ZOOM", "1"))
-c.location = (cx + 1.2 * zz, -4.2 * zz, 1.5 if zz == 1 else 1.25)
-c.rotation_euler = (Vector((cx, 0, 1.0 if zz == 1 else 1.2)) - c.location).to_track_quat('-Z', 'Y').to_euler()
+c.location = (cx + 1.2 * zz, -4.2 * zz, 1.5 if zz == 1 else float(os.environ.get('ALTO', '1.25')))
+c.rotation_euler = (Vector((cx, 0, 1.0 if zz == 1 else float(os.environ.get('ALTO', '1.25')) - 0.05)) - c.location).to_track_quat('-Z', 'Y').to_euler()
 scn.render.engine = 'CYCLES'; scn.cycles.samples = 24; scn.cycles.use_denoising = True
 scn.render.resolution_x, scn.render.resolution_y = 900, 900
 scn.render.filepath = salida
