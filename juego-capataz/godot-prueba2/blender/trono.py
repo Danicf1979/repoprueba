@@ -18,7 +18,8 @@ scn = escena_vacia()
 L2, W2 = 2.3, 1.1                       # media longitud y media anchura de la mesa
 Z_VARAL = 0.8                           # parte de arriba del varal
 Z_MESA, Z_CUB = 0.93, 1.43              # mesa y cubierta (donde va la candelería)
-Z_TECHO = 3.3
+Z_TECHO = 3.45
+ARBOTANTES = 'cuatro'                  # 'cuatro' (esquinas) o 'traseros' (solo los de atrás)
 
 BRILLO = tuple(c * 0.08 for c in ORFEBRERIA)                     # brillo propio del metal, como en el trono web
 oro = material('oro', ORFEBRERIA, 0.28, 1.0, emis=BRILLO, emis_f=1.0)
@@ -27,12 +28,13 @@ tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bor
 madera = material('madera', (0.12, 0.06, 0.03), 0.45)
 varal_m = material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.065), emis_f=1.0)
 hierro = material('hierro', (0.05, 0.05, 0.055), 0.5, 0.6)
-cera = material('cera', (0.96, 0.93, 0.84), 0.4)
+cera = material('cera', (0.93, 0.86, 0.68), 0.45)            # cera color hueso
 llama = material('llama', (1.0, 0.7, 0.3), 0.5, emis=(1.0, 0.55, 0.15), emis_f=14.0)
 flor_m = material('flor', FLOR, 0.55, sheen=0.4, emis=(1.0, 0.85, 0.8), emis_f=0.15, tex=textura_flores('flores', FLOR), escala_nor=0.6)
 hoja = material('hoja', (0.08, 0.22, 0.07), 0.6)
 cristal = material('tulipa', (1.0, 0.8, 0.55), 0.1, alpha=0.4, emis=(1.0, 0.65, 0.3), emis_f=1.5)
 flecos = material('flecos', ORFEBRERIA, 0.35, 1.0, tex=textura_flecos('flecos', ORFEBRERIA), recorte=True)
+bellotas = material('bellotas', ORFEBRERIA, 0.35, 1.0, tex=textura_flecos('bellotas', ORFEBRERIA, bellotas=True), recorte=True)
 pintura = material('pintura', (0.55, 0.68, 0.85), 0.6)
 
 # ---------------------------------------------------------------- mesa, patas y varales
@@ -105,44 +107,50 @@ for nombre, ancho, pos, rz in (('faldon_frente', 2 * W2, (0, -L2 - 0.03, Z_MESA)
     lado(nombre, ancho, pos, rz, alto_f, tercio, f=ondas, rep=(ancho / 0.55, alto_f / 0.55))
     fl = lado('flecos', ancho, (pos[0], pos[1], Z_MESA - alto_f), rz, 0.07, flecos, nx=20, nz=1, rep=(ancho / 0.3, 1))
 
-# ---------------------------------------------------------------- candelería en tandas (arcos que suben hacia la imagen)
+# ---------------------------------------------------------------- candelería: el «monte» de cera
+# Candeleros bajos y cirios altos y gruesos, color hueso, en tandas que suben desde delante hasta el pecho de la imagen.
 Y_IMG = 0.5
-def candelero(k, h):
-    pie = objeto('candelero_%d' % k, torno([(0.035, 0), (0.035, 0.015), (0.014, 0.03), (0.012, h * 0.3), (0.022, h * 0.33), (0.012, h * 0.37),
-                                         (0.012, h * 0.65), (0.02, h * 0.68), (0.012, h * 0.71), (0.012, h - 0.02), (0.042, h - 0.005),
-                                         (0.042, h), (0.0, h)], 12), oro)
-    cir = objeto('cirio_%d' % k, torno([(0.017, h), (0.017, h + 0.2), (0.013, h + 0.21), (0.0, h + 0.212)], 10), cera)
-    ll = objeto('llama_%d' % k, torno([(0.0, h + 0.215), (0.008, h + 0.225), (0.009, h + 0.24), (0.004, h + 0.26), (0.0, h + 0.275)], 8), llama)
-    return [pie, cir, ll]
+def candelero(k, h, lc):
+    pie = objeto('candelero_%d' % k, torno([(0.03, 0), (0.03, 0.012), (0.012, 0.025), (0.011, h * 0.5), (0.02, h * 0.55), (0.011, h * 0.6),
+                                         (0.011, h - 0.012), (0.036, h - 0.004), (0.036, h), (0.0, h)], 12), oro)
+    cir = objeto('cirio_%d' % k, torno([(0.021, h), (0.021, h + lc), (0.016, h + lc + 0.01), (0.0, h + lc + 0.012)], 10), cera)
+    z = h + lc + 0.012
+    ll = objeto('llama_%d' % k, torno([(0.0, z), (0.008, z + 0.01), (0.009, z + 0.025), (0.004, z + 0.045), (0.0, z + 0.06)], 8), llama)
+    return [pie, cir, ll], z + 0.03
 VELAS = []
-for k in range(7):
-    R = 1.75 - 0.2 * k; h = 0.14 + 0.1 * k
-    piezas = candelero(k, h)
-    amax = min(math.asin(min(0.85 / R, 1)), 1.15)
-    n = max(3, int(2 * amax * R / 0.155) + 1)
+for k in range(8):
+    R = 1.7 - 0.17 * k; h = 0.06 + 0.012 * k; lc = 0.28 + 0.085 * k
+    piezas, zl = candelero(k, h, lc)
+    amax = min(math.asin(min(0.72 / R, 1)), 1.2)
+    n = max(3, int(2 * amax * R / 0.11) + 1)
     for i in range(n):
-        a = -amax + 2 * amax * i / (n - 1)
-        x, y = R * math.sin(a), Y_IMG - 0.35 - R * math.cos(a)
-        if y < -L2 + 0.1: continue
+        a_ = -amax + 2 * amax * i / (n - 1)
+        x, y = R * math.sin(a_), Y_IMG - 0.32 - R * math.cos(a_)
+        if y < -L2 + 0.25: continue
         for p in piezas: duplicar(p, p.name.split('.')[0], (x, y, Z_CUB))
-        VELAS.append((x, y, Z_CUB + h + 0.24))
+        VELAS.append((x, y, Z_CUB + zl))
     for p in piezas: bpy.data.objects.remove(p)
 
-# ---------------------------------------------------------------- jarras con flores
+# ---------------------------------------------------------------- flores: jarras con ramos altos por los costados y friso delantero
 def jarra(nombre, pos, esc=1.0):
     x, y, z = pos
     j = objeto(nombre, torno([(0.07 * esc, 0), (0.09 * esc, 0.02 * esc), (0.04 * esc, 0.06 * esc), (0.05 * esc, 0.12 * esc), (0.11 * esc, 0.22 * esc),
                               (0.1 * esc, 0.3 * esc), (0.07 * esc, 0.34 * esc), (0.1 * esc, 0.38 * esc), (0.0, 0.38 * esc)], 20), talla)
     j.location = (x, y, z)
-    bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=3, radius=0.24 * esc, calc_uvs=True)
-    for v in bm.verts:
-        d = v.co.normalized()
-        v.co *= 1 + 0.12 * abs(math.sin(d.x * 17) * math.sin(d.y * 19) * math.sin(d.z * 23)) ** 0.5
-        v.co.z *= 0.85
-    f = objeto(nombre + '_flor', bm, flor_m); f.location = (x, y, z + 0.38 * esc + 0.17 * esc)
+    zb = z + 0.38 * esc
+    ramo = objeto(nombre + '_flor', elipsoide((0.15 * esc, 0.15 * esc, 0.2 * esc), (x, y, zb + 0.12 * esc), 20, 14), flor_m)
+    for k in range(7):                                      # varas de gladiolo que salen hacia arriba
+        a_ = 2 * math.pi * k / 7; inc = 0.35 if k else 0.0
+        base = Vector((x, y, zb + 0.15 * esc)); d = Vector((math.cos(a_) * inc, math.sin(a_) * inc, 1)).normalized()
+        largo = (0.42 if k == 0 else 0.3) * esc
+        pts = [base + d * largo * t for t in (0, 0.3, 0.6, 0.85, 1.0)]
+        objeto(nombre + '_vara', tubo(pts, [0.05 * esc, 0.05 * esc, 0.042 * esc, 0.03 * esc, 0.0], segs=10), flor_m)
 for sx in (-1, 1):
-    jarra('jarra', (sx * 0.98, -1.35, Z_CUB), 1.0)
-    jarra('jarra', (sx * 0.62, Y_IMG - 0.62, Z_CUB), 0.8)
+    for y in (-1.73, -0.87, 0.0):
+        jarra('jarra', (sx * 0.86, y, Z_CUB), 0.75)
+for i in range(9):                                          # friso delantero: fila de ramitos bajos
+    x = -0.72 + 0.18 * i
+    objeto('friso_flores', elipsoide((0.11, 0.09, 0.08 + 0.02 * (i % 2)), (x, -L2 + 0.15, Z_CUB + 0.05), 16, 10), flor_m)
 
 # ---------------------------------------------------------------- arbotantes (como los de la Virgen de la Paloma)
 # Cuatro árboles de hojarasca que nacen en las esquinas del cajillo y se abren en diagonal hacia fuera: tronco con
@@ -189,7 +197,7 @@ TULIPAS = []
 K = 0.72
 NIV = [(0.42, 0.7, 8), (0.78, 0.78, 8), (1.12, 0.62, 7), (1.42, 0.4, 5)]
 for sx in (-1, 1):
-    for sy in (-1, 1):
+    for sy in ((-1, 1) if ARBOTANTES == 'cuatro' else (1,)):
         nom = 'arbotante_%s_%s' % ('del' if sy < 0 else 'tras', 'dcha' if sx > 0 else 'izda')
         c = Vector((sx * (W2 - 0.04), sy * (L2 - 0.04), Z_CUB))
         d = Vector((sx, sy * 0.75, 0)).normalized(); q = Vector((-d.y, d.x, 0))
@@ -285,11 +293,11 @@ for sx in (-1, 1):
 objeto('techo', caja((-W2 + 0.02, Y0, Z_TECHO), (W2 - 0.02, Y1, Z_TECHO + 0.06), rep=(3, 3)), tercio)
 objeto('cresteria', tubo([(-W2, Y0, Z_TECHO + 0.07), (W2, Y0, Z_TECHO + 0.07), (W2, Y1, Z_TECHO + 0.07), (-W2, Y1, Z_TECHO + 0.07), (-W2, Y0, Z_TECHO + 0.07)],
                          0.02, segs=8, tapas=False), oro)
-ALTO_B = 0.42
+ALTO_B = 0.58
 def festones(x, z, i, j, ancho):
     # el bajo de la bambalina en ondas (festones)
     if j == 8:
-        return (0, 0, 0.05 * abs(math.sin(math.pi * (x + ancho / 2) / 0.3)))
+        return (0, 0, 0.09 * abs(math.sin(math.pi * (x + ancho / 2) / 0.36)))
     return (0, 0, 0)
 for nombre, ancho, pos, rz in (('bambalina_frente', 2 * W2 - 0.04, (0, Y0 - 0.005, Z_TECHO + 0.06), 0),
                                ('bambalina_detras', 2 * W2 - 0.04, (0, Y1 + 0.005, Z_TECHO + 0.06), math.pi),
@@ -297,8 +305,8 @@ for nombre, ancho, pos, rz in (('bambalina_frente', 2 * W2 - 0.04, (0, Y0 - 0.00
                                ('bambalina_izda', Y1 - Y0, (-W2 + 0.015, (Y0 + Y1) / 2, Z_TECHO + 0.06), -math.pi / 2)):
     b = lado(nombre, ancho, pos, rz, ALTO_B, tercio, nx=48, nz=8, f=lambda x, z, i, j, a=ancho: festones(x, z, i, j, a),
              rep=(ancho / 0.45, ALTO_B / 0.45))
-    fl = objeto(nombre + '_flecos', rejilla(ancho, 0.07, 48, 1, lambda x, z, i, j, a=ancho: (0, 0, 0.05 * abs(math.sin(math.pi * (x + a / 2) / 0.3))),
-                                              rep=(ancho / 0.3, 1)), flecos)
+    fl = objeto(nombre + '_flecos', rejilla(ancho, 0.14, 48, 1, lambda x, z, i, j, a=ancho: (0, 0, 0.09 * abs(math.sin(math.pi * (x + a / 2) / 0.36))),
+                                              rep=(ancho / 0.3, 1)), bellotas)
     fl.parent = b; fl.location = (0, 0.002, -ALTO_B)
     g = objeto(nombre + '_galon', tubo([(-ancho / 2, -0.006, -0.03), (ancho / 2, -0.006, -0.03)], 0.012, segs=6), oro); g.parent = b
 

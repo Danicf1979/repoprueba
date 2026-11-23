@@ -49,7 +49,13 @@ hermandad**.
   negro, blanco, rojo) y el bordado: un gran dibujo simétrico con motivo central (escudo, paloma, anagrama) y cenefa.
 - **Cabezas de varal**: tallas doradas de hojarasca, madera tallada, plata cincelada.
 - **Varales**: forrados de plata o metal, o de madera.
-- **Arbotantes**: árboles de hojarasca dorada (como la Paloma) o de plata con brazos en voluta; nº de tulipas.
+- **Arbotantes**: árboles de hojarasca dorada (como la Paloma) o de plata con brazos en voluta; nº de tulipas;
+  **cuatro (en las esquinas) o solo los dos de atrás**.
+- **Cajillo**: plata cincelada con capillas e imágenes, madera dorada con figuras, madera tallada en su color.
+- **Candelería**: candeleros bajos y cirios altos de color hueso en tandas que suben hasta el pecho de la imagen.
+- **Flores**: jarras con ramos altos por los costados y friso por el borde delantero; tipo y color.
+- **Palio**: color y bordado del terciopelo; bambalinas altas en ondas con fleco de bellotas; crestería o corona en
+  la bambalina delantera.
 
 La luz del trono la dan las velas: emisión y resplandor siempre, y solo unas pocas luces reales (unas 4–6), para
 que vaya en móvil.

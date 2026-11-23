@@ -85,8 +85,18 @@ def textura_talla(nombre, metal=(1.0, 0.76, 0.34), N=512):
     return (_imagen(nombre + '_col', np.dstack([col, np.ones_like(m)])), _imagen(nombre + '_mr', mr),
             _imagen(nombre + '_nor', _normal(m, 9.0)))
 
-def textura_flecos(nombre, oro=(1.0, 0.75, 0.32), N=256):
+def textura_flecos(nombre, oro=(1.0, 0.75, 0.32), N=256, bellotas=False):
     y, x = np.mgrid[0:N, 0:N] / N
+    if bellotas:
+        # fleco de bellotas: cordones que bajan y acaban en una borla gruesa con su fleco corto
+        cx = (x * 12) % 1 - 0.5
+        cordon = (np.abs(cx) < 0.07) * (y > 0.1) * (y < 0.62)
+        bulbo = (np.hypot(cx / 0.3, (y - 0.7) / 0.1) < 1)
+        flequito = (np.abs(((x * 72) % 1) - 0.5) < 0.3) * (np.abs(cx) < 0.32) * (y > 0.75) * (y < 0.97)
+        cab = (y < 0.12)
+        a = np.maximum.reduce([cordon.astype(float), bulbo.astype(float), flequito.astype(float), cab.astype(float)])
+        col = np.array(oro)[None, None, :] * (0.65 + 0.35 * np.clip(1 - np.abs(cx) * 2, 0, 1)[..., None])
+        return _imagen(nombre, np.dstack([col, a]))
     hilo = (np.abs(((x * 48) % 1) - 0.5) < 0.3).astype(float) * (y > 0.12)
     cab = (y < 0.16).astype(float)
     a = np.maximum(hilo, cab) * (1 - 0.6 * (y > 0.92) * ((x * 48 % 1) > 0.5))
