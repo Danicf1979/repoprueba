@@ -14,10 +14,10 @@ espejo = '_espejo' in salida      # versión espejada: el cirio al otro lado, pa
 P = {
     'realista': dict(hombro=1.44, cab_z=1.62, cab_r=0.105, cintura=1.04, r_bajo=0.34, r_cin=0.17, r_pecho=0.2,
                      r_hombro=0.21, capi=0.78, babero=0.44, espalda=0.52, capa_r=0.215, pliegues=16, prof=0.035,
-                     brazo=0.055, manga=0.085, mano=0.045, cirio_l=1.35, cirio_r=0.03, ojo=(0.026, 0.017)),
+                     brazo=0.055, manga=0.085, mano=0.045, cirio_l=1.35, cirio_r=0.03, ojo=(0.026, 0.017), lado=0.12, punta=1.5),
     'cabezon':  dict(hombro=0.66, cab_z=0.9, cab_r=0.22, cintura=0.44, r_bajo=0.27, r_cin=0.2, r_pecho=0.21,
-                     r_hombro=0.2, capi=0.5, babero=0.26, espalda=0.24, capa_r=0.235, pliegues=9, prof=0.03,
-                     brazo=0.07, manga=0.1, mano=0.07, cirio_l=0.95, cirio_r=0.03, ojo=(0.06, 0.045)),
+                     r_hombro=0.2, capi=0.5, babero=0.32, espalda=0.26, capa_r=0.235, pliegues=9, prof=0.03,
+                     brazo=0.07, manga=0.1, mano=0.07, cirio_l=0.95, cirio_r=0.03, ojo=(0.06, 0.045), lado=0.03, punta=3.0),
 }[estilo]
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -159,7 +159,7 @@ for k in range(1, 8):                                       # caída: babero del
         return max(base, r_tun(zf + dz(th)) + 0.03 + abs(math.sin(th)) ** 2 * P['brazo'] * 0.9)   # ceñido, tapando justo los hombros
     def dz(th, t=t):
         f = math.cos(th)                                     # 1 delante, -1 detrás
-        caida = P['babero'] * max(f, 0) ** 1.5 + P['espalda'] * max(-f, 0) ** 1.2 + 0.12 * (1 - abs(f))
+        caida = P['babero'] * max(f, 0) ** P['punta'] + P['espalda'] * max(-f, 0) ** (P['punta'] * 0.8) + P['lado'] * (1 - abs(f))
         return -t * caida
     filas.append((cuelloz - (cuelloz - (h + 0.02)) * min(1, t * 1.6) * 0.9, r, dz, 1.0, 0.8))
 filas = [f if len(f) > 2 else (f[0], f[1], None, 1.0, 1.0) for f in filas]
@@ -249,7 +249,7 @@ else:
     # Cabezón: brazos cortos y redondos que salen por debajo de los lados del antifaz. La mano derecha agarra el
     # cirio en el costado, casi vertical; la izquierda cae relajada junto al cuerpo, con la manopla cerrada.
     dirc = Vector((0.1, -0.06, 1)).normalized()
-    zh = ci + 0.1                                                          # hombros, bajo el borde del antifaz
+    zh = ci + 0.17                                                         # los dos hombros, justo bajo el borde del antifaz
     mano_d = Vector((r_tun(ci) * 0.95, -(r_tun(ci) * 0.78 + 0.07), ci - 0.05))
     hombro = Vector((r_tun(zh) - 0.02, 0.0, zh))
     codo = Vector((r_tun(ci) + 0.055, -0.03, ci - 0.02))
@@ -257,8 +257,8 @@ else:
     manga('brazo_d', [hombro, hombro.lerp(codo, 0.5), codo, codo.lerp(muneca, 0.5), muneca], [0.06, 0.064, 0.066, 0.064, 0.068])
     guante_cirio(mano_d, codo, 0.85)
     hombro = Vector((-(r_tun(zh) - 0.02), 0.0, zh))
-    codo = Vector((-(r_tun(ci) + 0.05), -0.01, ci - 0.03))
-    mano = Vector((-(r_tun(ci) + 0.035), -0.07, ci - 0.13))
+    codo = Vector((-(r_tun(ci) + 0.055), -0.03, ci - 0.02))                # simétrico al del cirio
+    mano = Vector((-r_tun(ci) * 0.97, -(r_tun(ci) * 0.78 + 0.045), ci - 0.06))   # a la altura de la otra mano
     muneca = mano + (codo - mano).normalized() * 0.045
     manga('brazo_i', [hombro, hombro.lerp(codo, 0.5), codo, codo.lerp(muneca, 0.5), muneca], [0.06, 0.064, 0.066, 0.064, 0.068])
     elipsoide('guante', mano, (0.05, 0.048, 0.056), M['guante'])           # manopla
@@ -287,10 +287,111 @@ if espejo:
         bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.reverse_faces(bm, faces=bm.faces[:]); bm.to_mesh(o.data); bm.free()
         o.location.x = -o.location.x; o.rotation_euler.z = -o.rotation_euler.z; o.rotation_euler.y = -o.rotation_euler.y
 
-# raíz con el nombre del estilo
-raiz = bpy.data.objects.new('nazareno_' + estilo, None); scn.collection.objects.link(raiz)
-for o in list(scn.collection.objects):
-    if o is not raiz: o.parent = raiz
+# ---------------------------------------------------------------- esqueleto y animaciones
+# Se aplican los modificadores, se une todo en una malla y se pesa por zonas a 7 huesos:
+#   raiz · cuerpo (túnica de cintura arriba, cíngulo) · cabeza (capirote y antifaz) · pierna_d / pierna_i (bajo de la
+#   túnica y zapatos) · brazo_d / brazo_i (mangas y guantes; el del lado del cirio lleva el cirio).
+# Animaciones: «andar» (paso de procesión, ciclo de 1,6 s) y «parado» (respiración), en bucle.
+import os
+from mathutils import Matrix
+dg = bpy.context.evaluated_depsgraph_get()
+mallas = [o for o in scn.collection.objects if o.type == 'MESH']
+for o in mallas:
+    me = bpy.data.meshes.new_from_object(o.evaluated_get(dg))
+    me.transform(o.matrix_world)
+    o.modifiers.clear(); o.data = me; o.matrix_world = Matrix.Identity(4)
+def centro(o): return sum((v.co for v in o.data.vertices), Vector()) / max(len(o.data.vertices), 1)
+cirio_o = next(o for o in mallas if o.name.startswith('cirio'))
+lado_cirio = 1 if centro(cirio_o).x > 0 else -1
+nom_lado = lambda x: '_d' if x * lado_cirio > 0 else '_i'      # _d = lado del cirio
+hombros = {}
+for o in mallas:
+    if o.name.startswith('brazo'):
+        vs = [v.co for v in o.data.vertices]
+        hom = max(vs, key=lambda c: c.z)
+        hombros[nom_lado(centro(o).x)] = (hom.copy(), max(vs, key=lambda c: (c - hom).length).copy())
+zc = ci - 0.08                                                   # cadera
+huesos = ['raiz', 'cuerpo', 'cabeza', 'pierna_d', 'pierna_i', 'brazo_d', 'brazo_i']
+def peso(o, v):
+    n, c = o.name, v.co
+    if n.startswith(('capirote', 'ojo', 'escudo')): return {'cabeza': 1}
+    if n.startswith('zapato'): return {'pierna' + ('_d' if c.x * lado_cirio > 0 else '_i'): 1}
+    if n.startswith(('cirio', 'cera', 'llama')): return {'brazo_d': 1}
+    if n.startswith(('guante', 'dedos', 'pulgar')): return {'brazo' + nom_lado(centro(o).x): 1}
+    if n.startswith('brazo'):
+        b = 'brazo' + nom_lado(centro(o).x); hom = hombros[b[5:]][0]
+        w = min(1, (c - hom).length / 0.08)
+        return {b: w, 'cuerpo': 1 - w}
+    if n.startswith('tunica') and c.z < zc:
+        t = (zc - c.z) / zc; wl = 0.85 * t
+        sd = min(1, max(0, 0.5 + c.x * lado_cirio / 0.12))
+        return {'pierna_d': wl * sd, 'pierna_i': wl * (1 - sd), 'cuerpo': 1 - wl}
+    return {'cuerpo': 1}
+for o in mallas:
+    grupos = {b: o.vertex_groups.new(name=b) for b in huesos}
+    for v in o.data.vertices:
+        for b, w in peso(o, v).items():
+            if w > 0: grupos[b].add([v.index], w, 'REPLACE')
+bpy.ops.object.select_all(action='DESELECT')
+for o in mallas: o.select_set(True)
+bpy.context.view_layer.objects.active = mallas[0]
+bpy.ops.object.join()
+cuerpo_m = bpy.context.view_layer.objects.active; cuerpo_m.name = 'nazareno'
 
-bpy.ops.export_scene.gltf(filepath=salida, export_format='GLB', export_apply=True)
+arm = bpy.data.armatures.new('esqueleto'); rig = bpy.data.objects.new('esqueleto', arm); scn.collection.objects.link(rig)
+bpy.context.view_layer.objects.active = rig; bpy.ops.object.mode_set(mode='EDIT')
+def hueso(n, cab, cola, padre=None):
+    b = arm.edit_bones.new(n); b.head = cab; b.tail = cola
+    if padre: b.parent = arm.edit_bones[padre]
+    return b
+hueso('raiz', (0, 0, 0), (0, 0, 0.1))
+hueso('cuerpo', (0, 0, zc), (0, 0, h), 'raiz')
+hueso('cabeza', (0, 0, h), (0, 0, h + 0.3), 'cuerpo')
+for sfx in ('_d', '_i'):
+    x = 0.08 * lado_cirio * (1 if sfx == '_d' else -1)
+    hueso('pierna' + sfx, (x, 0, zc), (x, 0, 0.02), 'raiz')
+    hom, mano = hombros[sfx]
+    hueso('brazo' + sfx, tuple(hom), tuple(mano), 'cuerpo')
+bpy.ops.object.mode_set(mode='OBJECT')
+cuerpo_m.parent = rig
+cuerpo_m.modifiers.new('arm', 'ARMATURE').object = rig
+
+# animaciones
+fps = 30; scn.render.fps = fps
+rig.animation_data_create()
+pb = rig.pose.bones
+for b in pb: b.rotation_mode = 'XYZ'
+amp = dict(pierna=0.32 if estilo == 'cabezon' else 0.22, brazo=0.22 if estilo == 'cabezon' else 0.0,
+           bote=0.012 if estilo == 'cabezon' else 0.01, ladeo=0.06 if estilo == 'cabezon' else 0.03)
+def accion(nombre, n, f):
+    act = bpy.data.actions.new(nombre); rig.animation_data.action = act
+    for k in range(0, n + 1, 2):
+        t = (k % n) / n
+        for b in pb: b.location = (0, 0, 0); b.rotation_euler = (0, 0, 0)
+        f(t)
+        for b in pb:
+            b.keyframe_insert('location', frame=k); b.keyframe_insert('rotation_euler', frame=k)
+    tr = rig.animation_data.nla_tracks.new(); tr.name = nombre
+    tr.strips.new(nombre, 0, act)
+    rig.animation_data.action = None
+S = lambda t, fase=0.0: math.sin(2 * math.pi * t + fase)
+def andar(t):
+    pb['pierna_d'].rotation_euler.x = amp['pierna'] * S(t)
+    pb['pierna_i'].rotation_euler.x = -amp['pierna'] * S(t)
+    pb['cuerpo'].location.y = amp['bote'] * (0.5 - 0.5 * math.cos(4 * math.pi * t))    # sube en cada paso
+    pb['cuerpo'].rotation_euler.z = amp['ladeo'] * S(t, 0.3)                      # se ladea hacia el pie que apoya
+    pb['cuerpo'].rotation_euler.y = 0.05 * S(t)                                   # gira un poco la cadera
+    pb['cabeza'].rotation_euler.z = -0.5 * amp['ladeo'] * S(t, -0.4)              # el capirote compensa con retraso
+    pb['brazo_i'].rotation_euler.x = -amp['brazo'] * S(t)                         # el brazo libre se mece
+    pb['brazo_d'].rotation_euler.x = 0.03 * S(t)
+def parado(t):
+    pb['cuerpo'].location.y = 0.004 * (0.5 - 0.5 * math.cos(2 * math.pi * t))
+    pb['cabeza'].rotation_euler.z = 0.015 * S(t, 1.0)
+    pb['brazo_i'].rotation_euler.x = 0.03 * S(t, 0.5)
+accion('andar', 48, andar)
+accion('parado', 90, parado)
+
+raiz = bpy.data.objects.new('nazareno_' + estilo, None); scn.collection.objects.link(raiz)
+rig.parent = raiz
+bpy.ops.export_scene.gltf(filepath=salida, export_format='GLB', export_apply=False, export_animation_mode='NLA_TRACKS')
 print('ok', salida)

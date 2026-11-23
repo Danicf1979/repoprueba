@@ -19,3 +19,13 @@ terciopelo con babero, escudo, cíngulo con borlas, mangas, guantes, zapatos y c
 y saca tres capturas: `captura_naz_pareja.png`, `captura_naz_realista.png` y `captura_naz_cabezon.png`.
 Todavía no tienen esqueleto: el vaivén es un balanceo por código. El siguiente paso es el esqueleto y las
 animaciones con Mixamo.
+
+## Esqueleto y movimiento (nazareno cabezón)
+
+`blender/nazareno.py` también monta el esqueleto (raíz, cuerpo, cabeza, dos piernas y dos brazos; el del cirio lo lleva)
+y dos animaciones en bucle, `andar` (paso de procesión, ciclo de 1,6 s) y `parado`, que viajan dentro del GLB.
+Cada estilo tiene su versión espejada (`*_espejo.glb`) para que el cirio vaya siempre por dentro del cortejo.
+
+`video.tscn` (script `video.gd`) graba un tramo de cabezones andando; a los 5 s para la cabeza del tramo y la parada
+corre hacia atrás pareja a pareja, y a los 9,5 s arrancan igual:
+`godot --path . --write-movie salida.avi --fixed-fps 30 --quit-after 450 res://video.tscn`
