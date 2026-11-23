@@ -17,7 +17,8 @@ METALES = {'oro': (1.0, 0.76, 0.34), 'plata': (0.92, 0.93, 0.95)}
 TELAS = {'granate': (0.32, 0.01, 0.04), 'verde': (0.005, 0.16, 0.05), 'azul': (0.008, 0.03, 0.3), 'negro': (0.012, 0.01, 0.014),
          'morado': (0.17, 0.01, 0.3), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.55, 0.01, 0.015)}
 FLORES = {'blanco': (0.98, 0.95, 0.95), 'rosa': (0.95, 0.35, 0.55), 'rojo': (0.7, 0.02, 0.04), 'morado': (0.38, 0.1, 0.6)}
-V = {'orfebreria': 'oro', 'terciopelo': 'granate', 'manto': 'granate', 'flor': 'blanco', 'arbotantes': 'cuatro', 'varales': 'plata'}
+V = {'orfebreria': 'oro', 'terciopelo': 'granate', 'manto': 'granate', 'flor': 'blanco', 'arbotantes': 'cuatro', 'varales': 'plata',
+     'bordado': 'medio', 'bordado_manto': 'cargado'}
 V.update(json.loads(os.environ.get('VARIANTE', '{}')))
 ORFEBRERIA = METALES[V['orfebreria']]
 TERCIOPELO = TELAS[V['terciopelo']]
@@ -34,7 +35,7 @@ ARBOTANTES = V['arbotantes']           # 'cuatro' (esquinas) o 'traseros' (solo 
 BRILLO = tuple(c * 0.08 for c in ORFEBRERIA)                     # brillo propio del metal, como en el trono web
 oro = material('oro', ORFEBRERIA, 0.28, 1.0, emis=BRILLO, emis_f=1.0)
 talla = material('talla', ORFEBRERIA, 0.35, 1.0, emis=BRILLO, emis_f=1.0, tex=textura_talla('talla', ORFEBRERIA), escala_nor=1.0)
-tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('bordado', TERCIOPELO), escala_nor=0.8)
+tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('bordado', TERCIOPELO, nivel=V['bordado']), escala_nor=0.8)
 madera = material('madera', (0.12, 0.06, 0.03), 0.45)
 varal_m = (material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.065), emis_f=1.0) if V['varales'] == 'plata'
            else material('varal_madera', (0.32, 0.14, 0.06), 0.35, tex=textura_talla('varal_madera', (0.42, 0.2, 0.09)), escala_nor=0.5))
@@ -348,7 +349,7 @@ mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickn
 # cola del manto, como los de Málaga: nace en punta detrás de la corona, baja en rampa abombada, cada vez más
 # ancha, con los bordes caídos, y acaba redondeada sobre los varales traseros, por encima de las cabezas de los
 # hombres de trono. Bordado simétrico propio (textura_manto) y galón dorado alrededor.
-cola_m = material('manto_cola', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', MANTO), escala_nor=0.8)
+cola_m = material('manto_cola', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', MANTO, nivel=V['bordado_manto']), escala_nor=0.8)
 A = Vector((0.0, Y_IMG + 0.17, Z_IMG + 0.98))
 E_y, E_z = L2 + 1.33, Z_CUB - 0.02
 NS, NT = 44, 28
