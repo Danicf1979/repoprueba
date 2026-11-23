@@ -14,9 +14,9 @@ salida = sys.argv[-1]
 #   VARIANTE='{"orfebreria": "plata", "terciopelo": "verde", "manto": "azul", "arbotantes": "traseros"}'
 import json
 METALES = {'oro': (1.0, 0.76, 0.34), 'plata': (0.92, 0.93, 0.95)}
-TELAS = {'granate': (0.30, 0.025, 0.06), 'verde': (0.02, 0.14, 0.07), 'azul': (0.02, 0.05, 0.22), 'negro': (0.025, 0.022, 0.03),
-         'morado': (0.16, 0.03, 0.24), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.5, 0.03, 0.04)}
-FLORES = {'blanco': (0.98, 0.93, 0.95), 'rosa': (0.98, 0.62, 0.72), 'rojo': (0.78, 0.07, 0.09), 'morado': (0.55, 0.32, 0.7)}
+TELAS = {'granate': (0.32, 0.01, 0.04), 'verde': (0.005, 0.16, 0.05), 'azul': (0.008, 0.03, 0.3), 'negro': (0.012, 0.01, 0.014),
+         'morado': (0.17, 0.01, 0.3), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.55, 0.01, 0.015)}
+FLORES = {'blanco': (0.98, 0.95, 0.95), 'rosa': (0.95, 0.35, 0.55), 'rojo': (0.7, 0.02, 0.04), 'morado': (0.38, 0.1, 0.6)}
 V = {'orfebreria': 'oro', 'terciopelo': 'granate', 'manto': 'granate', 'flor': 'blanco', 'arbotantes': 'cuatro', 'varales': 'plata'}
 V.update(json.loads(os.environ.get('VARIANTE', '{}')))
 ORFEBRERIA = METALES[V['orfebreria']]
@@ -41,7 +41,7 @@ varal_m = (material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.0
 hierro = material('hierro', (0.05, 0.05, 0.055), 0.5, 0.6)
 cera = material('cera', (0.93, 0.86, 0.68), 0.45)            # cera color hueso
 llama = material('llama', (1.0, 0.7, 0.3), 0.5, emis=(1.0, 0.55, 0.15), emis_f=14.0)
-flor_m = material('flor', FLOR, 0.55, sheen=0.4, emis=(1.0, 0.85, 0.8), emis_f=0.15, tex=textura_flores('flores', FLOR), escala_nor=0.6)
+flor_m = material('flor', FLOR, 0.55, sheen=0.2, emis=FLOR, emis_f=0.1, tex=textura_flores('flores', FLOR), escala_nor=0.6)
 hoja = material('hoja', (0.08, 0.22, 0.07), 0.6)
 cristal = material('tulipa', (1.0, 0.8, 0.55), 0.1, alpha=0.4, emis=(1.0, 0.65, 0.3), emis_f=1.5)
 flecos = material('flecos', ORFEBRERIA, 0.35, 1.0, tex=textura_flecos('flecos', ORFEBRERIA), recorte=True)
@@ -445,6 +445,7 @@ if os.environ.get('FOTOS'):
         o = bpy.data.objects.new(nom, l); scn.collection.objects.link(o); o.location = pos
         o.rotation_euler = (Vector((0, 0, 1.6)) - Vector(pos)).to_track_quat('-Z', 'Y').to_euler()
     cam = bpy.data.cameras.new('cam'); co = bpy.data.objects.new('cam', cam); scn.collection.objects.link(co); scn.camera = co
+    scn.view_settings.view_transform = 'Standard'; scn.view_settings.look = 'None'   # sin desaturar los colores
     scn.render.engine = 'CYCLES'; scn.cycles.samples = int(os.environ.get('MUESTRAS', '40')); scn.cycles.use_denoising = True
     scn.render.resolution_x, scn.render.resolution_y = 1100, 800
     scn.render.image_settings.file_format = 'JPEG'; scn.render.image_settings.quality = 86

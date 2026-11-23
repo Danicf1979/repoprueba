@@ -191,7 +191,7 @@ def material(nombre, color=(0.8, 0.8, 0.8), rough=0.6, metal=0.0, sheen=0.0, emi
     b.inputs['Metallic'].default_value = metal
     if sheen:
         b.inputs['Sheen Weight'].default_value = sheen
-        b.inputs['Sheen Tint'].default_value = (*[min(1, c * 2.5) for c in color], 1)
+        b.inputs['Sheen Tint'].default_value = (*color, 1)            # el brillo del terciopelo, de su mismo color (no lo blanquea)
     if emis:
         b.inputs['Emission Color'].default_value = (*emis, 1); b.inputs['Emission Strength'].default_value = emis_f
     if alpha < 1.0 or recorte:
