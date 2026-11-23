@@ -12,7 +12,7 @@ estilo, salida = sys.argv[-2], sys.argv[-1]
 # Proporciones: altura de hombros, cabeza (centro y radio), cintura, anchuras, capirote y cirio
 P = {
     'realista': dict(hombro=1.44, cab_z=1.62, cab_r=0.105, cintura=1.04, r_bajo=0.34, r_cin=0.17, r_pecho=0.2,
-                     r_hombro=0.21, capi=0.78, babero=0.36, espalda=0.42, capa_r=0.215, pliegues=16, prof=0.035,
+                     r_hombro=0.21, capi=0.78, babero=0.44, espalda=0.52, capa_r=0.215, pliegues=16, prof=0.035,
                      brazo=0.055, manga=0.085, mano=0.045, cirio_l=1.35, cirio_r=0.03, ojo=(0.026, 0.017)),
     'cabezon':  dict(hombro=0.66, cab_z=0.9, cab_r=0.22, cintura=0.44, r_bajo=0.27, r_cin=0.2, r_pecho=0.21,
                      r_hombro=0.2, capi=0.5, babero=0.26, espalda=0.24, capa_r=0.235, pliegues=9, prof=0.03,
@@ -130,7 +130,14 @@ for k in range(pasos + 1):
     r0 = P['r_cin'] + (P['r_bajo'] - P['r_cin']) * smooth(t) ** 0.8
     filas.append((z, pliegue(r0, t ** 0.7)))
 filas = [(z, r, None, 1.0, 0.78) for (z, r) in filas]
-tun = objeto('tunica', torno(filas, segs=64, tapa_abajo=True), M['tunica'])
+PERFIL_T = [(z, r if not callable(r) else r(0.0)) for (z, r, *_ ) in filas]
+def r_tun(z):
+    for (z0, r0), (z1, r1) in zip(PERFIL_T, PERFIL_T[1:]):
+        if z1 <= z <= z0: return r0 + (r1 - r0) * (z0 - z) / max(z0 - z1, 1e-6)
+    return 0.0
+tun = objeto('tunica', torno(filas, segs=64, tapa_arriba=True, tapa_abajo=False), M['tunica'])
+tun.modifiers.new('solid', 'SOLIDIFY').thickness = 0.008
+tun.modifiers.move(1, 0)
 
 # ---------------------------------------------------------------- capirote y antifaz (una sola tela)
 cz, cr = P['cab_z'], P['cab_r']
@@ -145,8 +152,10 @@ for k in range(1, 6):                                       # sobre la cabeza ha
 cuelloz = cz - cr * 0.95
 for k in range(1, 8):                                       # caída: babero delante, más larga detrás
     t = k / 7
-    def r(th, t=t):
-        return cr * 1.08 + (P['capa_r'] - cr * 1.08) * smooth(min(1, t * 1.6)) + 0.01 * math.sin(7 * th) * t
+    zf = cuelloz - (cuelloz - (h + 0.02)) * min(1, t * 1.6) * 0.9
+    def r(th, t=t, zf=zf):
+        base = cr * 1.08 + (P['capa_r'] - cr * 1.08) * smooth(min(1, t * 1.6)) + 0.01 * math.sin(7 * th) * t
+        return max(base, r_tun(zf + dz(th)) + 0.04)
     def dz(th, t=t):
         f = math.cos(th)                                     # 1 delante, -1 detrás
         caida = P['babero'] * max(f, 0) ** 1.5 + P['espalda'] * max(-f, 0) ** 1.2 + 0.12 * (1 - abs(f))
@@ -192,25 +201,37 @@ for s, largo in ((-1, 0.42), (-1, 0.36)):
     bm = tubo([(x, y, z + 0.01), (x, y, z - 0.02), (x, y, z - 0.07)], [0.012, 0.022, 0.03], segs=12)
     objeto('borla', bm, M['cingulo'], subdiv=1)
 
-# ---------------------------------------------------------------- brazos, mangas anchas, guantes y cirio
-sx = P['r_hombro'] * 0.92
-mano_d = (sx * 0.85, -P['r_cin'] * 0.95 - P['mano'], ci + 0.06)          # mano derecha sobre la cadera
-codo_d = (sx * 1.15, -0.05, (h + ci) / 2 - 0.03)
-dirc = Vector((0.3, -0.2, 1)).normalized()                               # eje del cirio
-sube = (h - ci) * 0.22
-mano_i = tuple(Vector(mano_d) + dirc * sube + Vector((-0.01, -0.01, 0)))   # la izquierda lo sujeta más arriba
-codo_i = (-sx * 0.75, -0.16, (h + ci) / 2 - 0.06)
-for nom, codo, mano in (('brazo_d', codo_d, mano_d), ('brazo_i', codo_i, mano_i)):
-    hombro = (math.copysign(sx, codo[0]), 0.0, h - 0.04)
-    c, m_ = Vector(codo), Vector(mano)
-    puño = c.lerp(m_, 0.86)
-    pts = [hombro, Vector(hombro).lerp(c, 0.5), c, c.lerp(m_, 0.5), puño]
-    rad = [P['brazo'], P['brazo'] * 1.05, P['brazo'] * 1.25, P['manga'] * 0.8, P['manga']]
-    objeto(nom, tubo(pts, rad, segs=18, tapas=True), M['tunica'])
-    elipsoide('guante', mano, (P['mano'], P['mano'] * 0.9, P['mano'] * 1.15), M['guante'])
+# ---------------------------------------------------------------- brazos, mangas que cuelgan, guantes y cirio
+# Brazos pegados al cuerpo, codos a la altura de la cintura y antebrazos hacia delante: las dos manos sujetan el
+# cirio apoyado en la cadera derecha, por debajo del babero.
+sx = P['r_hombro'] * 0.95
+dirc = Vector((0.18, -0.16, 1)).normalized()                              # eje del cirio
+mano_d = Vector((P['r_cin'] * 0.75, -P['r_cin'] * 0.78 - P['mano'] * 0.9, ci - 0.04))
+mano_i = mano_d + dirc * P['mano'] * 2.6 + Vector((-0.012, 0, 0))
+for nom, lado, mano in (('brazo_d', 1, mano_d), ('brazo_i', -1, mano_i)):
+    hombro = Vector((lado * sx, 0.01, h - 0.05))
+    codo = Vector((lado * (P['r_cin'] + P['brazo'] * 1.1), 0.03, ci + 0.03 * (1 if lado > 0 else 1.6)))
+    muneca = mano + (codo - mano).normalized() * P['mano'] * 1.1
+    pts = [hombro, hombro.lerp(codo, 0.5), codo, codo.lerp(muneca, 0.45), codo.lerp(muneca, 0.8), muneca]
+    rad = [P['brazo'], P['brazo'] * 1.08, P['brazo'] * 1.2, P['manga'] * 0.72, P['manga'] * 0.68, P['manga'] * 0.6]
+    # la manga cuelga: el centro de cada anillo baja según lo ancho que es
+    pts = [p + Vector((0, 0, -(r - P['brazo']) * 0.3)) for p, r in zip(pts, rad)]
+    o = objeto(nom, tubo(pts, rad, segs=20, tapas=False), M['tunica'])
+    o.modifiers.new('solid', 'SOLIDIFY').thickness = 0.006
+    o.modifiers.move(1, 0)
+    # guante: dorso, dedos cerrados alrededor del cirio y pulgar
+    u = (codo - mano); u = (u - dirc * u.dot(dirc)).normalized()          # hacia el dorso (lado del codo)
+    v = dirc.cross(u).normalized()
+    rr = P['cirio_r'] + P['mano'] * 0.22
+    dorso = mano + u * (P['cirio_r'] + P['mano'] * 0.45)
+    elipsoide('guante', dorso, (P['mano'] * 0.62, P['mano'] * 0.62, P['mano'] * 0.62), M['guante'])
+    anillo = [mano + (u * math.cos(a) + v * math.sin(a)) * rr for a in [math.pi * (-0.75 + 1.5 * i / 10) for i in range(11)]]
+    objeto('dedos', tubo(anillo, [P['mano'] * 0.36] * 11, segs=10), M['guante'], subdiv=1)
+    pulgar = [dorso + v * P['mano'] * 0.5, mano + v * rr * 0.9 + dirc * P['mano'] * 0.45]
+    objeto('pulgar', tubo(pulgar, [P['mano'] * 0.26, P['mano'] * 0.22], segs=10), M['guante'], subdiv=1)
 
 # cirio apoyado en la cadera: sale de la mano derecha hacia arriba y algo hacia fuera y delante
-base = Vector(mano_d) + Vector((0, 0, -0.12 * (1 if estilo == 'realista' else 0.6)))
+base = mano_d - dirc * (0.1 if estilo == 'realista' else 0.06)
 punta = base + dirc * P['cirio_l']
 objeto('cirio', tubo([base, base.lerp(punta, 0.5), punta], [P['cirio_r']] * 3, segs=16), M['cera'], subdiv=0)
 for k, t in enumerate((0.9, 0.8, 0.95, 0.72)):                           # chorreones de cera
