@@ -10,23 +10,34 @@ from mathutils import Vector, Matrix
 from kit import *
 
 salida = sys.argv[-1]
-ORFEBRERIA = (1.0, 0.76, 0.34)          # oro; plata sería (0.92, 0.93, 0.95)
-TERCIOPELO = (0.30, 0.025, 0.06)        # granate
-FLOR = (0.98, 0.93, 0.95)               # blanco rosado
+# Opciones de gestión (catálogo). Se pueden cambiar con la variable de entorno VARIANTE (JSON), p. ej.
+#   VARIANTE='{"orfebreria": "plata", "terciopelo": "verde", "manto": "azul", "arbotantes": "traseros"}'
+import json
+METALES = {'oro': (1.0, 0.76, 0.34), 'plata': (0.92, 0.93, 0.95)}
+TELAS = {'granate': (0.30, 0.025, 0.06), 'verde': (0.02, 0.14, 0.07), 'azul': (0.02, 0.05, 0.22), 'negro': (0.025, 0.022, 0.03),
+         'morado': (0.16, 0.03, 0.24), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.5, 0.03, 0.04)}
+FLORES = {'blanco': (0.98, 0.93, 0.95), 'rosa': (0.98, 0.62, 0.72), 'rojo': (0.78, 0.07, 0.09), 'morado': (0.55, 0.32, 0.7)}
+V = {'orfebreria': 'oro', 'terciopelo': 'granate', 'manto': 'granate', 'flor': 'blanco', 'arbotantes': 'cuatro', 'varales': 'plata'}
+V.update(json.loads(os.environ.get('VARIANTE', '{}')))
+ORFEBRERIA = METALES[V['orfebreria']]
+TERCIOPELO = TELAS[V['terciopelo']]
+MANTO = TELAS[V['manto']]
+FLOR = FLORES[V['flor']]
 
 scn = escena_vacia()
 L2, W2 = 2.3, 1.1                       # media longitud y media anchura de la mesa
 Z_VARAL = 0.8                           # parte de arriba del varal
 Z_MESA, Z_CUB = 0.93, 1.43              # mesa y cubierta (donde va la candelería)
 Z_TECHO = 3.45
-ARBOTANTES = 'cuatro'                  # 'cuatro' (esquinas) o 'traseros' (solo los de atrás)
+ARBOTANTES = V['arbotantes']           # 'cuatro' (esquinas) o 'traseros' (solo los de atrás)
 
 BRILLO = tuple(c * 0.08 for c in ORFEBRERIA)                     # brillo propio del metal, como en el trono web
 oro = material('oro', ORFEBRERIA, 0.28, 1.0, emis=BRILLO, emis_f=1.0)
 talla = material('talla', ORFEBRERIA, 0.35, 1.0, emis=BRILLO, emis_f=1.0, tex=textura_talla('talla', ORFEBRERIA), escala_nor=1.0)
 tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('bordado', TERCIOPELO), escala_nor=0.8)
 madera = material('madera', (0.12, 0.06, 0.03), 0.45)
-varal_m = material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.065), emis_f=1.0)
+varal_m = (material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.065), emis_f=1.0) if V['varales'] == 'plata'
+           else material('varal_madera', (0.32, 0.14, 0.06), 0.35, tex=textura_talla('varal_madera', (0.42, 0.2, 0.09)), escala_nor=0.5))
 hierro = material('hierro', (0.05, 0.05, 0.055), 0.5, 0.6)
 cera = material('cera', (0.93, 0.86, 0.68), 0.45)            # cera color hueso
 llama = material('llama', (1.0, 0.7, 0.3), 0.5, emis=(1.0, 0.55, 0.15), emis_f=14.0)
@@ -320,7 +331,7 @@ for nombre, ancho, pos, rz in (('bambalina_frente', 2 * W2 - 0.04, (0, Y0 - 0.00
 piel = material('piel', (0.93, 0.76, 0.66), 0.5, sheen=0.2)
 encaje = material('encaje', (0.97, 0.96, 0.93), 0.6, tex=textura_bordado('encaje', (0.95, 0.94, 0.9), (1.0, 1.0, 0.98), N=256, grosor=0.8))
 saya = material('saya', (0.95, 0.9, 0.78), 0.6, tex=textura_bordado('saya', (0.93, 0.88, 0.76)), escala_nor=0.8)
-manto_m = material('manto', TERCIOPELO, 0.65, sheen=0.25, tex=textura_bordado('manto', TERCIOPELO, grosor=1.2), escala_nor=0.8)
+manto_m = material('manto', MANTO, 0.65, sheen=0.25, tex=textura_bordado('manto', MANTO, grosor=1.2), escala_nor=0.8)
 rasgo = material('rasgo', (0.2, 0.11, 0.08), 0.6)
 labio = material('labio', (0.72, 0.36, 0.36), 0.5)
 rubor = material('rubor', (0.95, 0.55, 0.55), 0.6, alpha=0.35)
@@ -337,7 +348,7 @@ mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickn
 # cola del manto, como los de Málaga: nace en punta detrás de la corona, baja en rampa abombada, cada vez más
 # ancha, con los bordes caídos, y acaba redondeada sobre los varales traseros, por encima de las cabezas de los
 # hombres de trono. Bordado simétrico propio (textura_manto) y galón dorado alrededor.
-cola_m = material('manto_cola', TERCIOPELO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', TERCIOPELO), escala_nor=0.8)
+cola_m = material('manto_cola', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', MANTO), escala_nor=0.8)
 A = Vector((0.0, Y_IMG + 0.17, Z_IMG + 0.98))
 E_y, E_z = L2 + 1.33, Z_CUB - 0.02
 NS, NT = 44, 28
@@ -423,5 +434,26 @@ for nombre, pts in (('luz_vela', VELAS[::9]), ('luz_tulipa', TULIPAS[::11])):
 raiz = bpy.data.objects.new('trono_palio', None); scn.collection.objects.link(raiz)
 for o in list(scn.collection.objects):
     if o is not raiz and o.parent is None: o.parent = raiz
-bpy.ops.export_scene.gltf(filepath=salida, export_format='GLB', export_apply=True)
+if os.environ.get('FOTOS'):
+    # fotos de catálogo con Cycles: luz cálida de noche, suelo oscuro; FOTOS = JSON [{"nombre", "cam", "mira", "lente"}]
+    w = bpy.data.worlds.new('w'); scn.world = w; w.use_nodes = True
+    w.node_tree.nodes['Background'].inputs[0].default_value = (0.012, 0.012, 0.022, 1)
+    suelo = objeto('suelo', caja((-12, -12, -0.02), (12, 12, 0.0)), material('suelo', (0.16, 0.14, 0.13), 0.8))
+    for nom, pos, e, col, tam in (('clave', (5, -7, 7), 2600, (1, 0.82, 0.62), 4), ('relleno', (-6, -4, 3), 700, (0.6, 0.7, 1.0), 4),
+                                  ('contra', (0, 7, 5), 1500, (1, 0.85, 0.7), 4)):
+        l = bpy.data.lights.new(nom, 'AREA'); l.energy = e; l.color = col; l.size = tam
+        o = bpy.data.objects.new(nom, l); scn.collection.objects.link(o); o.location = pos
+        o.rotation_euler = (Vector((0, 0, 1.6)) - Vector(pos)).to_track_quat('-Z', 'Y').to_euler()
+    cam = bpy.data.cameras.new('cam'); co = bpy.data.objects.new('cam', cam); scn.collection.objects.link(co); scn.camera = co
+    scn.render.engine = 'CYCLES'; scn.cycles.samples = int(os.environ.get('MUESTRAS', '40')); scn.cycles.use_denoising = True
+    scn.render.resolution_x, scn.render.resolution_y = 1100, 800
+    scn.render.image_settings.file_format = 'JPEG'; scn.render.image_settings.quality = 86
+    for f in json.loads(os.environ['FOTOS']):
+        cam.lens = f.get('lente', 40)
+        co.location = Vector(f['cam']); co.rotation_euler = (Vector(f['mira']) - co.location).to_track_quat('-Z', 'Y').to_euler()
+        scn.render.filepath = os.path.join(os.environ['CARPETA'], f['nombre'] + '.jpg')
+        bpy.ops.render.render(write_still=True)
+    print('fotos hechas')
+else:
+    bpy.ops.export_scene.gltf(filepath=salida, export_format='GLB', export_apply=True)
 print('ok', salida, len(VELAS), 'velas')
