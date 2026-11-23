@@ -7,12 +7,11 @@ var NAZ = {}
 var tramo = []   # [nodo, fase] para el vaivén al andar
 
 # El cirio va siempre por dentro del cortejo: el modelo lo lleva a su lado +X, así que la fila de la
-# derecha (x > 0) se espeja.
+# derecha (x > 0) usa la versión espejada que exporta Blender (voltearlo en Godot invierte la luz).
 func nazareno(estilo: String, pos: Vector3, rot_y := 0.0, espejo := false) -> Node3D:
-	var n: Node3D = NAZ[estilo].instantiate()
+	var n: Node3D = NAZ[estilo + ("_espejo" if espejo else "")].instantiate()
 	n.position = pos; n.rotation.y = rot_y + rng.randf_range(-0.06, 0.06)
 	n.scale = Vector3.ONE * (0.96 + rng.randf() * 0.08)
-	if espejo: n.scale.x = -n.scale.x
 	add_child(n)
 	for mi in n.find_children("llama*", "MeshInstance3D", true, false):
 		var l = omni(mi.get_aabb().get_center() + Vector3(0, 0.03, 0), Color(1.0, 0.68, 0.35), 0.5, 3.0, false, n)
@@ -22,7 +21,7 @@ func nazareno(estilo: String, pos: Vector3, rot_y := 0.0, espejo := false) -> No
 
 func _ready() -> void:
 	rng.seed = 2028
-	for e in ["realista", "cabezon"]:
+	for e in ["realista", "cabezon", "realista_espejo", "cabezon_espejo"]:
 		NAZ[e] = load("res://modelos/nazareno_" + e + ".glb")
 	montar_calle()
 	# tramo realista (detrás) y tramo cabezón (delante), en dos filas por el centro de la calle, andando hacia +Z
