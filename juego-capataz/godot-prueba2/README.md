@@ -35,7 +35,9 @@ corre hacia atrás pareja a pareja, y a los 9,5 s arrancan igual:
 `blender/trono.py` modela el trono de palio cabezón con el juego de piezas de `blender/kit.py` (formas torneadas, tubos
 y texturas de bordado, talla y flores generadas por código) y lo exporta a `modelos/trono_palio.glb`: mesa y patas,
 4 varales con sus cabezas, cajillo tallado con cartelas y cantoneras, faldones bordados con flecos, candelería en
-7 tandas (84 velas), jarras con flores, 4 arbotantes con tulipas, campana, peana, 12 varales de palio, techo y
+7 tandas (84 velas), jarras con flores, 4 arbotantes de hojarasca como los de la Paloma (tronco, ramas en cuatro pisos
+con volutas, hojas de acanto y una tulipa en cada punta), campana, peana, 12 varales de palio, techo que cubre el
+cajillo entero y
 bambalinas con festones (cada bambalina es un objeto aparte, para moverlas) y la Dolorosa estilizada con manto, cola,
 saya, toca, rostrillo, corona y ráfaga. Arriba del script están los parámetros de gestión (orfebrería, terciopelo, flor).
 

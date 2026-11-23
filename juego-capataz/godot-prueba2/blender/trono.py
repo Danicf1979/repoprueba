@@ -147,24 +147,101 @@ for sx in (-1, 1):
     jarra('jarra', (sx * 0.98, -1.35, Z_CUB), 1.0)
     jarra('jarra', (sx * 0.62, Y_IMG - 0.62, Z_CUB), 0.8)
 
-# ---------------------------------------------------------------- arbotantes con tulipas
+# ---------------------------------------------------------------- arbotantes (como los de la Virgen de la Paloma)
+# Cuatro árboles de hojarasca que nacen en las esquinas del cajillo y se abren en diagonal hacia fuera: tronco con
+# nudos, ramas en cuatro pisos (más largas hacia fuera, cortas hacia el palio) con voluta, hojas de acanto y una
+# tulipa en la punta de cada rama y otra en la cima. Es la misma construcción del trono web, a escala (0,72).
+import random
+rr = random.Random(1945)
+hoja_m = material('acanto', ORFEBRERIA, 0.3, 1.0, tex=textura_acanto('acanto', ORFEBRERIA), escala_nor=1.0, recorte=True)
+vidrio = material('tulipa', (1.0, 0.92, 0.8), 0.04, alpha=0.32, emis=(0.42, 0.27, 0.1), emis_f=1.0)
+vela_arb = material('vela_arb', (0.95, 0.9, 0.78), 0.4, emis=(0.16, 0.12, 0.06), emis_f=1.0)
+def catmull(pts, n=6):
+    P = [Vector(p) for p in pts]; P = [P[0]] + P + [P[-1]]; out = []
+    for i in range(1, len(P) - 2):
+        p0, p1, p2, p3 = P[i - 1], P[i], P[i + 1], P[i + 2]
+        for k in range(n):
+            t = k / n
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t ** 3))
+    out.append(P[-2]); return out
+def en(curva, t):
+    f = t * (len(curva) - 1); i = min(int(f), len(curva) - 2); return curva[i].lerp(curva[i + 1], f - i)
+def tangente(curva, t):
+    f = t * (len(curva) - 1); i = min(int(f), len(curva) - 2); return (curva[i + 1] - curva[i]).normalized()
+def hoja_en(bm, capa, p, d, esc, giro, inclina):
+    # hoja de acanto curvada (punta hacia fuera, bordes hacia dentro), 0,11 x 0,22 m
+    Y = (d + Vector((0, 0, 0.35))).normalized()
+    X = Y.cross(Vector((0, 0, 1)) if abs(Y.z) < 0.95 else Vector((1, 0, 0))).normalized()
+    X = X * math.cos(giro) + Y.cross(X) * math.sin(giro); Z = X.cross(Y)
+    ca, sa = math.cos(inclina), math.sin(inclina)
+    vs = []
+    for j in range(9):
+        k = j / 8; fila = []
+        for i in range(5):
+            u = (i / 4 - 0.5)
+            x = u * 0.108 * (1 - 0.15 * k); y = k * 0.216; z = -0.094 * k * k + 1.6 * x * x - 0.03 * math.sin(k * math.pi)
+            y, z = y * ca - z * sa, y * sa + z * ca
+            fila.append(bm.verts.new(p + (X * x + Y * y + Z * z) * esc))
+        vs.append(fila)
+    for j in range(8):
+        for i in range(4):
+            f = bm.faces.new((vs[j][i], vs[j][i + 1], vs[j + 1][i + 1], vs[j + 1][i]))
+            for lp, uv in zip(f.loops, [(i / 4, j / 8), ((i + 1) / 4, j / 8), ((i + 1) / 4, (j + 1) / 8), (i / 4, (j + 1) / 8)]):
+                lp[capa].uv = uv
 TULIPAS = []
+K = 0.72
+NIV = [(0.42, 0.7, 8), (0.78, 0.78, 8), (1.12, 0.62, 7), (1.42, 0.4, 5)]
 for sx in (-1, 1):
     for sy in (-1, 1):
-        x, y = sx * (W2 - 0.08), sy * (L2 - 0.08)
-        hz = Z_CUB + 1.25
-        objeto('arbotante', torno([(0.07, Z_CUB), (0.07, Z_CUB + 0.05), (0.03, Z_CUB + 0.1), (0.025, Z_CUB + 0.5), (0.05, Z_CUB + 0.55),
-                                   (0.025, Z_CUB + 0.6), (0.022, hz - 0.15), (0.05, hz - 0.1), (0.03, hz), (0.0, hz)], 14), talla).location = (x, y, 0)
-        brazos = [(math.cos(a), math.sin(a)) for a in [math.pi / 4 + i * math.pi / 2 for i in range(4)]]
-        for (cx, cy) in brazos + [(0, 0)]:
-            if (cx, cy) == (0, 0):
-                p = Vector((x, y, hz + 0.02))
-            else:
-                p0 = Vector((x, y, hz - 0.12)); p = Vector((x + cx * 0.24, y + cy * 0.24, hz - 0.08))
-                objeto('brazo_arb', tubo([p0, p0 + Vector((cx * 0.12, cy * 0.12, -0.05)), p - Vector((0, 0, 0.05)), p], 0.012, segs=8), oro)
-            objeto('tulipa', elipsoide((0.055, 0.055, 0.085), (p.x, p.y, p.z + 0.085)), cristal)
-            objeto('llama_tul', elipsoide((0.01, 0.01, 0.02), (p.x, p.y, p.z + 0.07)), llama)
-            TULIPAS.append((p.x, p.y, p.z + 0.08))
+        nom = 'arbotante_%s_%s' % ('del' if sy < 0 else 'tras', 'dcha' if sx > 0 else 'izda')
+        c = Vector((sx * (W2 - 0.04), sy * (L2 - 0.04), Z_CUB))
+        d = Vector((sx, sy * 0.75, 0)).normalized(); q = Vector((-d.y, d.x, 0))
+        P = lambda u, z, v: c + d * (u * K) + q * (v * K) + Vector((0, 0, z * K))
+        tronco = catmull([P(0, 0, 0), P(0.06, 0.6, 0), P(0.14, 1.2, 0), P(0.2, 1.72, 0)], 8)
+        objeto(nom + '_tronco', tubo(tronco, 0.06 * K, segs=10), oro)
+        for t, rad in ((0.08, 0.16), (0.45, 0.1), (0.75, 0.09)):
+            pp = en(tronco, t); objeto(nom + '_nudo', elipsoide((rad * K, rad * K, rad * K * 0.6), pp), talla)
+        bm_r = bmesh.new(); hojas = []; puntas = []
+        for nv, (hh, r, nb) in enumerate(NIV):
+            eje = en(tronco, hh / 1.72)
+            for k in range(nb):
+                th = -math.pi + 2 * math.pi * (k + 0.5) / nb + nv * 0.25
+                R = (r * (0.55 + 0.45 * math.cos(th)) + 0.12) * K
+                cu, cv = math.cos(th), math.sin(th)
+                pt = lambda f, z, rizo: eje + d * (cu * R * f + rizo * cu) + q * (cv * R * f + rizo * cv) + Vector((0, 0, z * K))
+                curva = catmull([pt(0, 0, 0), pt(0.35, -0.08, 0), pt(0.7, 0.02, 0), pt(1, 0.16, 0), pt(0.92, 0.24, -0.03 * K)], 4)
+                b = tubo(curva, 0.022 * K, segs=6); me = bpy.data.meshes.new('tmp'); b.to_mesh(me); b.free(); bm_r.from_mesh(me); bpy.data.meshes.remove(me)
+                vp = en(curva, 0.3); rad_v = 0.05 * K                                    # voluta
+                espiral = [vp + Vector((0, 0, -rad_v)) + (d * cu + q * cv) * (rad_v * (1 - 0.25 * a / (1.5 * math.pi)) * math.sin(a)) +
+                           Vector((0, 0, rad_v * (1 - 0.25 * a / (1.5 * math.pi)) * math.cos(a))) for a in [1.5 * math.pi * i / 10 for i in range(11)]]
+                b = tubo(espiral, 0.012 * K, segs=6); me = bpy.data.meshes.new('tmp'); b.to_mesh(me); b.free(); bm_r.from_mesh(me); bpy.data.meshes.remove(me)
+                for t in (0.1, 0.22, 0.34, 0.46, 0.58, 0.7, 0.82, 0.93):
+                    hojas.append((en(curva, t), tangente(curva, t), 0.8 + rr.random() * 0.5))
+                puntas.append(curva[-1] + Vector((0, 0, 0.03 * K)))
+        for i in range(13):
+            pp = en(tronco, 0.05 + i * 0.07)
+            for _ in range(3):
+                a = rr.random() * 2 * math.pi; hojas.append((pp, Vector((math.cos(a) * 0.8, math.sin(a) * 0.8, 0.6)).normalized(), 0.9 + rr.random() * 0.5))
+        puntas.append(en(tronco, 1.0) + Vector((0, 0, 0.05 * K)))
+        me = bpy.data.meshes.new(nom + '_ramas'); bm_r.to_mesh(me); bm_r.free()
+        o = bpy.data.objects.new(nom + '_ramas', me); scn.collection.objects.link(o); me.materials.append(oro)
+        for p_ in me.polygons: p_.use_smooth = True
+        bm_h = bmesh.new(); capa = bm_h.loops.layers.uv.verify()
+        for (p, tg, e) in hojas:
+            hoja_en(bm_h, capa, p, tg, e * K, (rr.random() - 0.5) * 1.6, -0.35 - rr.random() * 0.4)
+        objeto(nom + '_hojas', bm_h, hoja_m)
+        # cazoletas, velas, tulipas de cristal y llamas (una malla de cada, por arbotante)
+        partes = {'cazoletas': (bmesh.new(), oro), 'velas': (bmesh.new(), vela_arb), 'tulipas': (bmesh.new(), vidrio), 'llamas': (bmesh.new(), llama)}
+        for p in puntas:
+            for nombre_p, b in (('cazoletas', torno([(0.03 * K, 0), (0.05 * K, 0.04 * K), (0.0, 0.04 * K)], 10)),
+                                ('velas', torno([(0.02 * K, 0.04 * K), (0.02 * K, 0.18 * K), (0.0, 0.18 * K)], 8)),
+                                ('tulipas', torno([(0.045 * K, 0.02 * K), (0.06 * K, 0.12 * K), (0.055 * K, 0.28 * K)], 12, tapa=False)),
+                                ('llamas', elipsoide((0.02 * K, 0.02 * K, 0.04 * K), (0, 0, 0.21 * K), 8, 6))):
+                bmesh.ops.translate(b, verts=b.verts, vec=p)
+                me = bpy.data.meshes.new('tmp'); b.to_mesh(me); b.free(); partes[nombre_p][0].from_mesh(me); bpy.data.meshes.remove(me)
+            TULIPAS.append((p.x, p.y, p.z + 0.21 * K))
+        for nombre_p, (b, m) in partes.items():
+            objeto(nom + '_' + nombre_p, b, m)
 
 # ---------------------------------------------------------------- campana
 objeto('campana_soporte', tubo([(0, -L2 - 0.1, Z_CUB - 0.05), (0, -L2 - 0.2, Z_CUB + 0.02), (0, -L2 - 0.26, Z_CUB - 0.02)], 0.012, segs=8), oro)
@@ -178,7 +255,7 @@ objeto('peana', torno([(0.5, Z_CUB), (0.5, Z_CUB + 0.06), (0.44, Z_CUB + 0.09), 
 Z_IMG = Z_CUB + 0.37
 
 # ---------------------------------------------------------------- palio: varales, techo y bambalinas
-Y0, Y1 = -0.62, 2.32
+Y0, Y1 = -L2 + 0.1, L2 - 0.1                 # el palio cubre el cajillo entero
 for sx in (-1, 1):
     for k in range(6):
         y = Y0 + 0.04 + k * (Y1 - Y0 - 0.08) / 5
@@ -299,7 +376,7 @@ for i in range(12):
     objeto('estrella', tubo(estrella, 0.004, segs=4, tapas=False), oro)
 
 # ---------------------------------------------------------------- puntos de luz para Godot (nodos vacíos)
-for nombre, pts in (('luz_vela', VELAS[::9]), ('luz_tulipa', TULIPAS[::5])):
+for nombre, pts in (('luz_vela', VELAS[::9]), ('luz_tulipa', TULIPAS[::11])):
     for p in pts:
         e = bpy.data.objects.new(nombre, None); scn.collection.objects.link(e); e.location = p
 raiz = bpy.data.objects.new('trono_palio', None); scn.collection.objects.link(raiz)

@@ -112,6 +112,20 @@ def textura_flores(nombre, color, N=512):
     return (_imagen(nombre + '_col', np.dstack([col, np.ones_like(alto)])), _imagen(nombre + '_mr', mr),
             _imagen(nombre + '_nor', _normal(alto, 5.0)))
 
+def textura_acanto(nombre, metal=(1.0, 0.76, 0.34), N=256):
+    """Hoja de acanto: silueta lobulada (en el alfa), nervio central y nervios laterales en relieve."""
+    v, u = np.mgrid[0:N, 0:N] / N                      # v a lo largo de la hoja (0 = base), u a lo ancho
+    ancho = 0.46 * (1 - v) ** 0.35 * (0.72 + 0.28 * np.abs(np.cos(v * 7 * math.pi))) * np.clip(v * 8, 0, 1) ** 0.5
+    a = (np.abs(u - 0.5) < ancho).astype(float)
+    nerv = np.maximum(_linea(u - 0.5, 0.03), 0)
+    for k in range(7):
+        y0 = 0.1 + k * 0.12
+        nerv = np.maximum(nerv, _linea((v - y0) - 0.8 * np.abs(u - 0.5), 0.018) * (v > y0))
+    alto = _desenfoque(nerv, 2) + 0.3 * (1 - np.abs(u - 0.5) * 2)
+    col = np.array(metal)[None, None, :] * (0.55 + 0.45 * alto[..., None] / max(alto.max(), 1e-6))
+    mr = np.dstack([np.zeros_like(a), 0.3 + 0 * a, np.ones_like(a), np.ones_like(a)])
+    return (_imagen(nombre + '_col', np.dstack([col, a])), _imagen(nombre + '_mr', mr), _imagen(nombre + '_nor', _normal(alto, 6.0)))
+
 # ---------------------------------------------------------------- materiales
 def material(nombre, color=(0.8, 0.8, 0.8), rough=0.6, metal=0.0, sheen=0.0, emis=None, emis_f=0.0,
              alpha=1.0, tex=None, escala_nor=1.0, recorte=False):
