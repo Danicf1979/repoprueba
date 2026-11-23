@@ -348,12 +348,13 @@ lagrima = material('lagrima', (0.9, 0.95, 1.0), 0.05, alpha=0.5)
 
 X, Y, Z = 0.0, Y_IMG, Z_IMG
 def T(v): return Vector((X + v[0], Y + v[1], Z + v[2]))
-sy = objeto('saya', torno([(0.34, 0), (0.33, 0.08), (0.28, 0.3), (0.21, 0.5), (0.15, 0.62), (0.11, 0.72), (0.0, 0.74)], 36, rep_u=3, rep_v=1.5), saya)
+sy = objeto('saya', torno([(0.4, 0), (0.39, 0.1), (0.365, 0.3), (0.335, 0.5), (0.3, 0.64), (0.24, 0.74), (0.14, 0.8), (0.0, 0.82)], 36, rep_u=3, rep_v=1.5), saya)
 sy.location = T((0, 0, 0))
 # Manto sobre la cabeza (la corona va encima) que cae cubriendo los hombros y se abre en triángulo hasta la peana.
 # Cada fila: (radio, altura, media abertura delantera en rad): estrecha junto a la cara, más abierta abajo (se ve la saya).
-FILAS_M = [(0.46, 0.0, 0.95), (0.44, 0.1, 0.92), (0.4, 0.3, 0.85), (0.345, 0.5, 0.78), (0.295, 0.64, 0.72), (0.25, 0.74, 0.66),
-           (0.205, 0.84, 0.6), (0.178, 0.92, 0.56), (0.162, 0.98, 0.52), (0.135, 1.03, 0.45), (0.085, 1.075, 0.3), (0.012, 1.095, 0.1)]
+FILAS_M = [(0.46, 0.0, 0.58), (0.44, 0.15, 0.55), (0.415, 0.35, 0.5), (0.39, 0.55, 0.46), (0.375, 0.67, 0.44), (0.35, 0.735, 0.46),
+           (0.285, 0.785, 0.5), (0.21, 0.83, 0.56), (0.168, 0.88, 0.56), (0.16, 0.95, 0.52), (0.135, 1.02, 0.45), (0.085, 1.07, 0.3),
+           (0.012, 1.095, 0.1)]   # hombros anchos justo bajo la barbilla y caída casi recta, como una campana
 SEG_M = 40
 bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); anillos_m = []
 for (r, z, a_) in FILAS_M:
@@ -430,8 +431,8 @@ objeto('boca', tubo([sup(-0.009 + 0.018 * t, -0.056 + 0.0025 * math.sin(math.pi 
 
 # manos juntas sobre el pecho con el pañuelo
 for s_ in (-1, 1):
-    objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.232, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
-objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.245, 0.55))), encaje)
+    objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.33, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
+objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.345, 0.55))), encaje)
 
 # tocado (opción de gestión): corona con ráfaga, corona sola, solo ráfaga, diadema o aro de estrellas
 TOC = V['tocado']
