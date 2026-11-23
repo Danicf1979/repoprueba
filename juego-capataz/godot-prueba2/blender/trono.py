@@ -20,10 +20,12 @@ Z_VARAL = 0.8                           # parte de arriba del varal
 Z_MESA, Z_CUB = 0.93, 1.43              # mesa y cubierta (donde va la candelería)
 Z_TECHO = 3.3
 
-oro = material('oro', ORFEBRERIA, 0.28, 1.0)
-talla = material('talla', ORFEBRERIA, 0.35, 1.0, tex=textura_talla('talla', ORFEBRERIA), escala_nor=1.0)
+BRILLO = tuple(c * 0.08 for c in ORFEBRERIA)                     # brillo propio del metal, como en el trono web
+oro = material('oro', ORFEBRERIA, 0.28, 1.0, emis=BRILLO, emis_f=1.0)
+talla = material('talla', ORFEBRERIA, 0.35, 1.0, emis=BRILLO, emis_f=1.0, tex=textura_talla('talla', ORFEBRERIA), escala_nor=1.0)
 tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('bordado', TERCIOPELO), escala_nor=0.8)
 madera = material('madera', (0.12, 0.06, 0.03), 0.45)
+varal_m = material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.065), emis_f=1.0)
 hierro = material('hierro', (0.05, 0.05, 0.055), 0.5, 0.6)
 cera = material('cera', (0.96, 0.93, 0.84), 0.4)
 llama = material('llama', (1.0, 0.7, 0.3), 0.5, emis=(1.0, 0.55, 0.15), emis_f=14.0)
@@ -40,12 +42,7 @@ for x in (-0.55, 0.55):
     for y in (-1.9, 0.0, 1.9):
         objeto('pata', tubo([(x, y, 0.0), (x, y, 0.06), (x, y, Z_VARAL - 0.12)], [0.07, 0.045, 0.045], segs=10), hierro)
 for x in (-1.38, -0.55, 0.55, 1.38):                       # 4 varales: los de fuera a la vista, los de dentro bajo el faldón
-    objeto('varal', caja((x - 0.05, -3.75, Z_VARAL - 0.13), (x + 0.05, 3.75, Z_VARAL)), madera)
-    for s in (-1, 1):                                       # cabezas de varal
-        y0 = s * 3.75
-        cv = objeto('cabeza_varal', torno([(0.075, 0), (0.075, 0.22), (0.09, 0.24), (0.09, 0.27), (0.0, 0.29)], 20), talla)
-        cv.matrix_world = Matrix.Translation((x, y0 - s * 0.27, Z_VARAL - 0.065)) @ Matrix.Rotation(-s * math.pi / 2, 4, 'X')
-        objeto('remate', elipsoide((0.05, 0.05, 0.05), (x, y0 + s * 0.04, Z_VARAL - 0.065)), oro)
+    objeto('varal', caja((x - 0.05, -3.75, Z_VARAL - 0.13), (x + 0.05, 3.75, Z_VARAL)), varal_m)
 
 # ---------------------------------------------------------------- cajillo tallado (perfil barrido alrededor de la mesa)
 def recorrido(ox, oy, ch):
@@ -153,7 +150,7 @@ for sx in (-1, 1):
 # tulipa en la punta de cada rama y otra en la cima. Es la misma construcción del trono web, a escala (0,72).
 import random
 rr = random.Random(1945)
-hoja_m = material('acanto', ORFEBRERIA, 0.3, 1.0, tex=textura_acanto('acanto', ORFEBRERIA), escala_nor=1.0, recorte=True)
+hoja_m = material('acanto', ORFEBRERIA, 0.3, 1.0, emis=BRILLO, emis_f=1.0, tex=textura_acanto('acanto', ORFEBRERIA), escala_nor=1.0, recorte=True)
 vidrio = material('tulipa', (1.0, 0.92, 0.8), 0.04, alpha=0.32, emis=(0.42, 0.27, 0.1), emis_f=1.0)
 vela_arb = material('vela_arb', (0.95, 0.9, 0.78), 0.4, emis=(0.16, 0.12, 0.06), emis_f=1.0)
 def catmull(pts, n=6):
@@ -243,6 +240,26 @@ for sx in (-1, 1):
         for nombre_p, (b, m) in partes.items():
             objeto(nom + '_' + nombre_p, b, m)
 
+# ---------------------------------------------------------------- cabezas de varal: tallas doradas de hojarasca
+for x in (-1.38, -0.55, 0.55, 1.38):
+    for sy in (-1, 1):
+        y0 = sy * 3.75; zc_ = Z_VARAL - 0.065
+        nucleo = objeto('cabeza_varal', torno([(0.065, 0), (0.075, 0.06), (0.1, 0.14), (0.11, 0.24), (0.08, 0.34), (0.095, 0.42), (0.06, 0.52), (0.07, 0.56), (0.03, 0.62), (0.0, 0.64)], 20), talla)
+        nucleo.matrix_world = Matrix.Translation((x, y0 - sy * 0.06, zc_)) @ Matrix.Rotation(-sy * math.pi / 2, 4, 'X')
+        bm_h = bmesh.new(); capa = bm_h.loops.layers.uv.verify()
+        eje = Vector((0, sy, 0))
+        for anillo, (dist, rad, n) in enumerate(((0.06, 0.08, 7), (0.24, 0.1, 8), (0.42, 0.08, 6))):
+            for k in range(n):
+                a_ = 2 * math.pi * (k + 0.5 * anillo) / n
+                radial = Vector((math.cos(a_), 0, math.sin(a_)))
+                p = Vector((x, y0 + sy * (dist - 0.06), zc_)) + radial * rad * 0.8
+                hoja_en(bm_h, capa, p, (eje * 1.0 + radial * 0.35).normalized(), 0.6, rr.random() - 0.5, -0.3)
+        for k in range(2):                                  # volutas encima
+            esp = [Vector((x + (0.04 - 0.08 * k) + 0.05 * math.cos(t) * (1 - t / 12), y0 + sy * 0.15 + sy * 0.05 * math.sin(t) * (1 - t / 12), zc_ + 0.14 + 0.012 * t))
+                   for t in [i * 0.55 for i in range(14)]]
+            objeto('voluta_varal', tubo(esp, 0.012, segs=6), oro)
+        objeto('cabeza_varal_hojas', bm_h, hoja_m)
+
 # ---------------------------------------------------------------- campana
 objeto('campana_soporte', tubo([(0, -L2 - 0.1, Z_CUB - 0.05), (0, -L2 - 0.2, Z_CUB + 0.02), (0, -L2 - 0.26, Z_CUB - 0.02)], 0.012, segs=8), oro)
 objeto('campana', torno([(0.07, -0.13), (0.065, -0.11), (0.045, -0.06), (0.04, -0.02), (0.02, 0.0), (0.0, 0.01)], 20), oro).location = (0, -L2 - 0.26, Z_CUB - 0.03)
@@ -304,29 +321,33 @@ ab = 0.62                                                 # medio ancho de la ab
 mt = objeto('manto', torno([(0.43, 0.0), (0.41, 0.1), (0.36, 0.32), (0.27, 0.52), (0.2, 0.66), (0.165, 0.76), (0.155, 0.84), (0.158, 0.93),
                             (0.14, 1.01), (0.09, 1.07), (0.0, 1.09)], 40, rep_u=4, rep_v=2, tapa=False, arco=(ab, 2 * math.pi - ab)), manto_m)
 mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickness = 0.012
-# cola del manto: baja por la espalda de la imagen, se apoya en la cubierta, sale por la trasera del cajillo y se
-# extiende casi hasta el final de los varales traseros (como en el trono web), abriéndose y bajando muy poco para
-# pasar por encima de las cabezas de los hombres de trono.
-ruta_c = [(0.3, 0.62), (0.42, 0.42), (0.55, 0.1), (0.7, -0.2), (0.9, -0.33), (1.2, -0.355), (1.6, -0.355), (1.8, -0.35),
-          (2.1, -0.36), (2.5, -0.38), (2.9, -0.4), (3.15, -0.42), (3.22, -0.47)]
-anchos = [0.22, 0.4, 0.55, 0.68, 0.78, 0.82, 0.84, 0.85, 0.9, 0.95, 0.99, 1.0, 1.0]
-# la ruta se suaviza aquí (sin subdivisión después) para que el galón vaya pegado al borde de la tela
-ruta_s = catmull([(a_, dy, dz) for a_, (dy, dz) in zip(anchos, ruta_c)], 4)
-bm = bmesh.new(); vs = []; nx = 16
-for j, p_ in enumerate(ruta_s):
-    w, dy, dz = p_.x, p_.y, p_.z
-    vs.append([bm.verts.new(T((-w + 2 * w * i / nx, dy, dz + 0.006 * math.sin(i * 1.3) * (dy > 1.8)))) for i in range(nx + 1)])
-capa = bm.loops.layers.uv.verify()
-for j in range(len(vs) - 1):
-    for i in range(nx):
-        f = bm.faces.new((vs[j][i], vs[j][i + 1], vs[j + 1][i + 1], vs[j + 1][i]))
-        for lp, uv in zip(f.loops, [(i / nx * 4, j * 0.15), ((i + 1) / nx * 4, j * 0.15), ((i + 1) / nx * 4, (j + 1) * 0.15), (i / nx * 4, (j + 1) * 0.15)]):
+# cola del manto, como los de Málaga: nace en punta detrás de la corona, baja en rampa abombada, cada vez más
+# ancha, con los bordes caídos, y acaba redondeada sobre los varales traseros, por encima de las cabezas de los
+# hombres de trono. Bordado simétrico propio (textura_manto) y galón dorado alrededor.
+cola_m = material('manto_cola', TERCIOPELO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', TERCIOPELO), escala_nor=0.8)
+A = Vector((0.0, Y_IMG + 0.17, Z_IMG + 0.98))
+E_y, E_z = L2 + 1.33, Z_CUB - 0.02
+NS, NT = 44, 28
+bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); filas = []
+for j in range(NS + 1):
+    s_ = j / NS; fila = []
+    for i in range(NT + 1):
+        t = -1 + 2 * i / NT
+        sr = s_ * (1 - 0.22 * (1 - math.sqrt(max(0.0, 1 - t * t))))        # final redondeado
+        w = min(1.15, 0.05 + 1.1 * sr ** 0.8)
+        y = A.y + (E_y - A.y) * sr
+        z = A.z + (E_z - A.z) * (1 - (1 - sr) ** 1.5) + 0.1 * sr * (1 - t * t) - 0.36 * sr * abs(t) ** 4
+        fila.append(bm.verts.new((t * w, y, z)))
+    filas.append(fila)
+for j in range(NS):
+    for i in range(NT):
+        f = bm.faces.new((filas[j][i], filas[j][i + 1], filas[j + 1][i + 1], filas[j + 1][i]))
+        for lp, uv in zip(f.loops, [(i / NT, j / NS), ((i + 1) / NT, j / NS), ((i + 1) / NT, (j + 1) / NS), (i / NT, (j + 1) / NS)]):
             lp[capa].uv = uv
-j0 = next(j for j, p_ in enumerate(ruta_s) if p_.y > 0.9)          # el galón empieza donde la cola se apoya en la cubierta
-borde = [f[0].co.copy() for f in vs[j0:]][::-1] + [v.co.copy() for v in vs[-1]] + [f[-1].co.copy() for f in vs[j0:]]
-cola = objeto('manto_cola', bm, manto_m, subdiv=0)
+borde = [f[0].co.copy() for f in filas][::-1] + [v.co.copy() for v in filas[-1]] + [f[-1].co.copy() for f in filas]
+cola = objeto('manto_cola', bm, cola_m)
 cola.modifiers.new('grosor', 'SOLIDIFY').thickness = 0.012
-objeto('cola_galon', tubo([p + Vector((0, 0, 0.008)) for p in borde], 0.014, segs=6, tapas=False), oro)
+objeto('cola_galon', tubo([p + Vector((0, 0, 0.006)) for p in borde[1:-1]], 0.016, segs=6, tapas=False), oro)
 objeto('manto_galon', tubo([T((math.sin(a) * 0.43, -math.cos(a) * 0.43, 0.005)) for a in [ab + (2 * math.pi - 2 * ab) * i / 40 for i in range(41)]],
                            0.012, segs=6, tapas=False), oro)
 

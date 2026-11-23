@@ -126,6 +126,51 @@ def textura_acanto(nombre, metal=(1.0, 0.76, 0.34), N=256):
     mr = np.dstack([np.zeros_like(a), 0.3 + 0 * a, np.ones_like(a), np.ones_like(a)])
     return (_imagen(nombre + '_col', np.dstack([col, a])), _imagen(nombre + '_mr', mr), _imagen(nombre + '_nor', _normal(alto, 6.0)))
 
+def textura_manto(nombre, fondo, oro=(1.0, 0.74, 0.3), N=1024):
+    """Bordado de un manto de cola, simétrico: medallón central, tallo, grandes roleos a los lados, filigrana de fondo
+    y cenefa en el borde. u a lo ancho (0,5 = eje), v a lo largo (0 = la punta junto a la cabeza, 1 = el final)."""
+    fila, u = np.mgrid[0:N, 0:N] / N
+    v = 1 - fila
+    xm = 0.5 + np.abs(u - 0.5)                          # espejo: el dibujo se repite igual a los dos lados
+    m = np.zeros((N, N))
+    def espiral(cx, cy, a, w, vueltas=1.6):
+        dx, dy = xm - cx, (v - cy) * 1.3
+        r, th = np.hypot(dx, dy), np.arctan2(dy, dx) % (2 * math.pi)
+        out = np.zeros_like(r)
+        for k in range(int(vueltas) + 1):
+            tt = th + 2 * math.pi * k
+            out = np.maximum(out, _linea(r - a * tt / (2 * math.pi), w) * (tt < vueltas * 2 * math.pi))
+        return out
+    roleos = [(0.72, 0.3, 0.05), (0.8, 0.52, 0.06), (0.7, 0.74, 0.07), (0.84, 0.86, 0.05), (0.62, 0.92, 0.04), (0.88, 0.22, 0.04),
+              (0.6, 0.18, 0.035), (0.9, 0.68, 0.045), (0.64, 0.42, 0.04), (0.78, 0.96, 0.035), (0.86, 0.4, 0.035)]
+    for cx, cy, a in roleos:
+        m = np.maximum(m, espiral(cx, cy, a, 0.011))
+        for dxh, dyh in ((0.06, -0.05), (-0.05, 0.06), (0.04, 0.07)):                                # hojas junto al roleo
+            m = np.maximum(m, _linea(np.hypot((xm - cx - dxh) / 1.6, (v - cy - dyh) * 1.3) - 0.018, 0.009))
+    m = np.maximum(m, _linea(np.hypot((xm - 0.5) / 0.11, (v - 0.55) / 0.09) - 1, 0.07))              # medallón
+    m = np.maximum(m, _linea(np.hypot((xm - 0.5) / 0.08, (v - 0.55) / 0.065) - 1, 0.06))
+    m = np.maximum(m, ((np.hypot((xm - 0.5) / 0.05, (v - 0.55) / 0.04) < 1)).astype(float) * 0.9)
+    tallo = _linea(xm - 0.5, 0.009) * (v > 0.08) * (v < 0.95) * (np.abs(v - 0.55) > 0.09)
+    m = np.maximum(m, tallo)
+    for k in range(9):                                     # hojas a lo largo del tallo
+        cy = 0.12 + k * 0.1
+        if abs(cy - 0.55) < 0.1: continue
+        m = np.maximum(m, _linea(np.hypot((xm - 0.53) / 0.035, (v - cy - (xm - 0.5) * 0.6) / 0.012) - 1, 0.25))
+    fondo_f = np.tile(patron(N // 4, 1.5), (4, 4)) * 0.8                                           # filigrana
+    m = np.maximum(m, fondo_f * (np.abs(u - 0.5) < 0.45) * (v < 0.95))
+    m = np.maximum(m, (np.abs(u - 0.5) > 0.465).astype(float))                                     # cenefa
+    m = np.maximum(m, _linea(np.abs(u - 0.5) - 0.445, 0.004))
+    m = np.maximum(m, (v > 0.965).astype(float))
+    m = _desenfoque(np.clip(m, 0, 1), 1)
+    rng = np.random.default_rng(4)
+    ruido = _desenfoque(rng.random((N, N)), 4)
+    base = np.array(fondo)[None, None, :] * (0.85 + 0.3 * ruido[..., None])
+    hilo = np.array(oro)[None, None, :] * (0.7 + 0.3 * _desenfoque(m, 2)[..., None])
+    col = base * (1 - m[..., None]) + hilo * m[..., None]
+    mr = np.dstack([np.zeros_like(m), 0.75 - 0.4 * m, m, np.ones_like(m)])
+    return (_imagen(nombre + '_col', np.dstack([col, np.ones_like(m)])), _imagen(nombre + '_mr', mr),
+            _imagen(nombre + '_nor', _normal(_desenfoque(m, 2), 7.0)))
+
 # ---------------------------------------------------------------- materiales
 def material(nombre, color=(0.8, 0.8, 0.8), rough=0.6, metal=0.0, sheen=0.0, emis=None, emis_f=0.0,
              alpha=1.0, tex=None, escala_nor=1.0, recorte=False):

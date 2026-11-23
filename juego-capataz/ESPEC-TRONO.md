@@ -42,6 +42,15 @@ hermandad**.
 | Peana, imagen y manto | Ver punto 4 | — |
 | Campana | En el frente, con su mazo | — |
 
+**Catálogo para la gestión** (cada trono cambia; según las fotos de tronos de Málaga):
+
+- **Manto de cola**: nace en punta detrás de la corona, baja en rampa abombada, cada vez más ancho, y acaba
+  redondeado sobre los varales traseros, con los bordes caídos. Varía el color del terciopelo (granate, morado, azul,
+  negro, blanco, rojo) y el bordado: un gran dibujo simétrico con motivo central (escudo, paloma, anagrama) y cenefa.
+- **Cabezas de varal**: tallas doradas de hojarasca, madera tallada, plata cincelada.
+- **Varales**: forrados de plata o metal, o de madera.
+- **Arbotantes**: árboles de hojarasca dorada (como la Paloma) o de plata con brazos en voluta; nº de tulipas.
+
 La luz del trono la dan las velas: emisión y resplandor siempre, y solo unas pocas luces reales (unas 4–6), para
 que vaya en móvil.
 
