@@ -59,9 +59,17 @@ Recomendación: **B**, hecha con mimo y enseñada antes de seguir.
 
 ## 5. La gente del trono
 
-- **Hombres de trono (Málaga)**: el cabezón con túnica de la hermandad y la cara descubierta (hace falta diseñar una
-  cara sencilla: ojos y boca pintados en la textura, con varias expresiones: normal, esfuerzo, cansancio, emoción).
-  Van a los dos lados de cada varal, con la mano en el varal.
+- **Hombres de trono (Málaga)**: van a los dos lados de cada varal, con la mano en el varal. **Cómo visten lo
+  decide la hermandad en el modo gestión, y por separado para cada trono** (en el Sepulcro de Málaga, los del Cristo
+  van de traje y los de la Virgen con túnica sin faraona):
+  1. **Traje** (chaqueta oscura, corbata), cara descubierta.
+  2. **Túnica sin faraona**, cara descubierta.
+  3. **Túnica con faraona**, cara descubierta.
+  4. **Túnica con faraona y la cara tapada.**
+
+  Es un mismo cuerpo con piezas de ropa intercambiables (traje, túnica, faraona abierta, faraona cerrada), con los
+  colores de la hermandad. Para las opciones 1–3 hace falta una cara sencilla: ojos y boca pintados en la textura,
+  con varias expresiones (normal, esfuerzo, cansancio, emoción).
 - **Mayordomo y capataz** en la campana, **hombres de campana y de varal** delante.
 - **Costaleros (Sevilla)**: bajo los faldones; se ven los pies, y en los relevos salen con el costal y la faja.
 
