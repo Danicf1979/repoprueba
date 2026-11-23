@@ -310,18 +310,21 @@ mt.location = T((0, 0, 0)); s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickn
 ruta_c = [(0.3, 0.62), (0.42, 0.42), (0.55, 0.1), (0.7, -0.2), (0.9, -0.33), (1.2, -0.355), (1.6, -0.355), (1.8, -0.35),
           (2.1, -0.36), (2.5, -0.38), (2.9, -0.4), (3.15, -0.42), (3.22, -0.47)]
 anchos = [0.22, 0.4, 0.55, 0.68, 0.78, 0.82, 0.84, 0.85, 0.9, 0.95, 0.99, 1.0, 1.0]
+# la ruta se suaviza aquí (sin subdivisión después) para que el galón vaya pegado al borde de la tela
+ruta_s = catmull([(a_, dy, dz) for a_, (dy, dz) in zip(anchos, ruta_c)], 4)
 bm = bmesh.new(); vs = []; nx = 16
-for j, (dy, dz) in enumerate(ruta_c):
-    w = anchos[j]
-    vs.append([bm.verts.new(T((-w + 2 * w * i / nx, dy, dz + 0.006 * math.sin(i * 1.3) * (j > 7)))) for i in range(nx + 1)])
+for j, p_ in enumerate(ruta_s):
+    w, dy, dz = p_.x, p_.y, p_.z
+    vs.append([bm.verts.new(T((-w + 2 * w * i / nx, dy, dz + 0.006 * math.sin(i * 1.3) * (dy > 1.8)))) for i in range(nx + 1)])
 capa = bm.loops.layers.uv.verify()
 for j in range(len(vs) - 1):
     for i in range(nx):
         f = bm.faces.new((vs[j][i], vs[j][i + 1], vs[j + 1][i + 1], vs[j + 1][i]))
-        for lp, uv in zip(f.loops, [(i / nx * 4, j * 0.6), ((i + 1) / nx * 4, j * 0.6), ((i + 1) / nx * 4, (j + 1) * 0.6), (i / nx * 4, (j + 1) * 0.6)]):
+        for lp, uv in zip(f.loops, [(i / nx * 4, j * 0.15), ((i + 1) / nx * 4, j * 0.15), ((i + 1) / nx * 4, (j + 1) * 0.15), (i / nx * 4, (j + 1) * 0.15)]):
             lp[capa].uv = uv
-borde = [v.co.copy() for v in [f[0] for f in vs]][::-1] + [v.co.copy() for v in vs[-1]] + [f[-1].co.copy() for f in vs]
-cola = objeto('manto_cola', bm, manto_m, subdiv=1)
+j0 = next(j for j, p_ in enumerate(ruta_s) if p_.y > 0.9)          # el galón empieza donde la cola se apoya en la cubierta
+borde = [f[0].co.copy() for f in vs[j0:]][::-1] + [v.co.copy() for v in vs[-1]] + [f[-1].co.copy() for f in vs[j0:]]
+cola = objeto('manto_cola', bm, manto_m, subdiv=0)
 cola.modifiers.new('grosor', 'SOLIDIFY').thickness = 0.012
 objeto('cola_galon', tubo([p + Vector((0, 0, 0.008)) for p in borde], 0.014, segs=6, tapas=False), oro)
 objeto('manto_galon', tubo([T((math.sin(a) * 0.43, -math.cos(a) * 0.43, 0.005)) for a in [ab + (2 * math.pi - 2 * ab) * i / 40 for i in range(41)]],
