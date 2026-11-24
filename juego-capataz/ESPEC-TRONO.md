@@ -46,8 +46,10 @@ hermandad**.
 
 - **Manto**: una sola pieza, como en Málaga: pasa por encima de la cabeza (el tocado va encima), cae por los hombros
   en triángulo hasta la peana y por la espalda se alarga en cola sobre la cubierta y los varales traseros, hasta casi su
-  final, abriéndose a lo ancho. Varía el color del terciopelo y el bordado (cinco niveles; motivo central: escudo,
+  final, abriéndose a lo ancho. Varía el color del terciopelo (granate, morado, azul, negro, blanco, rojo intenso, salmón…) y el bordado (cinco niveles; motivo central: escudo,
   paloma, anagrama), con cenefa en la abertura y el bajo.
+- **Dibujo del bordado** (palio y manto, por separado): roleos, hojas, granadas o soles; en el palio el motivo se repite,
+  en el manto va en simetría desde la espalda. Se combina con el nivel de carga.
 - **Bordado** (palio —techo y bambalinas— y manto, por separado; los faldones del trono van lisos con galón): cinco niveles, del más barato al más caro, con su plazo de
   taller orientativo: liso (solo galón, una temporada), sencillo (motivos sueltos, un año), medio (dos años),
   cargado (roleos gruesos y filigrana, tres o cuatro años) y riquísimo (casi todo oro, a realce, cinco años o más).

@@ -65,23 +65,81 @@ def _normal(alto, fuerza):
     n /= np.linalg.norm(n, axis=2, keepdims=True)
     return np.dstack([n * 0.5 + 0.5, np.ones_like(alto)])
 
+# Dibujos (tipo de patrón) del bordado: el palio repite un motivo en mosaico; el manto lo coloca en simetría
+DIBUJOS = ['roleos', 'hojas', 'granadas', 'soles']
+
+def _granada(x, y, cx, cy, s, g):
+    """Granada (y crece hacia abajo): cuerpo con contorno, mitad baja rellena con granos, corona de tres puntas y dos hojas."""
+    a, b = 0.055 * s, 0.065 * s
+    d = np.hypot((x - cx) / a, (y - cy) / b) - 1
+    m = _linea(d, 0.16 * g)
+    m = np.maximum(m, (d < -0.12) * (y > cy + 0.1 * b) * ((np.cos((x - cx) / a * 11) > 0.55) * (np.cos((y - cy) / b * 11) > 0.55)) * 0.95)
+    for k_ in (-1, 0, 1):
+        m = np.maximum(m, _linea(np.hypot((x - cx - k_ * 0.35 * a) / (0.18 * a), (y - cy + b * 1.12) / (0.3 * b)) - 1, 0.5 * g))
+    for sx in (-1, 1):
+        u_ = (x - cx - sx * 1.25 * a) * math.cos(0.6) + (y - cy + 0.55 * b) * sx * math.sin(0.6)
+        v_ = -(x - cx - sx * 1.25 * a) * sx * math.sin(0.6) + (y - cy + 0.55 * b) * math.cos(0.6)
+        m = np.maximum(m, _linea(np.hypot(u_ / (0.7 * a), v_ / (0.28 * a)) - 1, 0.3 * g))
+    return m
+
+def _sol(x, y, cx, cy, s, g):
+    """Sol: disco, aro y rayos alternos largos y cortos."""
+    dx, dy = x - cx, y - cy
+    r, th = np.hypot(dx, dy) / s, np.arctan2(dy, dx)
+    m = (r < 0.03).astype(float)
+    m = np.maximum(m, _linea(r - 0.045, 0.007 * g))
+    largo = np.where(np.cos(16 * th) > 0, 0.13, 0.1)
+    m = np.maximum(m, (np.abs(np.sin(16 * th)) < 0.22 * g) * (r > 0.055) * (r < largo))
+    return m
+
+def motivo(N, dibujo, grosor=1.0):
+    """Mosaico repetible de un dibujo de bordado (para el palio)."""
+    if dibujo == 'roleos':
+        return patron(N, grosor)
+    y, x = np.mgrid[0:N, 0:N] / N
+    m = np.zeros((N, N))
+    if dibujo == 'soles':
+        m = _sol(x, y, 0.5, 0.5, 1.2, grosor)
+        for cx, cy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            m = np.maximum(m, _sol(x, y, cx, cy, 0.7, grosor))
+        for cx, cy in ((0.5, 0), (0, 0.5), (1, 0.5), (0.5, 1)):                      # estrellitas entre los soles
+            m = np.maximum(m, (np.hypot(x - cx, y - cy) < 0.012).astype(float))
+    elif dibujo == 'granadas':
+        m = _granada(x, y, 0.5, 0.52, 1.6, grosor)
+        for cx, cy in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            m = np.maximum(m, _granada(x, y, cx, cy + 0.02, 1.0, grosor))
+        for s_ in (1, -1):                                                           # tallos que las unen
+            d = (y - 0.5) - s_ * (x - 0.5)
+            m = np.maximum(m, _linea(d / 1.414, 0.007 * grosor) * (np.abs(x - 0.5) > 0.14) * (np.abs(x - 0.5) < 0.4))
+    elif dibujo == 'hojas':
+        for x0, fase in ((0.25, 0.0), (0.75, math.pi)):                              # dos parras que suben ondulando
+            xc = x0 + 0.07 * np.sin(2 * math.pi * y + fase)
+            m = np.maximum(m, _linea(x - xc, 0.008 * grosor))
+            for j in range(8):
+                yh = (j + 0.5) / 8; lado = 1 if j % 2 == 0 else -1
+                xh = x0 + 0.07 * math.sin(2 * math.pi * yh + fase) + lado * 0.06
+                u_ = (x - xh) * 0.8 + (y - yh) * lado * 0.6; v_ = -(x - xh) * lado * 0.6 + (y - yh) * 0.8
+                m = np.maximum(m, _linea(np.hypot(u_ / 0.055, v_ / 0.02) - 1, 0.25 * grosor))
+                m = np.maximum(m, (np.hypot(u_ / 0.055, v_ / 0.02) < 0.6) * 0.8)
+    return np.clip(m, 0, 1)
+
 # Niveles de bordado, del más barato al más caro (ver ESPEC-TRONO.md)
 NIVELES = ['liso', 'sencillo', 'medio', 'cargado', 'riquisimo']
 RELIEVE = {'liso': 0.0, 'sencillo': 5.0, 'medio': 6.0, 'cargado': 8.0, 'riquisimo': 11.0}
 
-def textura_bordado(nombre, fondo, oro=(1.0, 0.74, 0.3), N=512, grosor=1.0, nivel='medio'):
+def textura_bordado(nombre, fondo, oro=(1.0, 0.74, 0.3), N=512, grosor=1.0, nivel='medio', dibujo='roleos'):
     """Terciopelo de color `fondo` bordado en oro: color, metal/rugosidad y relieve. `nivel`: de liso a riquísimo."""
     y, x = np.mgrid[0:N, 0:N] / N
     if nivel == 'liso':
         m = np.zeros((N, N))
     elif nivel == 'sencillo':                                  # motivos sueltos, mucho terciopelo a la vista
-        m = patron(N, grosor * 0.8) * (np.hypot(x - 0.5, y - 0.5) < 0.19)
+        m = motivo(N, dibujo, grosor * 0.8) * (np.hypot(x - 0.5, y - 0.5) < 0.22)
     elif nivel == 'medio':
-        m = patron(N, grosor)
+        m = motivo(N, dibujo, grosor)
     elif nivel == 'cargado':                                   # roleos gruesos y relleno de filigrana
-        m = np.maximum(patron(N, grosor * 1.6), np.tile(patron(N // 2, 1.0), (2, 2)) * 0.85)
+        m = np.maximum(motivo(N, dibujo, grosor * 1.6), np.tile(patron(N // 2, 1.0), (2, 2)) * 0.6)
     else:                                                      # riquísimo: casi todo oro, a realce
-        m = np.maximum.reduce([patron(N, grosor * 3.4), np.tile(patron(N // 2, 2.8), (2, 2)), np.tile(patron(N // 4, 2.6), (4, 4))])
+        m = np.maximum.reduce([motivo(N, dibujo, grosor * 2.6), np.tile(patron(N // 2, 2.4), (2, 2)) * 0.85, np.tile(patron(N // 4, 2.4), (4, 4)) * 0.85])
     m = _desenfoque(m, 1)
     rng = np.random.default_rng(3)
     ruido = _desenfoque(rng.random((N, N)), 3)
@@ -151,7 +209,7 @@ def textura_acanto(nombre, metal=(1.0, 0.76, 0.34), N=256):
     mr = np.dstack([np.zeros_like(a), 0.3 + 0 * a, np.ones_like(a), np.ones_like(a)])
     return (_imagen(nombre + '_col', np.dstack([col, a])), _imagen(nombre + '_mr', mr), _imagen(nombre + '_nor', _normal(alto, 6.0)))
 
-def textura_manto(nombre, fondo, oro=(1.0, 0.74, 0.3), N=1024, nivel='cargado'):
+def textura_manto(nombre, fondo, oro=(1.0, 0.74, 0.3), N=1024, nivel='cargado', dibujo='roleos'):
     """Bordado de un manto de cola, simétrico: medallón central, tallo, grandes roleos a los lados, filigrana de fondo
     y cenefa en el borde. u a lo ancho (0,5 = eje), v a lo largo (0 = la punta junto a la cabeza, 1 = el final)."""
     fila, u = np.mgrid[0:N, 0:N] / N
@@ -169,10 +227,27 @@ def textura_manto(nombre, fondo, oro=(1.0, 0.74, 0.3), N=1024, nivel='cargado'):
     roleos = [(0.72, 0.3, 0.05), (0.8, 0.52, 0.06), (0.7, 0.74, 0.07), (0.84, 0.86, 0.05), (0.62, 0.92, 0.04), (0.88, 0.22, 0.04),
               (0.6, 0.18, 0.035), (0.9, 0.68, 0.045), (0.64, 0.42, 0.04), (0.78, 0.96, 0.035), (0.86, 0.4, 0.035)]
     n_ = NIVELES.index(nivel)                            # liso 0 · sencillo 1 · medio 2 · cargado 3 · riquísimo 4
+    g = 1.0 if n_ < 4 else 1.6
+    yv = 1 - v                                             # para los motivos que se dibujan «hacia abajo»
     for cx, cy, a in (roleos if n_ >= 2 else []):
-        m = np.maximum(m, espiral(cx, cy, a, 0.011 if n_ < 4 else 0.017))
-        for dxh, dyh in ((0.06, -0.05), (-0.05, 0.06), (0.04, 0.07)):                                # hojas junto al roleo
-            m = np.maximum(m, _linea(np.hypot((xm - cx - dxh) / 1.6, (v - cy - dyh) * 1.3) - 0.018, 0.009))
+        if dibujo == 'roleos':
+            m = np.maximum(m, espiral(cx, cy, a, 0.011 * g))
+            for dxh, dyh in ((0.06, -0.05), (-0.05, 0.06), (0.04, 0.07)):                            # hojas junto al roleo
+                m = np.maximum(m, _linea(np.hypot((xm - cx - dxh) / 1.6, (v - cy - dyh) * 1.3) - 0.018, 0.009))
+        elif dibujo == 'granadas':
+            m = np.maximum(m, _granada(xm, yv, cx, 1 - cy, a * 22, g))
+        elif dibujo == 'soles':
+            m = np.maximum(m, _sol(xm, v, cx, cy, a * 9, g))
+    if dibujo == 'hojas' and n_ >= 2:                      # tallos largos que suben abriéndose, con hojas a los lados
+        for j, (v0, ab_) in enumerate(((0.08, 0.55), (0.3, 0.75), (0.52, 1.0))):
+            xc = 0.5 + ab_ * np.clip(v - v0, 0, None) ** 0.8 * 0.5
+            m = np.maximum(m, _linea(xm - xc, 0.008 * g) * (v > v0) * (v < 0.97))
+            for q in range(10):
+                vh = v0 + 0.05 + q * 0.09
+                if vh > 0.95: break
+                xh = 0.5 + ab_ * (vh - v0) ** 0.8 * 0.5; lado = 1 if q % 2 == 0 else -1
+                u_ = (xm - xh) * 0.7 + (v - vh) * lado * 0.7; w_ = -(xm - xh) * lado * 0.7 + (v - vh) * 0.7
+                m = np.maximum(m, np.clip(1.2 - np.hypot(u_ / 0.05, w_ / 0.018), 0, 1) * 1.0)
     if n_ == 0: m = np.zeros((N, N))
     if n_ >= 1:
       m = np.maximum(m, _linea(np.hypot((xm - 0.5) / 0.11, (v - 0.55) / 0.09) - 1, 0.07))            # medallón
@@ -185,8 +260,8 @@ def textura_manto(nombre, fondo, oro=(1.0, 0.74, 0.3), N=1024, nivel='cargado'):
           if abs(cy - 0.55) < 0.1: continue
           m = np.maximum(m, _linea(np.hypot((xm - 0.53) / 0.035, (v - cy - (xm - 0.5) * 0.6) / 0.012) - 1, 0.25))
     if n_ >= 3:                                            # filigrana de relleno (más tupida en el riquísimo)
-        fondo_f = np.tile(patron(N // 4, 1.5), (4, 4)) * 0.8
-        if n_ == 4: fondo_f = np.maximum(np.tile(patron(N // 4, 3.4), (4, 4)), np.tile(patron(N // 8, 2.8), (8, 8)))
+        fondo_f = np.tile(patron(N // 8, 1.3), (8, 8)) * 0.7
+        if n_ == 4: fondo_f = np.maximum(np.tile(patron(N // 8, 3.0), (8, 8)), np.tile(patron(N // 16, 2.4), (16, 16)))
         m = np.maximum(m, fondo_f * (np.abs(u - 0.5) < 0.45) * (v < 0.95))
     ancho_c = 0.465 if n_ < 4 else 0.44
     m = np.maximum(m, (np.abs(u - 0.5) > ancho_c).astype(float) * (1.0 if n_ else 0.0))                 # cenefa

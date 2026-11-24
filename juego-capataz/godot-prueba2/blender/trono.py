@@ -15,10 +15,11 @@ salida = sys.argv[-1]
 import json
 METALES = {'oro': (1.0, 0.76, 0.34), 'plata': (0.92, 0.93, 0.95)}
 TELAS = {'granate': (0.32, 0.01, 0.04), 'verde': (0.005, 0.16, 0.05), 'azul': (0.008, 0.03, 0.3), 'negro': (0.012, 0.01, 0.014),
-         'morado': (0.17, 0.01, 0.3), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.55, 0.01, 0.015)}
+         'morado': (0.17, 0.01, 0.3), 'blanco': (0.86, 0.84, 0.8), 'rojo': (0.62, 0.0, 0.008), 'salmon': (0.86, 0.36, 0.27)}
 FLORES = {'blanco': (0.98, 0.95, 0.95), 'rosa': (0.95, 0.35, 0.55), 'rojo': (0.7, 0.02, 0.04), 'morado': (0.38, 0.1, 0.6)}
 V = {'orfebreria': 'oro', 'terciopelo': 'granate', 'manto': 'granate', 'flor': 'blanco', 'arbotantes': 'cuatro', 'varales': 'plata',
-     'bordado': 'medio', 'bordado_manto': 'cargado', 'bordado_saya': 'medio', 'tocado': 'corona_rafaga'}
+     'bordado': 'medio', 'bordado_manto': 'cargado', 'bordado_saya': 'medio', 'tocado': 'corona_rafaga',
+     'dibujo_palio': 'roleos', 'dibujo_manto': 'roleos'}
 V.update(json.loads(os.environ.get('VARIANTE', '{}')))
 ORFEBRERIA = METALES[V['orfebreria']]
 TERCIOPELO = TELAS[V['terciopelo']]
@@ -26,7 +27,7 @@ MANTO = TELAS[V['manto']]
 FLOR = FLORES[V['flor']]
 
 scn = escena_vacia()
-L2, W2 = 2.3, 1.1                       # media longitud y media anchura de la mesa
+L2, W2 = 2.05, 1.1                      # media longitud y media anchura de la mesa
 Z_VARAL = 0.8                           # parte de arriba del varal
 Z_MESA, Z_CUB = 0.93, 1.43              # mesa y cubierta (donde va la candelería)
 Z_TECHO = 3.45
@@ -35,7 +36,7 @@ ARBOTANTES = V['arbotantes']           # 'cuatro' (esquinas) o 'traseros' (solo 
 BRILLO = tuple(c * 0.08 for c in ORFEBRERIA)                     # brillo propio del metal, como en el trono web
 oro = material('oro', ORFEBRERIA, 0.28, 1.0, emis=BRILLO, emis_f=1.0)
 talla = material('talla', ORFEBRERIA, 0.35, 1.0, emis=BRILLO, emis_f=1.0, tex=textura_talla('talla', ORFEBRERIA), escala_nor=1.0)
-tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('bordado', TERCIOPELO, nivel=V['bordado']), escala_nor=0.8)
+tercio = material('terciopelo', TERCIOPELO, 0.7, 0.0, sheen=0.2, tex=textura_bordado('bordado', TERCIOPELO, nivel=V['bordado'], dibujo=V['dibujo_palio']), escala_nor=0.8)
 madera = material('madera', (0.12, 0.06, 0.03), 0.45)
 varal_m = (material('varal', (0.8, 0.81, 0.84), 0.32, 1.0, emis=(0.06, 0.06, 0.065), emis_f=1.0) if V['varales'] == 'plata'
            else material('varal_madera', (0.32, 0.14, 0.06), 0.35, tex=textura_talla('varal_madera', (0.42, 0.2, 0.09)), escala_nor=0.5))
@@ -354,17 +355,17 @@ sy.location = T((0, 0, 0))
 # triángulo hasta la peana y por detrás se alarga en la cola: la parte de la espalda se estira hacia atrás, baja a la
 # cubierta y sigue sobre los varales traseros hasta casi su final, abriéndose a lo ancho. Bordado simétrico
 # (textura_manto): el eje del dibujo va por la espalda y la cenefa queda en la abertura delantera y en el bajo.
-cola_m = material('manto', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto', MANTO, nivel=V['bordado_manto']), escala_nor=0.8)
+cola_m = material('manto', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto', MANTO, nivel=V['bordado_manto'], dibujo=V['dibujo_manto']), escala_nor=0.8)
 def smooth(t): return t * t * (3 - 2 * t)
 # perfil (radio, altura, media abertura delantera en rad), de abajo arriba
 PERFIL_M = [(0.46, 0.0, 0.95), (0.44, 0.1, 0.92), (0.4, 0.3, 0.85), (0.345, 0.5, 0.78), (0.295, 0.64, 0.72), (0.25, 0.74, 0.66),
             (0.205, 0.84, 0.6), (0.178, 0.92, 0.56), (0.162, 0.98, 0.52), (0.135, 1.03, 0.45), (0.085, 1.075, 0.3), (0.012, 1.095, 0.1)]
 FILAS = [Vector(p) for p in catmull(PERFIL_M, 4)]            # filas intermedias, para que la cola salga suave
 Z_TOP = 1.095
-LARGO_COLA = (L2 + 1.33) - Y_IMG                              # de la imagen hasta casi el final de los varales traseros
+LARGO_COLA = 3.63 - Y_IMG                                       # de la imagen hasta casi el final de los varales traseros
 BAJA_COLA = Z_IMG - (Z_CUB - 0.02)                            # de la peana a la altura de la cubierta
 SEG_M = 72
-bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); anillos_m = []
+bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); anillos_m = []; xs_m = {}
 for p in FILAS:
     r, z, a_ = p.x, p.y, p.z
     tau = max(0.0, 1 - z / Z_TOP)                             # 0 en lo alto de la cabeza, 1 en el bajo
@@ -383,14 +384,21 @@ for p in FILAS:
         if yy < L2 + 0.05:                                    # sobre la cubierta, nunca por debajo de ella
             zz = max(zz, Z_CUB + 0.012 - Z_IMG)
         fila.append(bm.verts.new(T((x, y, zz))))
+        xs_m.setdefault(len(anillos_m), []).append(x)
     anillos_m.append(fila)
 nf = len(anillos_m) - 1
+# UV con medidas reales para que el bordado no se estire: v = recorrido desde lo alto de la cabeza (por cada «meridiano»),
+# u = 0,5 + x; la misma escala en los dos sentidos (la longitud de la espalda, de la cabeza al final de la cola)
+dist = [[0.0] * (SEG_M + 1) for _ in range(nf + 1)]
+for kk in range(nf - 1, -1, -1):
+    for i in range(SEG_M + 1):
+        dist[kk][i] = dist[kk + 1][i] + (anillos_m[kk][i].co - anillos_m[kk + 1][i].co).length
+ESC_UV = dist[0][SEG_M // 2]
 for k in range(nf):
     for i in range(SEG_M):
         f = bm.faces.new((anillos_m[k][i], anillos_m[k][i + 1], anillos_m[k + 1][i + 1], anillos_m[k + 1][i]))
-        # u a lo ancho (0,5 = espalda), v de la cabeza (0) al bajo y final de la cola (1)
-        for lp, uv in zip(f.loops, [(i / SEG_M, 1 - k / nf), ((i + 1) / SEG_M, 1 - k / nf), ((i + 1) / SEG_M, 1 - (k + 1) / nf), (i / SEG_M, 1 - (k + 1) / nf)]):
-            lp[capa].uv = uv
+        for lp, (kk, ii) in zip(f.loops, [(k, i), (k, i + 1), (k + 1, i + 1), (k + 1, i)]):
+            lp[capa].uv = (0.5 + xs_m[kk][ii] / ESC_UV, dist[kk][ii] / ESC_UV)
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 borde_m = [anillos_m[k][0].co.copy() for k in range(nf - 1, -1, -1)] + [v.co.copy() for v in anillos_m[0][1:]] + \
           [anillos_m[k][-1].co.copy() for k in range(1, nf)]
