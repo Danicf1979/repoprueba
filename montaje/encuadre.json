@@ -53,5 +53,10 @@
     0.66,
     0.45,
     1.75
-  ]
+  ],
+  "baile_iceta": [0.47, 0.45, 1.25],
+  "montero_mitin_may": [0.47, 0.42, 1.15],
+  "montero_mitin_oct": [0.5, 0.45, 1.0],
+  "risa_montero26": [0.56, 0.42, 1.0],
+  "baile_sevilla": [0.32, 0.42, 1.2]
 }

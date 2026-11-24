@@ -54,6 +54,7 @@ TARJETAS = [
     T("2022", "«Solo sí es sí»", "+1.000 rebajas a agresores sexuales", img="solosi"),
     T("2022", "Suprime la sedición", "Y rebaja la malversación"),
     T("2023", "«Tito Berni», diputado del PSOE", "A juicio por cohecho (caso Mediador)", True, img="tito"),
+    R("baile_iceta", "Ministros bailando en Ferraz\nNoche electoral, jul. 2023"),
     R("risa1", "Congreso, nov. 2023"),
     T("2024", "Caso Koldo", "Mascarillas y comisiones", True, img="koldo"),
     T("2024", "Su mujer, investigada", "Begoña Gómez", True, img="begona"),
@@ -75,7 +76,9 @@ TARJETAS = [
     R("risa2", "Rueda de prensa G20, nov. 2025"),
     T("2026", "Tren de Adamuz: 46 muertos", img="adamuz"),
     T("2026", "Tercer año sin Presupuestos", "Siguen los de 2023, prorrogados"),
+    R("risa_montero26", "Montero, en la sesión de control\nMar. 2026", dur=2.4),
     T("2026", "Regularización masiva", "1,17 millones de solicitudes", img="regularizacion"),
+    R("montero_mitin_may", "Montero, mitin en Andalucía\nMayo 2026", dur=3.0),
     T("2026", "Zapatero, imputado en el caso Plus Ultra", "Primer expresidente imputado", True, img="zapatero"),
     T("2026", "Ábalos, condenado a 24 años", "Koldo, a 19. Por el Supremo", img="abalos_condena"),
     T("2026", "Su hermano, condenado", "9 años de inhabilitación · recurrida", img="hermano_condena"),
@@ -85,7 +88,9 @@ TARJETAS = [
     T("2026", "Ley de nietos", "El Supremo frena su voto"),
     T("2026", "63 subidas de impuestos y cotizaciones", "141 con las encubiertas · Instituto Juan de Mariana"),
     R("baile2", "Mitin en Fuenlabrada, oct. 2026"),
+    R("montero_mitin_oct", "Montero, en el mismo mitin\nOct. 2026", dur=2.4),
     T("2026", "Tren de Urda: 69 muertos", img="urda"),
+    R("baile_sevilla", "Sánchez y su mujer, arranque de campaña\nSevilla, nov. 2026", dur=2.4),
     T("", "Yo sí te voy a votar…\n¿sabiendo todo esto?", dur=3.5, sello="29-N"),
 ]
 

@@ -16,6 +16,11 @@ python hacer_reel.py --audio cancion.mp3 --inicio-cancion <s>   # con canción, 
 | `reacciones/baile1.mp4` | Congreso del PES, Madrid, feb 2019 | cE1bdaBmPXE |
 | `reacciones/baile2.mp4` | Mitin en Fuenlabrada, oct 2026 | 3MafoIiMghQ |
 | `reacciones/vacaciones.mp4` | La Mareta (Lanzarote), 3 ago 2026 | T29GJkvvnhI |
+| `reacciones/baile_iceta.mp4` | Iceta e Isabel Rodríguez bailan en Ferraz, noche del 23-J 2023 | eJdcqhv56YU (El Plural), 13,5 s |
+| `reacciones/risa_montero26.mp4` | Montero se ríe en la sesión de control, 18 mar 2026 | 8P5jAynXsiU (El Debate), 10,8 s |
+| `reacciones/montero_mitin_may.mp4` | Montero en un mitin de la campaña andaluza, may 2026 | YOt7ZKKVriA, 14,0 s |
+| `reacciones/montero_mitin_oct.mp4` | Montero en el acto de Fuenlabrada, 17 oct 2026 | JexNWAQ9Umc, 62,1 s |
+| `reacciones/baile_sevilla.mp4` | Sánchez y Begoña Gómez bailan en el mitin de Sevilla, 12 nov 2026 | jqcT5BTXpH4, 1,0 s |
 | `imagenes/NN.mp4` | Fondo de archivo de la tarjeta NN | agencias / TV |
 | `encuadre.json` | Recorte vertical por clip: `[centro_x, centro_y, zoom]` | |
 
@@ -46,4 +51,10 @@ Fuentes de las tarjetas añadidas (nov. 2026):
 - Impuestos: Impuestómetro 2026 del Instituto Juan de Mariana (63 explícitas + 46 por no deflactar
   + 32 catastrales = 141). Hacienda discute el recuento total.
 
-Si añades la música en TikTok/IG, bájala en: 33–36 s · 43,5–46,5 s · 55–69 s.
+Los rótulos de las reacciones solo dicen quién, dónde y cuándo: nada de insinuaciones sobre su estado.
+
+Cortes de voz en el vídeo (120 s): 35–37,5 s · 45,5–47,5 s · 57–70,5 s. Si añades la música en TikTok/IG,
+bájala ahí. En TikTok web las canciones de la biblioteca duran 60 s y no se pueden dividir: volumen único
+(-10 dB) y fundido de salida.
+
+Portada: `D:\POLÍTICA\perfil\portada_tiktok.png` (Sánchez riendo en el Congreso, nov 2023).
