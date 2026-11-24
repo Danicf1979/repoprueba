@@ -25,4 +25,25 @@ Notas de verificación (transcripción con faster-whisper):
 - Ceuta 2026: entrada masiva 30–31 jul; Sánchez visitó Ceuta el 31 jul y estuvo de vacaciones en La Mareta
   del 3 al 23 ago, cuando aún quedaban ~5.000 migrantes en la ciudad (EFE, 14 ago).
 
-Si añades la música en TikTok/IG, bájala en: 21,5–24,5 s · 29,5–32,5 s · 33,5–47,5 s.
+Fondos: `imagenes/<nombre>.mp4`, con el nombre que indica `img=` en cada tarjeta de `hacer_reel.py`.
+
+Fuentes de las tarjetas añadidas (nov. 2026):
+- Indultos del procés: Consejo de Ministros, 22 jun 2021 (BOE 23 jun 2021).
+- Sedición y malversación: Ley Orgánica 14/2022, de 22 dic.
+- «Tito Berni»: auto de apertura de juicio oral del caso Mediador, 24 sept 2026 (cohecho y otros); pendiente de juicio.
+- ERE: Audiencia de Sevilla, sentencia 490/2019 (680 M€), confirmada por el Supremo (jul 2022);
+  el Constitucional anuló las condenas de Chaves y Griñán (jul 2024).
+- Expareja de Ábalos: admitió ante el Supremo el 27 feb 2025 que no fue a trabajar; la sentencia del caso
+  mascarillas recoge 34.450 € de Ineco y 9.500 € de Tragsatec.
+- Paco Salazar: dimitió en jul 2025 tras denuncias internas de acoso; nota del PSOE (5 dic 2025)
+  admitiendo «no haber estado a la altura». No hay causa judicial (la querella de Hazte Oír fue inadmitida).
+- Leire Díez: imputada por cohecho y tráfico de influencias (jul 2025); en instrucción.
+- Presupuestos: tercera prórroga de los PGE de 2023 (Consejo de Ministros, 23 dic 2025).
+- Zapatero: imputado en el caso Plus Ultra (Audiencia Nacional, 19 may 2026).
+- Ábalos: condenado por el Supremo a 24 años; Koldo, a 19 (22 jun 2026).
+- David Sánchez: 9 años de inhabilitación por prevaricación (Audiencia de Badajoz, 14 jul 2026); recurrida.
+- Begoña Gómez: apertura de juicio oral con jurado por tráfico de influencias y malversación (21 sept 2026).
+- Impuestos: Impuestómetro 2026 del Instituto Juan de Mariana (63 explícitas + 46 por no deflactar
+  + 32 catastrales = 141). Hacienda discute el recuento total.
+
+Si añades la música en TikTok/IG, bájala en: 31–34,5 s · 43,5–46,5 s · 55–69 s.

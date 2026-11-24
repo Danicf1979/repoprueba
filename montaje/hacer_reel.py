@@ -29,8 +29,9 @@ def lectura(*textos):
     n = sum(len(t.split()) for t in textos if t)
     return max(1.4, 0.5 + 0.2 * n)
 
-def T(anio, tit, sub="", judicial=False, dur=None, sello=""):
-    return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial, sello=sello,
+def T(anio, tit, sub="", judicial=False, dur=None, sello="", img=None):
+    """Dato. img = nombre del fondo en imagenes/<img>.mp4/.jpg (opcional)."""
+    return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial, sello=sello, img=img,
                 dur=dur or lectura(tit, sub) + (0.3 if judicial else 0))
 
 def V(cita, contexto, voz, dur=None):
@@ -42,35 +43,48 @@ def R(clip, rotulo="Mientras tanto…", dur=1.7):
     return dict(tipo="reac", clip=clip, rotulo=rotulo, dur=dur)
 
 TARJETAS = [
-    T("", "2018 – 2026", "Lo que ha pasado con Sánchez", dur=1.9),
-    T("2020", "COVID: +100.000 muertos", "Confinamiento inconstitucional"),
+    T("", "2018 – 2026", "Lo que ha pasado con Sánchez", dur=1.9, img="intro"),
+    T("2020", "COVID: +100.000 muertos", "Confinamiento inconstitucional", img="covid"),
     R("risa1", "Congreso, nov. 2023"),
-    T("2020", "Ábalos y Delcy en Barajas"),
-    T("2021", "53 millones para Plus Ultra"),
-    T("2021", "Ceuta: 10.000 entradas en 2 días"),
-    T("2021", "La Palma", "Ayudas que no llegaban"),
-    T("2022", "«Solo sí es sí»", "+1.000 rebajas a agresores sexuales"),
-    T("2024", "Caso Koldo", "Mascarillas y comisiones", True),
-    T("2024", "Amnistía", "A cambio de 7 votos de Junts"),
-    T("2024", "Su mujer, investigada", "Begoña Gómez", True),
-    T("2024", "DANA: 229 muertos", "Y el presidente dijo…"),
+    T("2020", "Ábalos y Delcy en Barajas", img="delcy"),
+    T("2021", "53 millones para Plus Ultra", img="plusultra"),
+    T("2021", "Ceuta: 10.000 entradas en 2 días", img="ceuta21"),
+    T("2021", "Indulta a los 9 condenados del procés", img="indultos"),
+    T("2021", "La Palma", "Ayudas que no llegaban", img="palma"),
+    T("2022", "«Solo sí es sí»", "+1.000 rebajas a agresores sexuales", img="solosi"),
+    T("2022", "Suprime la sedición", "Y rebaja la malversación"),
+    T("2023", "«Tito Berni», diputado del PSOE", "A juicio por cohecho (caso Mediador)", True, img="tito"),
+    T("2024", "Caso Koldo", "Mascarillas y comisiones", True, img="koldo"),
+    T("2024", "Su mujer, investigada", "Begoña Gómez", True, img="begona"),
+    T("2024", "Amnistía", "A cambio de 7 votos de Junts", img="amnistia"),
+    T("2024", "ERE: el Constitucional anula las condenas", "Chaves y Griñán · 680 M€ malversados", img="ere"),
+    T("2024", "DANA: 229 muertos", "Y el presidente dijo…", img="dana"),
     V("Si necesita más recursos, que los pida", "2 nov. 2024, comparecencia tras la DANA", "dana"),
     R("baile1", "Madrid, feb. 2019"),
-    T("2025", "Apagón total", "28 de abril"),
-    T("2025", "Su nº 3, Cerdán, a prisión", "", True),
+    T("2025", "La expareja de Ábalos cobró de empresas públicas", "Admitió en el Supremo que no fue ni un día"),
+    T("2025", "Apagón total", "28 de abril", img="apagon"),
+    T("2025", "Su nº 3, Cerdán, a prisión", "", True, img="cerdan"),
     V("Son las cinco, no he comido", "Junio 2025, sobre Cerdán", "cinco"),
-    T("2025", "Su hermano, a juicio", "", True),
+    T("2025", "Paco Salazar, su mano derecha en Moncloa", "Denuncias de acoso. El PSOE admitió «no estar a la altura»"),
+    T("2025", "Leire Díez, «la fontanera» del PSOE", "Imputada por cohecho y tráfico de influencias", True),
+    T("2025", "Su hermano, a juicio", "", True, img="hermano"),
     V("Hay jueces haciendo política y políticos que tratan de hacer justicia", "Septiembre 2025, entrevista en TVE", "jueces"),
     V("¿La Fiscalía de quién depende? Pues ya está", "Nov. 2019, entrevista en RNE", "fiscalia"),
-    T("2025", "Su fiscal general, condenado", "Por el Supremo"),
-    T("2025", "Ábalos y Koldo, a prisión", "", True),
-    T("2026", "Tren de Adamuz: 46 muertos"),
+    T("2025", "Su fiscal general, condenado", "Por el Supremo", img="fiscal"),
+    T("2025", "Ábalos y Koldo, a prisión", "", True, img="abalos"),
+    T("2026", "Tren de Adamuz: 46 muertos", img="adamuz"),
     R("risa2", "Rueda de prensa G20, nov. 2025"),
-    T("2026", "Regularización masiva", "1,17 millones de solicitudes"),
-    T("2026", "Ceuta: 72.000 entradas en 2 días", "96.000, según la Ciudad"),
+    T("2026", "Tercer año sin Presupuestos", "Siguen los de 2023, prorrogados"),
+    T("2026", "Regularización masiva", "1,17 millones de solicitudes", img="regularizacion"),
+    T("2026", "Zapatero, imputado en el caso Plus Ultra", "Primer expresidente imputado", True, img="zapatero"),
+    T("2026", "Ábalos, condenado a 24 años", "Koldo, a 19. Por el Supremo", img="abalos_condena"),
+    T("2026", "Su hermano, condenado", "9 años de inhabilitación · recurrida", img="hermano_condena"),
+    T("2026", "Ceuta: 72.000 entradas en 2 días", "96.000, según la Ciudad", img="ceuta26"),
     R("vacaciones", "Mientras tanto…\nAgosto 2026, de vacaciones en La Mareta", dur=2.6),
+    T("2026", "Su mujer, a juicio con jurado", "Tráfico de influencias y malversación", True, img="begona_juicio"),
     T("2026", "Ley de nietos", "El Supremo frena su voto"),
-    T("2026", "Tren de Urda: 69 muertos"),
+    T("2026", "63 subidas de impuestos y cotizaciones", "141 con las encubiertas · Instituto Juan de Mariana"),
+    T("2026", "Tren de Urda: 69 muertos", img="urda"),
     R("baile2", "Mitin en Fuenlabrada, oct. 2026"),
     T("", "Si le vuelves a votar, no digas que no lo sabías.", dur=3.5, sello="29-N"),
 ]
@@ -85,10 +99,10 @@ except FileNotFoundError:
     pass
 
 
-def recorte(ruta, clave):
+def recorte(ruta, clave, es_fondo=False):
     """Filtro crop 9:16 centrado en el encuadre de `clave` (o centrado sin zoom)."""
     # Fondos de archivo (NN): zoom ligero hacia arriba para dejar fuera los rótulos de las cadenas.
-    defecto = (0.5, 0.42, 1.3) if clave.isdigit() else (0.5, 0.5, 1.0)
+    defecto = (0.5, 0.42, 1.3) if es_fondo else (0.5, 0.5, 1.0)
     cx, cy, z = ENCUADRE.get(clave, defecto)
     r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
                         "stream=width,height", "-of", "csv=p=0", ruta], capture_output=True, text=True, check=True)
@@ -134,7 +148,7 @@ IMG = ("jpg", "jpeg", "png", "webp")
 
 
 def fondo(i, t, p=None):
-    p = p or buscar("imagenes", f"{i:02d}", IMG)
+    p = p or buscar("imagenes", t.get("img") or f"{i:02d}", IMG)
     S = (int(W * 1.1), int(H * 1.1))
     if p:
         im = Image.open(p).convert("RGB")
@@ -271,7 +285,7 @@ def main():
                 print(f"(se salta la reacción reacciones/{t['clip']}: no existe)")
                 continue
         if not vid:
-            vid = buscar("imagenes", f"{i:02d}", VIDEO)
+            vid = buscar("imagenes", t.get("img") or f"{i:02d}", VIDEO)
         t["video"] = vid
         tarjetas.append(t); fvoz.append(v); fvid.append(vid)
         durs.append(duracion(v) + 0.4 if v else t["dur"])
@@ -300,8 +314,8 @@ def main():
         n = round(dur * FPS)
         if fvid[i]:  # vídeo de fondo: recorte a vertical y, si es dato, oscurecido
             osc = "" if t["tipo"] in ("voz", "reac") else ",eq=brightness=-0.25"
-            clave = t.get("voz") or t.get("clip") or f"{i:02d}"
-            vf = (f"[0:v]fps={FPS},{recorte(fvid[i], clave)}scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1"
+            clave = t.get("voz") or t.get("clip") or t.get("img") or f"{i:02d}"
+            vf = (f"[0:v]fps={FPS},{recorte(fvid[i], clave, t["tipo"] == "dato")}scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1"
                   f"{osc},tpad=stop_mode=clone:stop_duration=30[b];"
                   f"[1:v]fade=t=in:st=0:d=0.15:alpha=1[t];[b][t]overlay=0:0,format=yuv420p")
             entrada = ["-i", fvid[i]]
@@ -334,7 +348,7 @@ def main():
     for k, (v, ini, _, _) in enumerate(voces):
         cmd += ["-i", v]
         ms = int(ini * 1000)
-        filtros.append(f"[{base+k}:a]aresample=44100,volume=1.6,alimiter=limit=0.85:level=false,adelay={ms}|{ms}[v{k}]")
+        filtros.append(f"[{base+k}:a]aresample=44100,volume=1.6,alimiter=limit=0.8:level=false,adelay={ms}|{ms}[v{k}]")
         mezcla.append(f"[v{k}]")
     cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
     mezcla.append(f"[{base+len(voces)}:a]")
