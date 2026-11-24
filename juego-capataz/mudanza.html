@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capataz · La mudanza</title>
+</head>
+<body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Marcellus+SC&display=swap">
+<style>
+/* Una calle de noche vista a través de un juego: la escena 3D ocupa todo y el HUD flota en paneles de terciopelo y oro. */
+:root {
+  color-scheme: dark;
+  --noche: #0c0d1b;
+  --panel: rgba(20, 13, 30, 0.82);
+  --panel-solido: #1a1126;
+  --borde: rgba(217, 164, 65, 0.38);
+  --oro: #d9a441;
+  --oro-suave: rgba(217, 164, 65, 0.18);
+  --cera: #f1e6cc;
+  --cera-2: #b8ab92;
+  --sangre: #d2465c;
+  --verde: #8fc79a;
+  --font-d: "Marcellus SC", "Book Antiqua", "Times New Roman", serif;
+  --font-b: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --sl: env(safe-area-inset-left, 0px);
+  --sr: env(safe-area-inset-right, 0px);
+  --st: env(safe-area-inset-top, 0px);
+  --sb: env(safe-area-inset-bottom, 0px);
+}
+html, body { height: 100%; margin: 0; background: var(--noche); color: var(--cera); font-family: var(--font-b); overflow: hidden; }
+#app { position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; background: var(--noche); }
+#c { display: block; width: 100%; height: 100%; }
+[hidden] { display: none !important; }
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+
+/* Vista "bajo el faldón" */
+#veil { position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 75% 60% at 50% 70%, transparent 55%, rgba(8, 2, 6, 0.85) 100%),
+    linear-gradient(to bottom, #2a0710 0, #43101e 44%, transparent 44.2%);
+}
+#veil::after { content: ""; position: absolute; left: 0; right: 0; top: 44%; height: 16px;
+  background: repeating-linear-gradient(90deg, #b88b33 0 2px, transparent 2px 6px);
+  -webkit-mask: linear-gradient(to bottom, #000, transparent); mask: linear-gradient(to bottom, #000, transparent); }
+
+/* Panel superior izquierdo */
+.hud { position: absolute; pointer-events: none; }
+#panel { top: calc(12px + var(--st)); left: calc(12px + var(--sl)); width: min(330px, calc(100% - 24px - var(--sl) - var(--sr))); background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; backdrop-filter: blur(6px); }
+.marca { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.marca h1 { margin: 0; font-family: var(--font-d); font-weight: 400; font-size: 1.35rem; letter-spacing: 0.06em; color: var(--oro); }
+.marca span { font-size: 0.82rem; color: var(--cera-2); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stats div { display: grid; gap: 1px; }
+.stats b { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats small { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cera-2); }
+#st-golpes.malo { color: var(--sangre); }
+.estado-fila { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+#compas { width: 10px; height: 10px; border-radius: 50%; background: var(--oro-suave); border: 1px solid var(--oro); flex: none; transition: background 0.25s; }
+#compas.on { background: var(--oro); transition: none; }
+#objetivo { margin: 0; font-size: 0.86rem; line-height: 1.35; color: var(--cera-2); }
+#objetivo strong { color: var(--cera); font-weight: 500; }
+
+/* Mapa y aviso */
+#mapa-wrap { top: calc(12px + var(--st)); right: calc(12px + var(--sr)); display: grid; gap: 6px; justify-items: end; }
+#mapa { width: 170px; height: 170px; border-radius: 50%; border: 1px solid var(--borde); background: rgba(10, 8, 18, 0.85); }
+#aviso { max-width: 210px; font-size: 0.8rem; line-height: 1.3; text-align: right; background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 9px; }
+#aviso.peligro { border-color: var(--sangre); }
+#aviso .t { display: block; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cera-2); }
+#aviso.peligro .v { color: #ffb3bf; }
+
+/* Orden del capataz */
+#orden { left: 50%; top: calc(14px + var(--st)); transform: translateX(-50%); text-align: center; min-width: 220px; max-width: min(460px, 50vw); background: var(--panel-solido); border: 1px solid var(--borde); border-radius: 10px; padding: 8px 16px 10px; opacity: 0; transition: opacity 0.3s; }
+#orden.vis { opacity: 1; }
+#orden small { display: block; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cera-2); }
+#orden-txt { font-family: var(--font-d); font-size: 1.3rem; color: var(--cera); text-wrap: balance; }
+#orden-barra { height: 2px; background: var(--oro-suave); margin-top: 6px; overflow: hidden; border-radius: 2px; }
+#orden-barra i { display: block; height: 100%; width: 100%; background: var(--oro); transform-origin: left; transform: scaleX(1); }
+#orden.esperando #orden-barra i { animation: llena var(--retardo, 0.45s) linear forwards; }
+@keyframes llena { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+#toast { left: 50%; top: 38%; transform: translate(-50%, -50%); background: rgba(60, 10, 22, 0.92); border: 1px solid var(--sangre); color: #ffe3e8; border-radius: 10px; padding: 10px 16px; font-size: 1rem; text-align: center; max-width: min(420px, calc(100% - 40px)); opacity: 0; transition: opacity 0.25s; }
+#toast.info { background: var(--panel-solido); border-color: var(--borde); color: var(--cera); }
+#toast.vis { opacity: 1; }
+
+/* Botonera */
+#pad { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 calc(12px + var(--sr)) calc(12px + var(--sb)) calc(12px + var(--sl)); display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; pointer-events: none; }
+.grupo { display: grid; gap: 6px; pointer-events: auto; }
+.grupo.dir { grid-template-columns: repeat(3, minmax(64px, 84px)); }
+.grupo.ord { grid-template-columns: repeat(3, minmax(70px, 96px)); }
+.pb { position: relative; min-height: 50px; padding: 6px 4px 5px; background: var(--panel); border: 1px solid var(--borde); border-radius: 9px; cursor: pointer; display: grid; place-items: center; gap: 1px; line-height: 1.05; touch-action: none; }
+.pb span { font-family: var(--font-d); font-size: 0.8rem; }
+.pb kbd { font-family: var(--font-b); font-size: 0.64rem; color: var(--cera-2); border: 1px solid rgba(241, 230, 204, 0.25); border-radius: 4px; padding: 0 4px; }
+.pb.on, .pb:active { background: rgba(217, 164, 65, 0.32); }
+.pb.clave { border-color: var(--oro); }
+#herr { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 210px; }
+.mini { pointer-events: auto; background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 5px 9px; font-size: 0.78rem; cursor: pointer; text-align: left; }
+.mini kbd { font-family: var(--font-b); font-size: 0.64rem; color: var(--cera-2); margin-left: 4px; }
+
+/* Pantallas */
+.pantalla { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 6, 16, 0.78); backdrop-filter: blur(3px); padding: calc(16px + var(--st)) max(16px, var(--sr)) calc(16px + var(--sb)) max(16px, var(--sl)); overflow-y: auto; }
+.carta { width: min(640px, 100%); background: var(--panel-solido); border: 1px solid var(--borde); border-radius: 14px; padding: 26px 26px 22px; display: grid; gap: 14px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5); }
+.carta h2 { margin: 0; font-family: var(--font-d); font-weight: 400; font-size: clamp(2rem, 6vw, 3rem); color: var(--oro); letter-spacing: 0.05em; line-height: 1; text-wrap: balance; }
+.carta .sub { margin: 0; font-size: 1.05rem; color: var(--cera-2); }
+.carta p { margin: 0; line-height: 1.5; max-width: 62ch; }
+.teclas { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 0.92rem; align-items: baseline; }
+.teclas kbd { font-family: var(--font-b); font-size: 0.78rem; border: 1px solid var(--borde); border-radius: 5px; padding: 1px 6px; white-space: nowrap; justify-self: start; }
+.teclas em { font-style: normal; color: var(--oro); font-family: var(--font-d); }
+.acciones { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { background: var(--oro); color: #1b1006; border: 0; border-radius: 9px; padding: 11px 20px; font-family: var(--font-d); font-size: 1.05rem; cursor: pointer; }
+.btn.sec { background: transparent; color: var(--cera); border: 1px solid var(--borde); text-decoration: none; display: inline-flex; align-items: center; }
+.nota { font-size: 0.8rem; color: var(--cera-2); }
+.res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.res div { border-top: 1px solid var(--borde); padding-top: 8px; display: grid; gap: 2px; }
+.res b { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.res small { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cera-2); }
+#fin-titulo { font-family: var(--font-d); font-size: 1.5rem; color: var(--cera); margin: 0; }
+
+@media (max-width: 760px) {
+  #panel { width: min(250px, calc(100% - 160px)); padding: 9px 10px; gap: 6px; }
+  #objetivo { display: none; }
+  .marca span { display: none; }
+  #mapa { width: 118px; height: 118px; }
+  #aviso { max-width: 150px; font-size: 0.72rem; }
+  #herr { max-width: 150px; }
+  #orden { top: auto; bottom: calc(146px + var(--sb)); max-width: calc(100% - 32px); min-width: 0; }
+  #orden-txt { font-size: 1.05rem; }
+  .grupo.dir { grid-template-columns: repeat(3, 52px); }
+  .grupo.ord { grid-template-columns: repeat(2, 70px); }
+  .pb { min-height: 46px; }
+  .pb span { font-size: 0.68rem; }
+  .pb kbd { display: none; }
+  .res { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { #orden, #toast { transition: none; } }
+</style>
+
+<div id="app">
+  <canvas id="c" aria-label="Escena 3D: un paso de misterio en una calle de noche"></canvas>
+  <div id="veil" hidden></div>
+
+  <div id="panel" class="hud">
+    <div class="marca"><h1>Capataz</h1><span>La mudanza · fase 1</span></div>
+    <div class="stats">
+      <div><b id="st-tiempo">0:00</b><small>Tiempo</small></div>
+      <div><b id="st-golpes">0</b><small>Golpes</small></div>
+      <div><b id="st-altura">3,35 m</b><small>Altura paso</small></div>
+    </div>
+    <div class="estado-fila"><i id="compas" aria-hidden="true"></i><span id="st-estado">En tierra</span></div>
+    <p id="objetivo"></p>
+  </div>
+
+  <div id="mapa-wrap" class="hud">
+    <canvas id="mapa" width="340" height="340" aria-label="Mapa de la calle alrededor del paso"></canvas>
+    <div id="aviso" hidden><span class="t">Por delante</span><span class="v" id="aviso-txt"></span></div>
+    <div id="herr">
+    <button class="mini" id="b-cam" type="button">Cámara<kbd>V</kbd></button>
+    <button class="mini" id="b-mus" type="button">Banda: sí<kbd>M</kbd></button>
+    <button class="mini" id="b-voz" type="button">Voz: sí<kbd>N</kbd></button>
+    <button class="mini" id="b-ayu" type="button">Ayuda<kbd>H</kbd></button>
+    <button class="mini" id="b-son" type="button">Probar sonido</button>
+    <button class="mini" id="b-graf" type="button">Gráficos: altos</button>
+    </div>
+  </div>
+
+  <div id="orden" class="hud"><small>El capataz manda</small><div id="orden-txt"></div><div id="orden-barra"><i></i></div></div>
+  <div id="toast" class="hud"></div>
+
+  <div id="pad">
+    <div class="grupo dir">
+      <button class="pb" type="button" data-acc="giroIzq"><span>⟲ Gira</span><kbd>A</kbd></button>
+      <button class="pb clave" type="button" data-acc="frente"><span>De frente</span><kbd>W</kbd></button>
+      <button class="pb" type="button" data-acc="giroDer"><span>Gira ⟳</span><kbd>D</kbd></button>
+      <button class="pb" type="button" data-acc="costIzq"><span>◂ Costero</span><kbd>Q</kbd></button>
+      <button class="pb" type="button" data-acc="atras"><span>Atrás</span><kbd>S</kbd></button>
+      <button class="pb" type="button" data-acc="costDer"><span>Costero ▸</span><kbd>E</kbd></button>
+    </div>
+    <div class="grupo ord">
+      <button class="pb clave" type="button" data-acc="levantar"><span>¡A esta es!</span><kbd>Espacio</kbd></button>
+      <button class="pb" type="button" data-acc="agachar" id="b-agachar"><span>Agachaditos</span><kbd>C</kbd></button>
+      <button class="pb" type="button" data-acc="parar"><span>Paramos</span><kbd>X</kbd></button>
+    </div>
+  </div>
+
+  <div id="inicio" class="pantalla">
+    <div class="carta">
+      <h2>Capataz</h2>
+      <p class="sub">La mudanza: del almacén de la hermandad a la parroquia de San Roque</p>
+      <p>Mandas una cuadrilla de costaleros que lleva el paso de misterio por las calles del barrio. Tú das las órdenes; ellos las cumplen medio segundo después, a cada golpe de bombo. Sácalo del almacén, pásalo por debajo de cables y balcones sin tocar nada y déjalo a tierra dentro del templo.</p>
+      <div class="teclas">
+        <kbd>Espacio</kbd><span><em>¡A esta es!</em> Levanta el paso</span>
+        <kbd>W / S</kbd><span><em>De frente</em> o <em>atrás</em></span>
+        <kbd>A / D</kbd><span>Girar (mantén pulsado). Parado gira sobre sí mismo; andando, en curva</span>
+        <kbd>Q / E</kbd><span><em>Costero a costero</em>: desplazarse de lado</span>
+        <kbd>C</kbd><span><em>Agachaditos</em>: baja el paso 35 cm. Otra vez, para subirlo</span>
+        <kbd>X</kbd><span><em>Paramos</em>. Si ya está parado, <em>a tierra</em></span>
+        <kbd>V · rueda</kbd><span>Cambiar de cámara · acercar o alejar</span>
+      </div>
+      <div class="acciones"><button class="btn" id="b-empezar" type="button">Empezar la mudanza</button><a class="btn sec" href="index.html">← Portada</a></div>
+      <p class="nota" id="record"></p>
+    </div>
+  </div>
+
+  <div id="ayuda" class="pantalla" hidden>
+    <div class="carta">
+      <h2>Órdenes</h2>
+      <p>Cada orden tarda un poco en cumplirse: la cuadrilla la escucha, se prepara y la ejecuta al siguiente golpe de bombo. Anticípate en las esquinas y para con tiempo.</p>
+      <div class="teclas">
+        <kbd>Espacio</kbd><span><em>¡A esta es!</em> Levanta el paso</span>
+        <kbd>W / S</kbd><span><em>De frente</em> o <em>atrás</em></span>
+        <kbd>A / D</kbd><span>Girar (mantén pulsado)</span>
+        <kbd>Q / E</kbd><span><em>Costero a costero</em> a izquierda o derecha</span>
+        <kbd>C</kbd><span><em>Agachaditos</em> / volver arriba</span>
+        <kbd>X</kbd><span><em>Paramos</em> · <em>a tierra</em></span>
+        <kbd>V</kbd><span>Cámara: detrás, como el capataz, desde arriba, bajo el faldón</span>
+        <kbd>M · N</kbd><span>Banda y voz del capataz</span>
+        <kbd>R</kbd><span>Volver a empezar</span>
+      </div>
+      <p>El paso mide 3,35 m de alto con el misterio. Los obstáculos altos (cables, balcones, faroles, copas de naranjo) solo cuentan si el paso llega a su altura: el mapa los marca con línea discontinua.</p>
+      <div class="acciones"><button class="btn" id="b-cerrar-ayuda" type="button">Seguir</button></div>
+    </div>
+  </div>
+
+  <div id="final" class="pantalla" hidden>
+    <div class="carta">
+      <h2 id="fin-nota">9,2</h2>
+      <p id="fin-titulo">Capataz de los de antes</p>
+      <div class="res">
+        <div><b id="fin-tiempo">0:00</b><small>Tiempo</small></div>
+        <div><b id="fin-golpes">0</b><small>Golpes</small></div>
+        <div><b id="fin-ordenes">0</b><small>Órdenes</small></div>
+        <div><b id="fin-record">—</b><small>Tu récord</small></div>
+      </div>
+      <p id="fin-texto"></p>
+      <div class="acciones"><button class="btn" id="b-repetir" type="button">Repetir la mudanza</button><button class="btn sec" id="b-mirar" type="button">Ver el paso</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+'use strict';
+(function () {
+const $ = (s) => document.querySelector(s);
+const DEG = Math.PI / 180;
+const fmt = (n, d = 2) => n.toFixed(d).replace('.', ',');
+const reloj = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const easeIO = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+const easeBack = (k) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2); };
+const REDUCIDO = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rng(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const rnd = rng(1979);
+
+// ---------------------------------------------------------------- configuración
+const CFG = {
+  bpm: 88,              // compás de la marcha: un paso de la cuadrilla por golpe de bombo
+  zancada: 0.6,         // metros por paso de frente
+  atras: 0.35,          // metros por paso hacia atrás
+  giroArco: 4.5 * DEG,  // giro por paso andando
+  giroSitio: 4.5 * DEG, // giro por paso sobre sí mismo
+  costero: 0.2,         // desplazamiento lateral por paso
+  retardo: 0.45,        // lo que tarda la cuadrilla en cumplir una orden (s)
+  agachar: 0.35,        // cuánto baja el paso con «agachaditos» (m)
+  par: 230,             // tiempo de referencia para la nota (s)
+};
+const BEAT = 60 / CFG.bpm;
+document.documentElement.style.setProperty('--retardo', CFG.retardo + 's');
+
+// El paso se modela como tres cuerpos apilados (vista cenital + franja de altura)
+const TIERS = [
+  { nombre: 'el faldón', hx: 1.2, hz: 2.1, y0: 0.05, y1: 1.5 },
+  { nombre: 'la candelería', hx: 1.1, hz: 2.0, y0: 1.5, y1: 2.6 },
+  { nombre: 'el misterio', hx: 0.6, hz: 1.3, y0: 2.6, y1: 3.35 },
+];
+const ALTO = TIERS[2].y1;
+
+// ---------------------------------------------------------------- nivel: planta de las calles
+// Polígono transitable (x, z): almacén → calle Alfarería → calle Feria → callejón del Agua → plaza de San Roque → templo
+const POLY = [[-5, -12], [5, -12], [5, -1.4], [1.7, -1.4], [1.7, -1], [3, -1], [3, 41], [42, 41], [42, 46.6], [38.3, 46.6], [38.3, 64], [46, 64], [46, 84], [37.5, 84], [37.5, 84.8], [41, 84.8], [41, 100], [31, 100], [31, 84.8], [34.5, 84.8], [34.5, 84], [26, 84], [26, 64], [33.7, 64], [33.7, 46.6], [-3, 46.6], [-3, -1], [-1.7, -1], [-1.7, -1.4], [-5, -1.4]];
+const SALIDA = { x: 0, z: -7.4, a: 0 };
+const PUERTA = { x: 36, z: 84 };
+
+function dentroPoly(x, z) {
+  let d = false;
+  for (let i = 0, j = POLY.length - 1; i < POLY.length; j = i++) {
+    const [xi, zi] = POLY[i], [xj, zj] = POLY[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) d = !d;
+  }
+  return d;
+}
+
+const OBS = [];
+const add = (o) => (OBS.push(o), o);
+for (let i = 0; i < POLY.length; i++) {
+  const a = POLY[i], b = POLY[(i + 1) % POLY.length];
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  add({ kind: 'seg', a, b, minH: 0, maxH: 99, label: len < 0.6 ? 'la jamba de la puerta' : 'la pared', pared: true });
+}
+function rect(x0, z0, x1, z1) { return [[x0, z0], [x1, z0], [x1, z1], [x0, z1]]; }
+
+// ---------------------------------------------------------------- colisiones (SAT en planta + franjas de altura)
+function obb(p, t) {
+  const s = Math.sin(p.a), c = Math.cos(p.a);
+  return { cx: p.x, cz: p.z, ux: s, uz: c, vx: c, vz: -s, hz: t.hz, hx: t.hx };
+}
+function esquinas(o) {
+  const r = [];
+  for (const [i, j] of [[1, 1], [1, -1], [-1, -1], [-1, 1]]) r.push([o.cx + o.ux * o.hz * i + o.vx * o.hx * j, o.cz + o.uz * o.hz * i + o.vz * o.hx * j]);
+  return r;
+}
+function separa(o, pts, ax, az) {
+  const c = o.cx * ax + o.cz * az;
+  const r = o.hz * Math.abs(o.ux * ax + o.uz * az) + o.hx * Math.abs(o.vx * ax + o.vz * az);
+  let mn = Infinity, mx = -Infinity;
+  for (const p of pts) { const d = p[0] * ax + p[1] * az; if (d < mn) mn = d; if (d > mx) mx = d; }
+  return mx < c - r || mn > c + r;
+}
+function choca2D(o, ob) {
+  if (ob.kind === 'circle') {
+    const dx = ob.x - o.cx, dz = ob.z - o.cz;
+    let f = dx * o.ux + dz * o.uz, l = dx * o.vx + dz * o.vz;
+    f = Math.max(-o.hz, Math.min(o.hz, f)); l = Math.max(-o.hx, Math.min(o.hx, l));
+    const px = o.cx + o.ux * f + o.vx * l, pz = o.cz + o.uz * f + o.vz * l;
+    return (ob.x - px) ** 2 + (ob.z - pz) ** 2 < ob.r * ob.r;
+  }
+  const pts = ob.kind === 'seg' ? [ob.a, ob.b] : ob.pts;
+  if (separa(o, pts, o.ux, o.uz) || separa(o, pts, o.vx, o.vz)) return false;
+  const n = pts.length === 2 ? 1 : pts.length;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    let nx = b[1] - a[1], nz = -(b[0] - a[0]);
+    const L = Math.hypot(nx, nz) || 1; nx /= L; nz /= L;
+    if (separa(o, pts, nx, nz)) return false;
+  }
+  return true;
+}
+function colisiona(p, dy, base = 0) {
+  for (const t of TIERS) {
+    const y0 = t.y0 + dy + base, y1 = t.y1 + dy + base;
+    const o = obb(p, t);
+    for (const ob of OBS) {
+      if (!(y1 > ob.minH && y0 < ob.maxH)) continue;
+      if (choca2D(o, ob)) return { ob, tier: t };
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------- escena
+const canvas = $('#c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0c0f1f);
+scene.fog = new THREE.FogExp2(0x141526, 0.018);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
+
+scene.add(new THREE.HemisphereLight(0x46507e, 0x2a1d12, 0.32));
+const luna = new THREE.DirectionalLight(0x9fb2e0, 0.25);
+luna.position.set(-40, 60, 90); scene.add(luna);
+// Luz cálida que sigue al paso y le da sombra
+const LUZ_SOMBRA = new THREE.DirectionalLight(0xffcf96, 0.35);
+LUZ_SOMBRA.castShadow = true; LUZ_SOMBRA.shadow.mapSize.set(2048, 2048);
+Object.assign(LUZ_SOMBRA.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10, near: 1, far: 50 });
+LUZ_SOMBRA.shadow.bias = -0.0004; LUZ_SOMBRA.shadow.normalBias = 0.03;
+scene.add(LUZ_SOMBRA); scene.add(LUZ_SOMBRA.target);
+// Entorno para los reflejos del metal: noche azul con faroles cálidos (el oro y la plata parecen metal)
+{ const pm = new THREE.PMREMGenerator(renderer), es = new THREE.Scene();
+  const g = new THREE.SphereGeometry(50, 32, 16), col = [], c = new THREE.Color();
+  for (let i = 0; i < g.attributes.position.count; i++) { const y = g.attributes.position.getY(i) / 50; c.setRGB(0.05 + 0.25 * Math.max(0, 0.3 - y), 0.05 + 0.18 * Math.max(0, 0.3 - y), 0.09 + 0.05 * Math.max(0, 0.3 - y)); col.push(c.r, c.g, c.b); }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  es.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+  const r0 = rng(77);
+  for (let k = 0; k < 18; k++) { const a = r0() * Math.PI * 2, y = -4 + r0() * 22, d = 30 + r0() * 12; const m = new THREE.MeshBasicMaterial({ color: 0xffb070 }); m.color.multiplyScalar(0.8 + r0() * 1.6); const b = new THREE.Mesh(new THREE.SphereGeometry(0.8 + r0() * 1.4, 8, 6), m); b.position.set(Math.cos(a) * d, y, Math.sin(a) * d); es.add(b); }
+  { const m = new THREE.MeshBasicMaterial({ color: 0xffe0b0 }); m.color.multiplyScalar(0.35); const b = new THREE.Mesh(new THREE.BoxGeometry(30, 1, 30), m); b.position.y = -24; es.add(b); }
+  scene.environment = pm.fromScene(es, 0.03).texture; pm.dispose(); }
+// Posprocesado: resplandor de velas y faroles; si no carga, se pinta sin él
+let composer = null, CALIDAD = 'alta';
+try { CALIDAD = localStorage.getItem('capataz-calidad') || (matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 500 ? 'media' : 'alta'); } catch (e) {}
+try {
+  if (THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass && THREE.ShaderPass && THREE.GammaCorrectionShader) {
+    let rt; if (renderer.capabilities.isWebGL2 && THREE.WebGLMultisampleRenderTarget) { rt = new THREE.WebGLMultisampleRenderTarget(256, 256, { format: THREE.RGBAFormat }); rt.samples = 4; }
+    composer = new THREE.EffectComposer(renderer, rt);
+    composer.addPass(new THREE.RenderPass(scene, camera));
+    composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), 0.55, 0.35, 0.93));
+    composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
+  }
+} catch (e) { composer = null; }
+
+function texCanvas(w, h, draw, repeat) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(cv);
+  t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  if (repeat) t.repeat.set(repeat[0], repeat[1]);
+  return t;
+}
+function rr(x, X, Y, W, H, R) { x.beginPath(); x.moveTo(X + R, Y); x.arcTo(X + W, Y, X + W, Y + H, R); x.arcTo(X + W, Y + H, X, Y + H, R); x.arcTo(X, Y + H, X, Y, R); x.arcTo(X, Y, X + W, Y, R); x.closePath(); }
+const M = (color, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.85, metalness: 0 }, o));
+
+// Adoquines
+const texAdoquin = texCanvas(512, 512, (x, w, h) => {
+  x.fillStyle = '#1d1a18'; x.fillRect(0, 0, w, h);
+  const n = 14, s = w / n;
+  for (let j = 0; j < n; j++) for (let i = -1; i <= n; i++) {
+    const off = (j % 2) * s / 2;
+    x.fillStyle = `hsl(${25 + rnd() * 20}, ${6 + rnd() * 10}%, ${24 + rnd() * 14}%)`;
+    rr(x, i * s + off + 2 + rnd() * 2, j * s + 2 + rnd() * 2, s - 5, s - 5, 7); x.fill();
+  }
+}, [36, 36]);
+const suelo = new THREE.Mesh(new THREE.PlaneGeometry(150, 150), M(0xffffff, { map: texAdoquin, roughness: 0.7 }));
+suelo.rotation.x = -Math.PI / 2; suelo.position.set(20, 0, 44); suelo.receiveShadow = true; scene.add(suelo);
+
+// Solerías interiores
+const texLosa = texCanvas(256, 256, (x, w, h) => { for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { x.fillStyle = (i + j) % 2 ? '#d8d0c0' : '#2a2626'; x.fillRect(i * w / 4, j * h / 4, w / 4, h / 4); } }, [10, 15]);
+const nave = new THREE.Mesh(new THREE.PlaneGeometry(10, 15.2), M(0xffffff, { map: texLosa, roughness: 0.4 }));
+nave.rotation.x = -Math.PI / 2; nave.position.set(36, 0.01, 92.4); scene.add(nave);
+const texCemento = texCanvas(256, 256, (x, w, h) => { x.fillStyle = '#5a5550'; x.fillRect(0, 0, w, h); for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(0,0,0,${rnd() * 0.15})`; x.fillRect(rnd() * w, rnd() * h, 2, 2); } }, [3, 3]);
+const alm = new THREE.Mesh(new THREE.PlaneGeometry(10, 10.6), M(0xffffff, { map: texCemento }));
+alm.rotation.x = -Math.PI / 2; alm.position.set(0, 0.01, -6.7); scene.add(alm);
+
+// Fachadas encaladas con zócalo de almagra o albero
+function texFachada(base, banda, ventanas, piedra) {
+  return texCanvas(512, 512, (x, w, h) => {
+    x.fillStyle = base; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2500; i++) { x.fillStyle = `rgba(${piedra ? '60,45,30' : '0,0,0'},${rnd() * 0.06})`; x.fillRect(rnd() * w, rnd() * h, 3, 3); }
+    if (piedra) { x.strokeStyle = 'rgba(70,55,40,0.35)'; for (let y = 0; y < h; y += 32) { x.beginPath(); x.moveTo(0, y); x.lineTo(w, y); x.stroke(); for (let X = (y / 32) % 2 ? 0 : 32; X < w; X += 64) { x.beginPath(); x.moveTo(X, y); x.lineTo(X, y + 32); x.stroke(); } } return; }
+    x.fillStyle = banda; x.fillRect(0, h * 0.86, w, h * 0.14); x.fillRect(0, 0, w, h * 0.035);
+    if (!ventanas) return;
+    for (const cx of [w * 0.27, w * 0.73]) for (const cy of [h * 0.2, h * 0.52]) {
+      const ww = w * 0.16, hh = h * 0.2;
+      x.fillStyle = banda; x.fillRect(cx - ww / 2 - 7, cy - 7, ww + 14, hh + 14);
+      x.fillStyle = '#17121c'; x.fillRect(cx - ww / 2, cy, ww, hh);
+      if (rnd() < 0.35) { x.fillStyle = 'rgba(255,190,110,0.55)'; x.fillRect(cx - ww / 2 + 4, cy + 4, ww - 8, hh - 8); }
+      x.strokeStyle = '#0a0a0a'; x.lineWidth = 3;
+      for (let k = 1; k < 5; k++) { x.beginPath(); x.moveTo(cx - ww / 2 + (ww * k) / 5, cy); x.lineTo(cx - ww / 2 + (ww * k) / 5, cy + hh); x.stroke(); }
+    }
+  });
+}
+const FACHADAS = [texFachada('#e9e3d6', '#a8442f', true), texFachada('#ece6d8', '#c9962f', true), texFachada('#e6e1d6', '#3f5f8a', true)];
+const TEX_ALMACEN = texFachada('#d9d1c2', '#6d5a45', false);
+const TEX_PIEDRA = texFachada('#b9a383', '#000', false, true);
+
+POLY.forEach((a, i) => {
+  const b = POLY[(i + 1) % POLY.length];
+  const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz);
+  let nx = dz / len, nz = -dx / len;
+  const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+  if (dentroPoly(mx + nx * 0.1, mz + nz * 0.1)) { nx = -nx; nz = -nz; }
+  const enTemplo = mz >= 83.9, enAlmacen = mz <= -1;
+  const hgt = enTemplo ? 13 : enAlmacen ? 5.2 : 6.5 + rnd() * 2.6;
+  const base = enTemplo ? TEX_PIEDRA : enAlmacen ? TEX_ALMACEN : FACHADAS[i % 3];
+  const t = base.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, Math.round(len / 7)), 1);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(len + 0.4, hgt, 0.4), M(0xffffff, { map: t }));
+  m.position.set(mx + nx * 0.2, hgt / 2, mz + nz * 0.2);
+  m.rotation.y = Math.atan2(-dz, dx); m.receiveShadow = true;
+  scene.add(m);
+});
+
+// Dinteles de las puertas
+function dintel(x0, z0, x1, z1, y0, y1, label, mat) {
+  add({ kind: 'poly', pts: rect(x0, z0, x1, z1), minH: y0, maxH: y1, label, alto: true, aviso: label[0].toUpperCase() + label.slice(1) });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat);
+  m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); scene.add(m);
+}
+dintel(-1.7, -1.4, 1.7, -1, 3.7, 5.2, 'el dintel del almacén', M(0xd9d1c2, { map: TEX_ALMACEN }));
+dintel(34.5, 84, 37.5, 84.8, 3.2, 13, 'el dintel de la puerta del templo', M(0xb9a383, { map: TEX_PIEDRA }));
+
+// Portada de la iglesia: pilastras, cornisa, espadaña y retablo cerámico
+const matPiedra = M(0xc2ad8c, { roughness: 0.9 });
+for (const px of [34.1, 37.9]) {
+  add({ kind: 'poly', pts: rect(px - 0.25, 83.6, px + 0.25, 84), minH: 0, maxH: 6, label: 'una pilastra de la portada' });
+  const p = new THREE.Mesh(new THREE.BoxGeometry(0.5, 5.2, 0.4), matPiedra); p.position.set(px, 2.6, 83.8); scene.add(p);
+}
+{ const c = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.4, 0.6), matPiedra); c.position.set(36, 5.4, 83.75); scene.add(c);
+  const e = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4, 0.6), matPiedra); e.position.set(36, 15, 84.3); scene.add(e);
+  const ojo = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.7), M(0x120d0a)); ojo.position.set(36, 15.3, 84.3); scene.add(ojo);
+  const torre = new THREE.Mesh(new THREE.BoxGeometry(3.4, 21, 3.4), M(0xffffff, { map: TEX_PIEDRA })); torre.position.set(44.4, 10.5, 86.6); scene.add(torre);
+  const texRet = texCanvas(512, 320, (x, w, h) => {
+    x.fillStyle = '#f4ecd8'; x.fillRect(0, 0, w, h);
+    x.strokeStyle = '#1f4f8f'; x.lineWidth = 3; for (let X = 0; X <= w; X += 64) { x.beginPath(); x.moveTo(X, 0); x.lineTo(X, h); x.stroke(); } for (let Y = 0; Y <= h; Y += 64) { x.beginPath(); x.moveTo(0, Y); x.lineTo(w, Y); x.stroke(); }
+    x.fillStyle = '#c99020'; x.fillRect(0, 0, w, 18); x.fillRect(0, h - 18, w, 18);
+    x.fillStyle = '#1f4f8f'; x.textAlign = 'center'; x.font = '600 46px serif'; x.fillText('PARROQUIA', w / 2, 120); x.font = '600 58px serif'; x.fillText('DE SAN ROQUE', w / 2, 200);
+  });
+  const ret = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.6), M(0xffffff, { map: texRet, roughness: 0.3 }));
+  ret.position.set(36, 7.2, 83.97); ret.rotation.y = Math.PI; scene.add(ret);
+  const texRot = texCanvas(512, 128, (x, w, h) => { x.fillStyle = '#efe6d2'; x.fillRect(0, 0, w, h); x.fillStyle = '#5a2236'; x.textAlign = 'center'; x.font = '600 44px serif'; x.fillText('ALMACÉN DE LA HERMANDAD', w / 2, 82); });
+  const rot = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.9), M(0xffffff, { map: texRot })); rot.position.set(0, 4.45, -0.97); scene.add(rot);
+}
+
+// Obstáculos con su geometría
+const matHierro = M(0x16161a, { roughness: 0.6, metalness: 0.4 });
+const matLuz = new THREE.MeshBasicMaterial({ color: 0xffd08a }); matLuz.color.multiplyScalar(2.2); matLuz.toneMapped = false;
+const FAROLES = [];
+function farola(x, y, z, conLuz = true) {
+  const l = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.5, 0.32), matLuz); l.position.set(x, y, z); scene.add(l);
+  const t = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.25, 4), matHierro); t.position.set(x, y + 0.36, z); t.rotation.y = Math.PI / 4; scene.add(t);
+  if (conLuz) { const pl = new THREE.PointLight(0xffb066, 1.1, 16, 2); pl.position.set(x, y - 0.2, z); scene.add(pl); }
+  FAROLES.push(new THREE.Vector3(x, y, z));
+}
+function naranjo(x, z) {
+  add({ kind: 'circle', x, z, r: 0.2, minH: 0, maxH: 2.4, label: 'el tronco de un naranjo' });
+  add({ kind: 'circle', x, z, r: 1.15, minH: 2.3, maxH: 4.2, label: 'la copa de un naranjo', alto: true, aviso: 'Copa de naranjo' });
+  const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 2.6, 8), M(0x3d2a1c)); tr.position.set(x, 1.3, z); scene.add(tr);
+  const al = new THREE.Mesh(new THREE.SphereGeometry(1.15, 14, 10), M(0x1d4524)); al.scale.set(1, 0.75, 1); al.position.set(x, 3.15, z); scene.add(al);
+  const alc = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.06, 12), M(0x4a3626)); alc.position.set(x, 0.03, z); scene.add(alc);
+  for (let i = 0; i < 14; i++) {
+    const n = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), M(0xf08a1c, { emissive: 0x3a1800 }));
+    const ang = rnd() * Math.PI * 2, el = (rnd() - 0.4) * 1.2;
+    n.position.set(x + Math.cos(ang) * 1.05 * Math.cos(el), 3.15 + Math.sin(el) * 0.75, z + Math.sin(ang) * 1.05 * Math.cos(el)); scene.add(n);
+  }
+}
+function cable(a, b, h, nombre) {
+  add({ kind: 'seg', a, b, minH: h, maxH: h + 0.05, label: nombre, alto: true, aviso: 'Cable de la luz' });
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, len, 5), M(0x050505));
+  c.rotation.z = Math.PI / 2; c.rotation.y = Math.atan2(-(b[1] - a[1]), b[0] - a[0]);
+  c.position.set((a[0] + b[0]) / 2, h + 0.02, (a[1] + b[1]) / 2); scene.add(c);
+  const bom = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), matLuz); bom.position.set((a[0] + b[0]) / 2, h - 0.08, (a[1] + b[1]) / 2); scene.add(bom);
+}
+function bolardo(x, z) {
+  add({ kind: 'circle', x, z, r: 0.14, minH: 0, maxH: 0.95, label: 'un bolardo' });
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.9, 10), matHierro); b.position.set(x, 0.45, z); scene.add(b);
+  const s = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), matHierro); s.position.set(x, 0.92, z); scene.add(s);
+}
+function balcon(x0, z0, x1, z1, h) {
+  add({ kind: 'poly', pts: rect(x0, z0, x1, z1), minH: h, maxH: h + 1.2, label: 'un balcón', alto: true, aviso: 'Balcón' });
+  const w = x1 - x0, d = z1 - z0, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  const losa = new THREE.Mesh(new THREE.BoxGeometry(w, 0.14, d), M(0x8d8578)); losa.position.set(cx, h + 0.07, cz); scene.add(losa);
+  const front = z0 < 43 ? z1 : z0;
+  for (let i = 0; i <= 12; i++) { const bar = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.95, 0.025), matHierro); bar.position.set(x0 + (w * i) / 12, h + 0.6, front); scene.add(bar); }
+  const pas = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 0.05), matHierro); pas.position.set(cx, h + 1.08, front); scene.add(pas);
+  for (let i = 0; i < 3; i++) { const g = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), M(i % 2 ? 0xc2183a : 0x2f6b2c)); g.position.set(x0 + 0.5 + i * (w - 1) / 2, h + 0.35, cz); scene.add(g); }
+}
+
+naranjo(2.7, 9); naranjo(-2.7, 29);
+cable([-3, 17], [3, 17], 3.1, 'el cable de la luz');
+farola(2.75, 4.6, 4.5); farola(-2.75, 4.6, 24);
+bolardo(8, 41.9); bolardo(8, 45.7);
+balcon(13, 41, 15.5, 42, 2.6); balcon(21, 45.6, 23.5, 46.6, 2.6);
+cable([30, 41], [30, 46.6], 3.05, 'otro cable de la luz');
+farola(17.5, 4.6, 41.25); farola(34, 4.6, 46.35);
+// Callejón del Agua: farol de forja bajo y una maceta
+add({ kind: 'poly', pts: rect(37.7, 54.8, 38.3, 55.2), minH: 2.4, maxH: 3.3, label: 'el farol de forja', alto: true, aviso: 'Farol de forja' });
+farola(37.95, 2.7, 55);
+{ const brazo = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.05), matHierro); brazo.position.set(38.05, 3.25, 55); scene.add(brazo); }
+add({ kind: 'circle', x: 34.1, z: 58, r: 0.36, minH: 0, maxH: 0.75, label: 'una maceta' });
+{ const m = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.26, 0.6, 12), M(0xa4502c)); m.position.set(34.1, 0.3, 58); scene.add(m);
+  const g = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), M(0x2e6a2a)); g.scale.set(1, 0.6, 1); g.position.set(34.1, 0.72, 58); scene.add(g);
+  for (let i = 0; i < 6; i++) { const f = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 5), M(0xd1173b)); f.position.set(34.1 + (rnd() - 0.5) * 0.6, 0.85, 58 + (rnd() - 0.5) * 0.6); scene.add(f); } }
+// Plaza de San Roque
+add({ kind: 'circle', x: 31, z: 72, r: 1.6, minH: 0, maxH: 1.1, label: 'la fuente' });
+{ const f = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.7, 0.7, 24), matPiedra); f.position.set(31, 0.35, 72); scene.add(f);
+  const ag = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.45, 0.05, 24), M(0x2b4a66, { roughness: 0.1, metalness: 0.3 })); ag.position.set(31, 0.66, 72); scene.add(ag);
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 1.8, 10), matPiedra); col.position.set(31, 1.2, 72); scene.add(col);
+  const taza = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.3, 0.25, 16), matPiedra); taza.position.set(31, 2.1, 72); scene.add(taza); }
+naranjo(42.5, 69); naranjo(29.5, 78.5);
+farola(26.3, 4.6, 70); farola(45.7, 4.6, 77);
+// Luna llena de Nisán y estrellas
+{ const l = new THREE.Mesh(new THREE.SphereGeometry(7, 24, 16), new THREE.MeshBasicMaterial({ color: 0xf3ead2, fog: false })); l.position.set(-70, 60, 170); scene.add(l);
+  const g = new THREE.BufferGeometry(), pos = [];
+  for (let i = 0; i < 500; i++) { const th = rnd() * Math.PI * 2, ph = rnd() * Math.PI * 0.42; pos.push(Math.cos(th) * Math.sin(ph) * 280, Math.cos(ph) * 280, Math.sin(th) * Math.sin(ph) * 280); }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xe8e2ff, size: 1.4, sizeAttenuation: false, fog: false }))); }
+
+// ---------------------------------------------------------------- ayudas de dibujo
+const texHalo = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,226,160,1)'); g.addColorStop(0.2, 'rgba(255,190,100,0.6)'); g.addColorStop(0.55, 'rgba(255,150,60,0.12)'); g.addColorStop(1, 'rgba(255,140,50,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(cv); })();
+function halos(pts, size) {
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flatMap((p) => [p.x, p.y, p.z]), 3));
+  return new THREE.Points(g, new THREE.PointsMaterial({ map: texHalo, size, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, fog: false }));
+}
+scene.add(halos(FAROLES, 1.5));
+// Bordado en oro sobre terciopelo (roleos, hojas y flores)
+function bordar(x, w, h, fondo, motivos, cenefa) {
+  x.fillStyle = fondo; x.fillRect(0, 0, w, h);
+  for (let k = 0; k < 2500; k++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; x.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+  const oro = (a) => `rgba(${226 + a * 20},${184 + a * 30},${84 + a * 40},1)`;
+  const roleo = (cx, cy, r, sx, rot) => {
+    x.save(); x.translate(cx, cy); x.rotate(rot); x.scale(sx, 1);
+    x.strokeStyle = '#7a5a1a'; x.lineWidth = r * 0.2; x.beginPath(); x.moveTo(0, 0); x.bezierCurveTo(r * 0.6, -r, r * 1.6, -r * 0.6, r * 1.3, r * 0.2); x.arc(r * 1.05, r * 0.15, r * 0.25, 0, Math.PI * 1.7); x.stroke();
+    x.strokeStyle = oro(0.3); x.lineWidth = r * 0.12; x.stroke();
+    for (let j = 0; j < 4; j++) { const t = 0.2 + j * 0.2; x.fillStyle = oro(j % 2 ? 0 : 0.5); x.beginPath(); x.ellipse(r * 1.5 * t, -r * 0.75 * Math.sin(t * Math.PI) - r * 0.18, r * 0.28, r * 0.1, -0.6 + j * 0.3, 0, Math.PI * 2); x.fill(); }
+    x.restore();
+  };
+  const flor = (cx, cy, r) => { for (let j = 0; j < 6; j++) { const a = (j / 6) * Math.PI * 2; x.fillStyle = oro(j % 2 ? 0.2 : 0.6); x.beginPath(); x.ellipse(cx + Math.cos(a) * r * 0.55, cy + Math.sin(a) * r * 0.55, r * 0.42, r * 0.2, a, 0, Math.PI * 2); x.fill(); } x.fillStyle = '#fff0b0'; x.beginPath(); x.arc(cx, cy, r * 0.25, 0, Math.PI * 2); x.fill(); };
+  for (const [cx, cy, r] of motivos) { roleo(cx, cy, r, 1, 0); roleo(cx, cy, r, -1, 0); roleo(cx, cy + r * 0.2, r * 0.8, 1, Math.PI); roleo(cx, cy + r * 0.2, r * 0.8, -1, Math.PI); flor(cx, cy - r * 0.1, r * 0.45); }
+  if (cenefa) { const c = cenefa; x.strokeStyle = oro(0.4); x.lineWidth = 5; x.strokeRect(c, c, w - 2 * c, h - 2 * c); for (let t = c + 24; t < w - c - 10; t += 34) { flor(t, c / 2 + 4, 9); flor(t, h - c / 2 - 4, 9); } }
+}
+// Talla barroca en gris: el color lo pone el material (oro)
+const texRelieve = texCanvas(1024, 256, (x, w, h) => {
+  x.fillStyle = '#9a9a9a'; x.fillRect(0, 0, w, h);
+  const linea = (y, c, a) => { x.fillStyle = c; x.fillRect(0, y, w, a); };
+  linea(0, '#e8e8e8', 10); linea(10, '#5a5a5a', 6); linea(h - 16, '#5a5a5a', 6); linea(h - 10, '#e8e8e8', 10);
+  const voluta = (cx, cy, r, sx) => { for (const [off, c, lw] of [[3, '#4a4a4a', 9], [0, '#f2f2f2', 6], [0, '#bdbdbd', 3]]) { x.strokeStyle = c; x.lineWidth = lw; x.beginPath(); x.moveTo(cx + off, cy + off); x.bezierCurveTo(cx + sx * r + off, cy - r * 1.2 + off, cx + sx * r * 2 + off, cy + r * 0.2 + off, cx + sx * r * 1.4 + off, cy + r * 0.6 + off); x.arc(cx + sx * r * 1.15 + off, cy + r * 0.45 + off, r * 0.3, 0, Math.PI * 1.6, sx < 0); x.stroke(); } };
+  for (let k = 0; k < 4; k++) { const cx = (k + 0.5) * (w / 4), cy = h / 2; x.fillStyle = '#6a6a6a'; x.beginPath(); x.ellipse(cx, cy, 34, 44, 0, 0, Math.PI * 2); x.fill(); x.strokeStyle = '#f0f0f0'; x.lineWidth = 6; x.stroke(); voluta(cx - 40, cy, 42, -1); voluta(cx + 40, cy, 42, 1); }
+});
+texRelieve.encoding = THREE.LinearEncoding;
+// Rostro pintado: mirada, cejas, nariz, boca; con barba y pelo largo para el Señor
+function texCara(barba, piel = '#d8ad86') {
+  return texCanvas(512, 256, (x, w, h) => {
+    x.fillStyle = piel; x.fillRect(0, 0, w, h);
+    const cx = 128;
+    const sombra = x.createRadialGradient(cx, 130, 30, cx, 130, 110); sombra.addColorStop(0, 'rgba(0,0,0,0)'); sombra.addColorStop(1, 'rgba(100,60,35,0.4)'); x.fillStyle = sombra; x.fillRect(0, 0, w, h);
+    for (const s of [-1, 1]) {
+      const ex = cx + s * 24, ey = 116;
+      x.strokeStyle = '#3a2416'; x.lineWidth = 4; x.beginPath(); x.moveTo(ex - 15, ey - 13); x.quadraticCurveTo(ex, ey - 22, ex + 15, ey - 12); x.stroke();
+      x.fillStyle = '#f4ece2'; x.beginPath(); x.ellipse(ex, ey, 11, 4.5, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#2a1a10'; x.beginPath(); x.ellipse(ex, ey + 1, 4.6, 4, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = piel; x.beginPath(); x.ellipse(ex, ey - 3.6, 12.5, 4.6, 0, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = '#1a0e08'; x.lineWidth = 2.4; x.beginPath(); x.ellipse(ex, ey - 0.6, 11.5, 3.6, 0, Math.PI * 0.05, Math.PI * 0.95, true); x.stroke();
+    }
+    x.strokeStyle = 'rgba(110,65,40,0.6)'; x.lineWidth = 2; x.beginPath(); x.moveTo(cx - 3, 120); x.quadraticCurveTo(cx - 7, 140, cx - 8, 147); x.quadraticCurveTo(cx, 152, cx + 8, 147); x.stroke();
+    x.fillStyle = '#8a4a40'; x.beginPath(); x.moveTo(cx - 11, 165); x.quadraticCurveTo(cx, 160, cx + 11, 165); x.quadraticCurveTo(cx, 171, cx - 11, 165); x.fill();
+    if (barba) {
+      x.fillStyle = '#2a1a10';
+      x.beginPath(); x.moveTo(cx - 46, 120); x.quadraticCurveTo(cx - 44, 185, cx, 205); x.quadraticCurveTo(cx + 44, 185, cx + 46, 120); x.lineTo(cx + 40, 150); x.quadraticCurveTo(cx + 22, 160, cx + 14, 158); x.quadraticCurveTo(cx, 156, cx - 14, 158); x.quadraticCurveTo(cx - 22, 160, cx - 40, 150); x.closePath(); x.fill();
+      x.fillStyle = '#8a4a40'; x.beginPath(); x.ellipse(cx, 168, 9, 3.5, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = '#2a1a10'; x.fillRect(0, 0, w, 70); x.fillRect(cx + 70, 0, w - cx - 140, h);
+    }
+  });
+}
+// Público (cuerpo, brazos, piernas, cabeza y pelo; instanciado)
+function unirGeos(geos) {
+  const lista = geos.map((g) => (g.index ? g.toNonIndexed() : g));
+  let n = 0; lista.forEach((g) => { n += g.attributes.position.count; });
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3); let o = 0;
+  lista.forEach((g) => { pos.set(g.attributes.position.array, o * 3); nor.set(g.attributes.normal.array, o * 3); o += g.attributes.position.count; });
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.BufferAttribute(pos, 3)); out.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); return out;
+}
+const PUB_GEO = (() => {
+  const piernas = unirGeos([-0.09, 0.09].map((x) => { const g = new THREE.CylinderGeometry(0.07, 0.065, 0.82, 7); g.translate(x, 0.41, 0); return g; }));
+  const torso = new THREE.LatheGeometry([[0, 0.78], [0.16, 0.8], [0.17, 1.0], [0.2, 1.3], [0.12, 1.43], [0, 1.45]].map(([r, y]) => new THREE.Vector2(r, y)), 9); torso.scale(1, 1, 0.68);
+  const brazos = [-1, 1].map((s) => { const g = new THREE.CylinderGeometry(0.05, 0.045, 0.62, 6); g.rotateZ(s * 0.1); g.translate(s * 0.22, 1.08, 0); return g; });
+  const ropa = unirGeos([torso, ...brazos]);
+  const cab = new THREE.SphereGeometry(0.105, 9, 7); cab.scale(1, 1.15, 1.05); cab.translate(0, 1.57, 0);
+  const cuello = new THREE.CylinderGeometry(0.045, 0.05, 0.1, 6); cuello.translate(0, 1.46, 0);
+  const manos = [-1, 1].map((s) => { const g = new THREE.SphereGeometry(0.045, 5, 4); g.translate(s * 0.25, 0.77, 0); return g; });
+  const piel = unirGeos([cab, cuello, ...manos]);
+  const pelo = new THREE.SphereGeometry(0.113, 9, 6, 0, Math.PI * 2, 0, Math.PI / 2.1); pelo.scale(1, 1.1, 1.08); pelo.translate(0, 1.6, -0.012);
+  return { piernas, ropa, piel, pelo };
+})();
+const ROPA = [0x1f2230, 0x2a2f45, 0x3a2a2a, 0x2b3a2e, 0x4a4036, 0x6b5d4c, 0x8a7a66, 0x2a2a2e, 0x5a2a32, 0x24354f, 0xb9ad98, 0x7a6a8a, 0x8a3a2a, 0xd8cdb8];
+const PANT = [0x1a1a22, 0x23283a, 0x2e2a26, 0x3a3a40, 0x4a5a7a, 0x5a4a3a];
+const PIEL = [0xc6976f, 0xd9b08a, 0xa97a55, 0xe3c2a0, 0x8a5a3a, 0xf0d0b0];
+const PELO = [0x1a120c, 0x2a1d12, 0x111111, 0x5a4030, 0x8a6a40, 0x9a9a9a, 0xd0c0a0];
+const GENTE = [];
+function franja(x0, z0, x1, z1, dx, dz) {
+  add({ kind: 'poly', pts: rect(x0, z0, x1, z1), minH: 0, maxH: 1.8, label: 'el público' });
+  const rot = Math.atan2(dx, dz);
+  for (let x = x0 + 0.23; x < x1 - 0.1; x += 0.46) for (let z = z0 + 0.23; z < z1 - 0.1; z += 0.46) {
+    if (rnd() < 0.12) continue;
+    GENTE.push([x + (rnd() - 0.5) * 0.2, 0, z + (rnd() - 0.5) * 0.2, rot + (rnd() - 0.5) * 0.9, rnd() < 0.1 ? 0.65 : 0.9 + rnd() * 0.2]);
+  }
+}
+function crearPublico(lista) {
+  const n = lista.length; if (!n) return;
+  const mk = (geo, rough) => { const m = new THREE.InstancedMesh(geo, M(0xffffff, { roughness: rough }), n); m.castShadow = true; scene.add(m); return m; };
+  const mP = mk(PUB_GEO.piernas, 0.8), mR = mk(PUB_GEO.ropa, 0.85), mS = mk(PUB_GEO.piel, 0.6), mH = mk(PUB_GEO.pelo, 0.9);
+  const dm = new THREE.Object3D(), col = new THREE.Color(), r2 = rng(n * 13 + 7), pick = (a) => a[Math.floor(r2() * a.length)];
+  lista.forEach(([x, y, z, r, e], i) => {
+    const mantilla = r2() < 0.08;
+    dm.position.set(x, y, z); dm.rotation.set(0, r, 0); dm.scale.set(e, e, e); dm.updateMatrix();
+    for (const m of [mP, mR, mS, mH]) m.setMatrixAt(i, dm.matrix);
+    mP.setColorAt(i, col.setHex(mantilla ? 0x101012 : pick(PANT))); mR.setColorAt(i, col.setHex(mantilla ? 0x0c0c10 : pick(ROPA)));
+    mS.setColorAt(i, col.setHex(pick(PIEL))); mH.setColorAt(i, col.setHex(mantilla ? 0x050505 : pick(PELO)));
+  });
+}
+// Vecinos esperando el paso en la plaza de San Roque (dejan libre el callejón y la puerta del templo)
+franja(26, 64.3, 32.8, 65.6, 0, 1); franja(39.2, 64.3, 46, 65.6, 0, 1);
+franja(26, 65.6, 27.3, 82.6, 1, 0); franja(44.7, 65.6, 46, 82.6, -1, 0);
+franja(26, 82.6, 33.3, 84, 0, -1); franja(38.7, 82.6, 46, 84, 0, -1);
+// y algunos asomados a los balcones de calle Feria
+for (const [x0, z, x1, rot] of [[13, 41.5, 15.5, 0], [21, 46.1, 23.5, Math.PI]]) for (let k = 0; k < 3; k++) GENTE.push([x0 + 0.5 + k * 0.75, 2.67, z, rot, 0.95]);
+crearPublico(GENTE);
+
+// ---------------------------------------------------------------- el paso
+const matOro = M(0xe2ac4a, { metalness: 1, roughness: 0.26, emissive: 0x140a00 });
+const matTalla = new THREE.MeshStandardMaterial({ color: 0xe2ac4a, map: texRelieve, bumpMap: texRelieve, bumpScale: 0.06, metalness: 1, roughness: 0.34, emissive: 0x140a00 });
+const texFaldon = texCanvas(512, 256, (x, w, h) => bordar(x, w, h, '#4a0b1c', [[64, 120, 34], [192, 120, 34], [320, 120, 34], [448, 120, 34]], 22), [2, 1]);
+const matTerciopelo = new THREE.MeshStandardMaterial({ map: texFaldon, roughness: 0.85, metalness: 0.1 });
+const paso = new THREE.Group(); paso.rotation.order = 'YXZ'; scene.add(paso);
+{ const f = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.78, 4.2), matTerciopelo); f.position.y = 0.48; paso.add(f);
+  const cesta = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.62, 4.3), matTalla); cesta.position.y = 1.18; paso.add(cesta);
+  for (const y of [0.88, 1.5]) { const mo = new THREE.Mesh(new THREE.BoxGeometry(2.58, 0.07, 4.38), matOro); mo.position.y = y; paso.add(mo); }
+  // respiraderos: medallones en los costeros
+  for (let i = -3; i <= 3; i++) for (const s of [-1, 1]) { const me = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.02, 12), M(0x5b1f6e, { emissive: 0x16051c })); me.rotation.z = Math.PI / 2; me.position.set(s * 1.26, 1.18, i * 0.55); paso.add(me); }
+  // monte de claveles
+  const clav = new THREE.InstancedMesh(new THREE.SphereGeometry(0.075, 6, 5), M(0x9b1022, { roughness: 0.9 }), 320);
+  const mtx = new THREE.Matrix4();
+  for (let i = 0; i < 320; i++) { mtx.makeTranslation((rnd() - 0.5) * 2.2, 1.57 + rnd() * 0.1, (rnd() - 0.5) * 4.0); clav.setMatrixAt(i, mtx); }
+  paso.add(clav);
+}
+const llamas = [];
+const matLlama = new THREE.MeshBasicMaterial({ color: 0xffd27a }); matLlama.color.multiplyScalar(2.6); matLlama.toneMapped = false;
+const matCristal = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, roughness: 0.04, metalness: 0.1, side: THREE.DoubleSide, emissive: 0x6a4418 });
+for (const [x, z] of [[1, 1.85], [-1, 1.85], [1, -1.85], [-1, -1.85]]) {
+  const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.85, 8), matOro); p.position.set(x, 1.95, z); paso.add(p);
+  const br = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.05), matOro); br.position.set(x, 2.35, z); br.rotation.y = Math.atan2(z, x) + Math.PI / 2; paso.add(br);
+  for (const k of [-1, 0, 1]) {
+    const ox = Math.cos(br.rotation.y) * 0.16 * k, oz = -Math.sin(br.rotation.y) * 0.16 * k;
+    const vela = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.2, 6), M(0xf5ecd6)); vela.position.set(x + ox, 2.47, z + oz); paso.add(vela);
+    const ll = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), matLlama); ll.scale.set(1, 2, 1); ll.position.set(x + ox, 2.6, z + oz); paso.add(ll); llamas.push(ll);
+    const gb = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.045, 0.28, 12, 1, true), matCristal); gb.position.set(x + ox, 2.56, z + oz); paso.add(gb);
+  }
+}
+const matPiel = M(0xc6976f, { roughness: 0.7 });
+function figura(x, z, rot, tunica, alto, extra) {
+  const g = new THREE.Group(); g.position.set(x, 1.62, z); g.rotation.y = rot;
+  const t = new THREE.Mesh(new THREE.ConeGeometry(0.3, alto, 14, 1, true), M(tunica, { side: THREE.DoubleSide })); t.position.y = alto / 2; g.add(t);
+  const hombros = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 8), M(tunica)); hombros.scale.set(1.25, 0.6, 0.8); hombros.position.y = alto - 0.04; g.add(hombros);
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.12, 20, 14), new THREE.MeshStandardMaterial({ map: texCara(tunica === 0x4a1d5e), roughness: 0.5 })); cab.scale.set(0.9, 1.1, 0.95); cab.position.y = alto + 0.12; cab.rotation.y = 0; g.add(cab);
+  const pelo = new THREE.Mesh(new THREE.SphereGeometry(0.125, 12, 8, 0, Math.PI * 2, 0, Math.PI / 1.8), M(0x24160e)); pelo.position.y = alto + 0.13; pelo.rotation.x = -0.25; g.add(pelo);
+  for (const s of [-1, 1]) { const br = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.55, 8), M(tunica)); br.position.set(s * 0.22, alto - 0.3, 0.08); br.rotation.x = -0.6; br.rotation.z = s * 0.25; g.add(br); }
+  if (extra) extra(g, alto);
+  paso.add(g); return g;
+}
+// Cristo con túnica morada y potencias
+figura(0, 0.1, 0, 0x4a1d5e, 1.25, (g, h) => {
+  const cord = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.02, 6, 16), matOro); cord.rotation.x = Math.PI / 2; cord.position.y = h - 0.55; g.add(cord);
+  for (const ang of [-0.75, 0, 0.75]) { const r = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 5), matOro); r.position.set(Math.sin(ang) * 0.16, h + 0.24 + Math.cos(ang) * 0.06, -0.02); r.rotation.z = -ang; g.add(r); }
+});
+// Soldado romano con casco y cresta
+figura(0.42, 0.95, -0.5, 0x8e1f24, 1.05, (g, h) => {
+  const casco = new THREE.Mesh(new THREE.SphereGeometry(0.135, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), matOro); casco.position.y = h + 0.15; g.add(casco);
+  const cresta = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, 0.26), M(0xb5182c)); cresta.position.y = h + 0.31; g.add(cresta);
+  const lanza = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.5, 5), M(0x4a3020)); lanza.position.set(0.3, h - 0.1, 0); g.add(lanza);
+});
+// Sayón
+figura(-0.42, 0.75, 0.5, 0x6b5a2a, 1.08);
+// Olivo del huerto
+{ const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.09, 1.1, 6), M(0x4a3626)); tr.position.set(0.3, 2.17, -1.05); tr.rotation.z = 0.2; paso.add(tr);
+  const co = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), M(0x55693a)); co.scale.set(1, 0.65, 1); co.position.set(0.38, 2.95, -1.05); paso.add(co); }
+paso.add(halos(llamas.map((l) => l.position), 0.32));
+const luzPaso = new THREE.PointLight(0xffc27a, 1.0, 11, 2); luzPaso.position.set(0, 2.7, 0); paso.add(luzPaso);
+// Zapatillas de los costaleros bajo el faldón
+const pies = [];
+{ const g = new THREE.BoxGeometry(0.12, 0.08, 0.26), m = M(0x111014);
+  for (const x of [-0.85, -0.3, 0.3, 0.85]) for (let i = 0; i < 5; i++) { const p = new THREE.Mesh(g, m); p.position.set(x, 0.04, -1.6 + i * 0.8); p.userData.z0 = p.position.z; p.userData.fase = (i + (x > 0 ? 1 : 0)) % 2 ? 1 : -1; paso.add(p); pies.push(p); } }
+// El capataz, delante del paso, mirando a la cuadrilla
+const capataz = new THREE.Group(); scene.add(capataz);
+{ const traje = M(0x18181f, { roughness: 0.6 });
+  for (const s of [-0.1, 0.1]) { const pi = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.85, 8), traje); pi.position.set(s, 0.43, 0); capataz.add(pi); }
+  const cu = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.24), traje); cu.position.y = 1.18; capataz.add(cu);
+  const cam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.3, 0.02), M(0xf0f0f0)); cam.position.set(0, 1.32, 0.125); capataz.add(cam);
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), matPiel); cab.position.y = 1.62; capataz.add(cab);
+  const pelo = new THREE.Mesh(new THREE.SphereGeometry(0.125, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(0x2a2420)); pelo.position.y = 1.64; capataz.add(pelo); }
+
+// ---------------------------------------------------------------- audio: banda, llamador y voz
+const AU = { ctx: null, master: null, musica: true, voz: true, ruido: null };
+function ac() {
+  if (!AU.ctx) {
+    try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); const c = AU.ctx.createDynamicsCompressor(); c.connect(AU.ctx.destination); AU.master = AU.ctx.createGain(); AU.master.gain.value = 0.8; AU.master.connect(c); } catch (e) { AU.ctx = null; }
+  }
+  if (AU.ctx && AU.ctx.state === 'suspended') AU.ctx.resume().catch(() => {});
+  return AU.ctx;
+}
+function ruido(c) {
+  if (!AU.ruido) { AU.ruido = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate); const d = AU.ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const s = c.createBufferSource(); s.buffer = AU.ruido; return s;
+}
+function env(g, t, pico, dur) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(pico, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); }
+function bombo(t) { const c = ac(); if (!c) return; t = t || c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(115, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.2); env(g, t, 0.9, 0.5); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.55); }
+function caja(t, v) { const c = ac(); if (!c) return; const s = ruido(c), f = c.createBiquadFilter(), g = c.createGain(); f.type = 'highpass'; f.frequency.value = 1700; env(g, t, v, 0.11); s.connect(f); f.connect(g); g.connect(AU.master); s.start(t); s.stop(t + 0.15); }
+function redoble(t, dur) { for (let k = 0; k < dur; k += 0.05) caja(t + k, 0.05 + (k / dur) * 0.12); }
+function llamador() { const c = ac(); if (!c) return; const t0 = c.currentTime; for (const d of [0, 0.17]) { const t = t0 + d; const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(260, t + 0.08); env(g, t, 0.5, 0.12); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.15); const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'bandpass'; f.frequency.value = 2400; env(g2, t, 0.35, 0.05); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.08); } }
+function sGolpe() { const c = ac(); if (!c) return; const t = c.currentTime; const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.25); env(g, t, 1, 0.35); o.connect(g); g.connect(AU.master); o.start(t); o.stop(t + 0.4); const s = ruido(c), f = c.createBiquadFilter(), g2 = c.createGain(); f.type = 'lowpass'; f.frequency.value = 700; env(g2, t, 0.6, 0.25); s.connect(f); f.connect(g2); g2.connect(AU.master); s.start(t); s.stop(t + 0.3); }
+let vozES = null;
+function buscarVoz() { try { const vs = speechSynthesis.getVoices(); vozES = vs.find((v) => /es[-_]ES/i.test(v.lang)) || vs.find((v) => /^es/i.test(v.lang)) || null; } catch (e) {} }
+if ('speechSynthesis' in window) { buscarVoz(); try { speechSynthesis.onvoiceschanged = buscarVoz; } catch (e) {} }
+
+// Desbloqueo del sonido: algunos navegadores (sobre todo iPhone en modo silencio) no dejan sonar Web Audio
+// hasta que se toca la pantalla y suena un elemento de audio normal.
+let silencio = null;
+function desbloquearAudio() {
+  const c = ac(); if (!c) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+  try { if (!silencio) { silencio = new Audio('data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA=='); silencio.loop = true; silencio.volume = 0.01; } silencio.play().catch(() => {}); } catch (e) {}
+}
+addEventListener('pointerdown', desbloquearAudio, true);
+addEventListener('keydown', desbloquearAudio, true);
+function probarSonido() {
+  desbloquearAudio();
+  const c = ac();
+  setTimeout(() => {
+    const st = c ? c.state : 'sin audio';
+    if (st === 'running') { llamador(); toast('Sonido activado. Si no oyes nada, sube el volumen y, en iPhone, quita el modo silencio.', true); }
+    else toast('El navegador no deja sonar el audio (estado: ' + st + '). Toca la pantalla otra vez; en iPhone, quita el modo silencio.');
+  }, 150);
+}
+function decir(txt) {
+  if (!AU.voz || !('speechSynthesis' in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt.replace(/[¡!¿?]/g, '')); u.lang = 'es-ES'; u.rate = 1.15; u.pitch = 0.75; if (vozES) u.voice = vozES; speechSynthesis.speak(u); } catch (e) {}
+}
+
+// ---------------------------------------------------------------- estado de la partida
+let G, now = 0, pausa = true, camModo = 0, zoom = 1, camSnap = true;
+const CAMS = ['Detrás del paso', 'Delante, como el capataz', 'Desde arriba', 'Bajo el faldón'];
+function nuevaPartida() {
+  G = {
+    pose: { ...SALIDA }, from: { ...SALIDA }, to: { ...SALIDA }, stepT: 1,
+    estado: 'tierra', liftT: 0, liftY: -0.25, mov: 'parado', giro: 0, lat: 0,
+    agachados: false, agachadosOrden: false, dy: 0, dyTarget: 0,
+    golpes: 0, ordenes: 0, t0: null, tiempo: 0, fin: false,
+    cola: [], beatAcc: 0, beatN: 0, ultimoGolpe: -9, shake: 0, swaySign: 1, visto: new Set(),
+  };
+  camSnap = true;
+  for (const p of pies) p.position.z = p.userData.z0;
+  actualizarAgacharBtn();
+}
+
+function orden(texto, fn, opts = {}) {
+  if (G.fin) return;
+  if (opts.cuenta !== false) G.ordenes++;
+  if (opts.martillo) llamador();
+  if (opts.hablar !== false) decir(texto);
+  mostrarOrden(texto);
+  G.cola.push({ t: now + CFG.retardo, fn });
+}
+function enTierra() { if (G.estado === 'tierra' || G.estado === 'arriando') { toast('El paso está en tierra. Levántalo con «¡A esta es!» (Espacio).', true); return true; } return false; }
+
+const ACC = {
+  levantar() {
+    if (G.estado !== 'tierra') { toast('El paso ya está arriba.', true); return; }
+    orden('¡A esta es!', () => {
+      if (G.estado !== 'tierra') return;
+      const h = colisiona(G.pose, G.dyTarget); if (h) { golpe(h); return; }
+      if (G.t0 === null) G.t0 = now;
+      G.estado = 'levantando'; G.liftT = 0;
+      const c = ac(); if (c && AU.musica) redoble(c.currentTime + 0.05, 0.6);
+    }, { martillo: true });
+  },
+  frente() { if (enTierra()) return; orden('¡De frente, vámonos!', () => { if (G.estado !== 'tierra') G.mov = 'adelante'; }); },
+  atras() { if (enTierra()) return; orden('¡Atrás, poquito a poco!', () => { if (G.estado !== 'tierra') G.mov = 'atras'; }); },
+  parar() {
+    if (G.estado === 'tierra') return;
+    if (G.mov !== 'parado' || G.giro || G.lat) orden('¡Paramos!', () => { G.mov = 'parado'; G.giro = 0; G.lat = 0; }, { martillo: true });
+    else orden('¡A tierra!', () => { if (G.estado === 'arriba' || G.estado === 'levantando') { G.estado = 'arriando'; G.liftT = 0; } }, { martillo: true });
+  },
+  agachar() {
+    if (enTierra()) return;
+    const quiere = !G.agachadosOrden; G.agachadosOrden = quiere; actualizarAgacharBtn();
+    orden(quiere ? '¡Agachaditos!' : '¡Arriba, valientes!', () => {
+      if (quiere) { G.agachados = true; G.dyTarget = -CFG.agachar; }
+      else {
+        const h = colisiona(G.pose, 0);
+        if (h) { golpe(h); G.agachadosOrden = true; actualizarAgacharBtn(); return; }
+        G.agachados = false; G.dyTarget = 0;
+      }
+    });
+  },
+  giroIzq: { press: () => ordenGiro(1), release: () => finGiro(1) },
+  giroDer: { press: () => ordenGiro(-1), release: () => finGiro(-1) },
+  costIzq: { press: () => ordenCostero(1), release: () => finCostero(1) },
+  costDer: { press: () => ordenCostero(-1), release: () => finCostero(-1) },
+  camara() { camModo = (camModo + 1) % CAMS.length; camSnap = true; toast('Cámara: ' + CAMS[camModo].toLowerCase(), true); },
+  musica() { AU.musica = !AU.musica; $('#b-mus').firstChild.textContent = 'Banda: ' + (AU.musica ? 'sí' : 'no'); },
+  voz() { AU.voz = !AU.voz; $('#b-voz').firstChild.textContent = 'Voz: ' + (AU.voz ? 'sí' : 'no'); if (!AU.voz) try { speechSynthesis.cancel(); } catch (e) {} },
+  ayuda() { if (!$('#inicio').hidden || !$('#final').hidden) return; const a = $('#ayuda'); a.hidden = !a.hidden; pausa = !a.hidden; },
+  reiniciar() { nuevaPartida(); $('#final').hidden = true; toast('Volvemos al almacén.', true); },
+};
+function ordenGiro(s) {
+  if (enTierra()) return;
+  const andando = G.mov !== 'parado';
+  const txt = s > 0 ? (andando ? '¡Derecha alante!' : '¡Derecha alante, izquierda atrás!') : (andando ? '¡Izquierda alante!' : '¡Izquierda alante, derecha atrás!');
+  orden(txt, () => { if (G.estado !== 'tierra') { G.giro = s; G.giroHecho = false; G.giroSoltar = false; } });
+}
+function finGiro(s) { if (G.estado === 'tierra') return; orden('¡Así, derecho!', () => { if (G.giro === s) { if (G.giroHecho) G.giro = 0; else G.giroSoltar = true; } }, { hablar: false, cuenta: false }); }
+function ordenCostero(s) { if (enTierra()) return; orden(s > 0 ? '¡Costero a costero, a la izquierda!' : '¡Costero a costero, a la derecha!', () => { if (G.estado !== 'tierra') { G.lat = s; G.latHecho = false; G.latSoltar = false; } }); }
+function finCostero(s) { if (G.estado === 'tierra') return; orden('¡Ahí!', () => { if (G.lat === s) { if (G.latHecho) G.lat = 0; else G.latSoltar = true; } }, { hablar: false, cuenta: false }); }
+
+function golpe(h) {
+  if (now - G.ultimoGolpe > 0.8) G.golpes++;
+  G.ultimoGolpe = now; G.shake = 0.45; sGolpe();
+  G.mov = 'parado'; G.giro = 0; G.lat = 0; G.giroSoltar = G.latSoltar = false;
+  const quien = h.ob.pared ? '' : ` (${h.tier.nombre})`;
+  toast(`¡Golpe! Has dado con ${h.ob.label}${quien}.`);
+  $('#st-golpes').classList.add('malo');
+}
+
+function dentroTemplo() { return esquinas(obb(G.pose, TIERS[0])).every(([, z]) => z > 85.0); }
+function terminar() {
+  G.fin = true; G.tiempo = now - G.t0;
+  const nota = Math.max(0, Math.min(10, 10 - G.golpes * 1 - Math.max(0, G.tiempo - CFG.par) / 30));
+  let rec = null; try { rec = JSON.parse(localStorage.getItem('capataz-mudanza') || 'null'); } catch (e) {}
+  const nuevo = !rec || nota > rec.nota || (nota === rec.nota && G.tiempo < rec.tiempo);
+  if (nuevo) { rec = { nota, tiempo: G.tiempo }; try { localStorage.setItem('capataz-mudanza', JSON.stringify(rec)); } catch (e) {} }
+  const titulo = nota >= 9 ? 'Capataz de los de antes' : nota >= 7 ? 'Buen mando, la cuadrilla te sigue' : nota >= 5 ? 'Ha llegado, que no es poco' : 'Hay que ensayar más';
+  $('#fin-nota').textContent = fmt(nota, 1);
+  $('#fin-titulo').textContent = titulo;
+  $('#fin-tiempo').textContent = reloj(G.tiempo);
+  $('#fin-golpes').textContent = G.golpes;
+  $('#fin-ordenes').textContent = G.ordenes;
+  $('#fin-record').textContent = fmt(rec.nota, 1);
+  $('#fin-texto').textContent = (G.golpes === 0 ? 'Sin un solo roce: el paso entra en San Roque como si fuera un Jueves Santo. ' : `El paso ha sufrido ${G.golpes} ${G.golpes === 1 ? 'golpe' : 'golpes'}. `) + (G.tiempo > CFG.par ? `Has tardado más de ${reloj(CFG.par)}, el tiempo de referencia.` : `Dentro del tiempo de referencia (${reloj(CFG.par)}).`) + (nuevo ? ' Nuevo récord.' : '');
+  setTimeout(() => { $('#final').hidden = false; }, 1400);
+}
+
+// ---------------------------------------------------------------- bucle
+function onBeat() {
+  G.beatN++;
+  const cp = $('#compas'); cp.classList.add('on'); setTimeout(() => cp.classList.remove('on'), 90);
+  if (AU.musica && AU.ctx && G.estado !== 'tierra') {
+    const t = AU.ctx.currentTime + 0.01;
+    bombo(t); caja(t + BEAT / 2, 0.16);
+    if (G.beatN % 4 === 3) redoble(t + BEAT * 0.5, BEAT * 0.45);
+  }
+  if (G.estado !== 'arriba' || G.fin) return;
+  if (G.mov === 'parado' && !G.giro && !G.lat) return;
+  const p = G.pose;
+  const dist = G.mov === 'adelante' ? CFG.zancada : G.mov === 'atras' ? -CFG.atras : 0;
+  const da = G.giro * (dist ? CFG.giroArco : CFG.giroSitio);
+  const am = p.a + da / 2;
+  const np = {
+    x: p.x + Math.sin(am) * dist + Math.cos(p.a) * CFG.costero * G.lat,
+    z: p.z + Math.cos(am) * dist - Math.sin(p.a) * CFG.costero * G.lat,
+    a: p.a + da,
+  };
+  const h = colisiona(np, Math.max(G.dyTarget, G.dy - 0.001));
+  if (h) { golpe(h); return; }
+  G.from = { ...p }; G.to = np; G.pose = np; G.stepT = 0; G.swaySign = -G.swaySign;
+  // un toque corto de giro o de costero da siempre al menos un paso
+  if (G.giro) { G.giroHecho = true; if (G.giroSoltar) { G.giro = 0; G.giroSoltar = false; } }
+  if (G.lat) { G.latHecho = true; if (G.latSoltar) { G.lat = 0; G.latSoltar = false; } }
+}
+
+const vis = { x: 0, z: 0, a: 0 };
+function update(dt) {
+  now += dt;
+  while (G.cola.length && G.cola[0].t <= now) G.cola.shift().fn();
+  G.beatAcc += dt;
+  while (G.beatAcc >= BEAT) { G.beatAcc -= BEAT; onBeat(); }
+  if (G.estado === 'levantando') {
+    G.liftT += dt / 0.9; const k = Math.min(1, G.liftT); G.liftY = -0.25 + 0.25 * easeBack(k);
+    if (k >= 1) { G.estado = 'arriba'; G.liftY = 0; }
+  } else if (G.estado === 'arriando') {
+    G.liftT += dt / 1.0; const k = Math.min(1, G.liftT); G.liftY = -0.25 * easeIO(k);
+    if (k >= 1) { G.estado = 'tierra'; G.mov = 'parado'; G.giro = 0; G.lat = 0; if (dentroTemplo() && !G.fin) terminar(); }
+  }
+  G.dy += (G.dyTarget - G.dy) * Math.min(1, dt * 5);
+  G.stepT = Math.min(1, G.stepT + dt / (BEAT * 0.82));
+  const k = easeIO(G.stepT);
+  vis.x = G.from.x + (G.to.x - G.from.x) * k; vis.z = G.from.z + (G.to.z - G.from.z) * k; vis.a = G.from.a + (G.to.a - G.from.a) * k;
+  const arco = Math.sin(G.stepT * Math.PI);
+  paso.position.set(vis.x, G.liftY + G.dy + (REDUCIDO ? 0 : arco * 0.025), vis.z);
+  paso.rotation.y = vis.a;
+  paso.rotation.z = REDUCIDO ? 0 : arco * 0.016 * G.swaySign;
+  for (const p of pies) p.position.z = p.userData.z0 + (G.stepT < 1 ? arco * 0.09 * p.userData.fase * G.swaySign : 0);
+  llamas.forEach((l, i) => { l.scale.y = 2 + Math.sin(now * 18 + i * 1.7) * 0.35 + Math.sin(now * 7 + i) * 0.2; });
+  luzPaso.intensity = 1.0 + Math.sin(now * 11) * 0.05;
+  LUZ_SOMBRA.position.set(vis.x - 5, 15, vis.z - 4); LUZ_SOMBRA.target.position.set(vis.x, 0, vis.z); LUZ_SOMBRA.target.updateMatrixWorld();
+  const fx = Math.sin(vis.a), fz = Math.cos(vis.a);
+  capataz.position.set(vis.x + fx * 3.4, (G.stepT < 1 && G.mov !== 'parado' ? arco * 0.03 : 0), vis.z + fz * 3.4);
+  capataz.rotation.y = vis.a + Math.PI;
+  G.shake = Math.max(0, G.shake - dt);
+  if (G.t0 !== null && !G.fin) G.tiempo = now - G.t0;
+}
+
+// Distancia máxima en una dirección sin salirse de las calles, para que la cámara no quede detrás de una pared
+function distLibre(dx, dz, max) {
+  let d = 2.4;
+  for (let k = 2.4; k <= max; k += 0.2) {
+    const x = vis.x + dx * k, z = vis.z + dz * k;
+    if (!dentroPoly(x, z) || !dentroPoly(x + 0.5, z) || !dentroPoly(x - 0.5, z) || !dentroPoly(x, z + 0.5) || !dentroPoly(x, z - 0.5)) break;
+    d = k;
+  }
+  return d;
+}
+const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), tmpP = new THREE.Vector3(), tmpL = new THREE.Vector3();
+function updateCam(dt) {
+  const fx = Math.sin(vis.a), fz = Math.cos(vis.a);
+  const y = G.liftY + G.dy;
+  let up = [0, 1, 0];
+  capataz.visible = camModo !== 1;
+  $('#veil').hidden = camModo !== 3;
+  if (camModo === 0) { const d = distLibre(-fx, -fz, 9.5 * zoom); tmpP.set(vis.x - fx * d, 2.2 + 4.2 * zoom + (9.5 * zoom - d) * 0.35, vis.z - fz * d); tmpL.set(vis.x + fx * 3, 1.8, vis.z + fz * 3); }
+  else if (camModo === 1) { const d = distLibre(fx, fz, 6.2 * zoom); tmpP.set(vis.x + fx * d, 1.7, vis.z + fz * d); tmpL.set(vis.x, 2.1 + y, vis.z); }
+  else if (camModo === 2) { tmpP.set(vis.x, 22 * zoom, vis.z); tmpL.set(vis.x, 0, vis.z); up = [fx, 0, fz]; }
+  else { tmpP.set(vis.x + fx * 2.25, 0.55 + y, vis.z + fz * 2.25); tmpL.set(vis.x + fx * 12, 1.2, vis.z + fz * 12); }
+  const s = camSnap ? 1 : 1 - Math.exp(-dt * (camModo === 3 ? 14 : 5));
+  camPos.lerp(tmpP, s); camLook.lerp(tmpL, s); camSnap = false;
+  camera.position.copy(camPos);
+  if (G.shake > 0 && !REDUCIDO) camera.position.add(new THREE.Vector3((Math.random() - 0.5) * G.shake * 0.5, (Math.random() - 0.5) * G.shake * 0.4, (Math.random() - 0.5) * G.shake * 0.5));
+  camera.up.set(up[0], up[1], up[2]);
+  camera.lookAt(camLook);
+}
+
+// ---------------------------------------------------------------- HUD
+const mapa = $('#mapa'), mx = mapa.getContext('2d');
+function dibujarMapa() {
+  const W = mapa.width, S = W / 52, c = W / 2;
+  const p = vis, fx = Math.sin(p.a), fz = Math.cos(p.a), lx = Math.cos(p.a), lz = -Math.sin(p.a);
+  const T = (x, z) => { const rx = x - p.x, rz = z - p.z; return [c - (rx * lx + rz * lz) * S, c - (rx * fx + rz * fz) * S]; };
+  mx.setTransform(1, 0, 0, 1, 0, 0); mx.clearRect(0, 0, W, W);
+  mx.save(); mx.beginPath(); mx.arc(c, c, c - 2, 0, Math.PI * 2); mx.clip();
+  mx.fillStyle = '#0b0912'; mx.fillRect(0, 0, W, W);
+  mx.beginPath(); POLY.forEach(([x, z], i) => { const [a, b] = T(x, z); i ? mx.lineTo(a, b) : mx.moveTo(a, b); }); mx.closePath();
+  mx.fillStyle = '#2c2440'; mx.fill(); mx.strokeStyle = '#8a77ad'; mx.lineWidth = 2; mx.stroke();
+  for (const o of OBS) {
+    if (o.pared) continue;
+    mx.setLineDash(o.alto ? [6, 5] : []);
+    mx.strokeStyle = o.alto ? '#e0a33a' : '#d8c49b'; mx.fillStyle = 'rgba(216,196,155,0.85)'; mx.lineWidth = o.alto ? 2.5 : 2;
+    mx.beginPath();
+    if (o.kind === 'circle') { const [a, b] = T(o.x, o.z); mx.arc(a, b, o.r * S, 0, Math.PI * 2); }
+    else { const pts = o.kind === 'seg' ? [o.a, o.b] : o.pts; pts.forEach(([x, z], i) => { const [a, b] = T(x, z); i ? mx.lineTo(a, b) : mx.moveTo(a, b); }); if (o.kind !== 'seg') mx.closePath(); }
+    if (o.alto) mx.stroke(); else mx.fill();
+  }
+  mx.setLineDash([]);
+  { const [a, b] = T(PUERTA.x, PUERTA.z + 4); mx.fillStyle = '#d9a441'; mx.beginPath(); mx.arc(a, b, 6, 0, Math.PI * 2); mx.fill(); }
+  for (const [i, t] of TIERS.entries()) {
+    const e = esquinas(obb(vis, t)); mx.beginPath(); e.forEach(([x, z], k) => { const [a, b] = T(x, z); k ? mx.lineTo(a, b) : mx.moveTo(a, b); }); mx.closePath();
+    if (i === 0) { mx.fillStyle = '#7a1730'; mx.fill(); } mx.strokeStyle = i === 0 ? '#d9a441' : 'rgba(241,230,204,0.7)'; mx.lineWidth = 2; mx.stroke();
+  }
+  mx.fillStyle = '#f1e6cc'; mx.beginPath(); mx.moveTo(c, c - 2.9 * S - 10); mx.lineTo(c - 7, c - 2.9 * S); mx.lineTo(c + 7, c - 2.9 * S); mx.closePath(); mx.fill();
+  mx.restore();
+}
+
+function objetivo() {
+  const { x, z } = G.pose;
+  if (G.fin) return '<strong>¡Ya está en San Roque!</strong>';
+  if (z < -1) return G.estado === 'tierra' ? '<strong>Almacén de la hermandad.</strong> Levanta el paso con «¡A esta es!» y sácalo por la puerta.' : '<strong>Almacén.</strong> Sal por la puerta, con el paso bien centrado.';
+  if (x < 4 && z < 37) return '<strong>Calle Alfarería.</strong> Hay un cable de la luz a 3,10 m y dos naranjos con la copa sobre la calle.';
+  if (x < 6) return '<strong>Cruce con calle Feria.</strong> Para en el centro del cruce y gira sobre ti mismo hacia la izquierda.';
+  if (x < 31 && z < 47) return '<strong>Calle Feria.</strong> Bolardos, balcones a 2,60 m y otro cable a 3,05 m.';
+  if (z < 47) return '<strong>Entrada del callejón.</strong> Para frente al callejón y gira a la derecha.';
+  if (z < 64) return '<strong>Callejón del Agua.</strong> Un farol de forja a la derecha y una maceta a la izquierda: pasa justo por el medio.';
+  if (z < 84.5) return '<strong>Plaza de San Roque.</strong> Alinea el paso con la puerta: el dintel está a 3,20 m.';
+  return dentroTemplo() ? '<strong>Dentro del templo.</strong> Para y manda «¡A tierra!» (X).' : '<strong>En la puerta.</strong> Un poco más, hasta que el paso entero esté dentro.';
+}
+
+function avisoProximo() {
+  const fx = Math.sin(G.pose.a), fz = Math.cos(G.pose.a), lx = Math.cos(G.pose.a), lz = -Math.sin(G.pose.a);
+  let mejor = null, df = Infinity;
+  for (const o of OBS) {
+    if (!o.alto) continue;
+    const pts = o.kind === 'circle' ? [[o.x, o.z]] : o.kind === 'seg' ? [o.a, o.b, [(o.a[0] + o.b[0]) / 2, (o.a[1] + o.b[1]) / 2]] : o.pts;
+    for (const [x, z] of pts) {
+      const rx = x - G.pose.x, rz = z - G.pose.z, f = rx * fx + rz * fz, l = rx * lx + rz * lz;
+      if (f > -1 && f < 16 && Math.abs(l) < 4.5 && f < df) { df = f; mejor = o; }
+    }
+  }
+  const el = $('#aviso');
+  if (!mejor) { el.hidden = true; return; }
+  el.hidden = false;
+  const topAhora = ALTO + G.dyTarget;
+  const choca = topAhora > mejor.minH;
+  el.classList.toggle('peligro', choca);
+  $('#aviso-txt').textContent = `${mejor.aviso}: ${fmt(mejor.minH)} m libres${choca ? ` · el paso mide ${fmt(topAhora)} m` : ''}`;
+}
+
+let ultimoHud = 0;
+function hud() {
+  $('#st-tiempo').textContent = reloj(G.t0 === null ? 0 : G.tiempo);
+  $('#st-golpes').textContent = G.golpes;
+  $('#st-altura').textContent = fmt(ALTO + G.dyTarget) + ' m';
+  let e;
+  if (G.estado === 'tierra') e = G.fin ? 'A tierra en el templo' : 'En tierra';
+  else if (G.estado === 'levantando') e = '¡Al cielo con ella!';
+  else if (G.estado === 'arriando') e = 'Arriando';
+  else e = G.mov === 'adelante' ? 'De frente' : G.mov === 'atras' ? 'Hacia atrás' : G.giro ? 'Girando en el sitio' : G.lat ? 'De costero' : 'Parado, arriba';
+  if (G.estado !== 'tierra' && G.giro && G.mov !== 'parado') e += ', girando';
+  if (G.agachados) e += ' · agachados';
+  $('#st-estado').textContent = e;
+  $('#objetivo').innerHTML = objetivo();
+  avisoProximo();
+}
+function actualizarAgacharBtn() { const b = $('#b-agachar'); if (!b) return; b.classList.toggle('on', !!(G && G.agachadosOrden)); b.querySelector('span').textContent = G && G.agachadosOrden ? 'Arriba' : 'Agachaditos'; }
+
+let tOrden = 0;
+function mostrarOrden(txt) {
+  const el = $('#orden'); $('#orden-txt').textContent = txt;
+  el.classList.remove('esperando'); void el.offsetWidth; el.classList.add('vis', 'esperando');
+  clearTimeout(tOrden); tOrden = setTimeout(() => el.classList.remove('vis'), 2200);
+}
+let tToast = 0;
+function toast(txt, info) {
+  const el = $('#toast'); el.textContent = txt; el.classList.toggle('info', !!info); el.classList.add('vis');
+  clearTimeout(tToast); tToast = setTimeout(() => el.classList.remove('vis'), info ? 1600 : 2400);
+}
+
+// ---------------------------------------------------------------- entrada
+const TECLAS = { Space: 'levantar', KeyW: 'frente', ArrowUp: 'frente', KeyS: 'atras', ArrowDown: 'atras', KeyA: 'giroIzq', ArrowLeft: 'giroIzq', KeyD: 'giroDer', ArrowRight: 'giroDer', KeyQ: 'costIzq', KeyE: 'costDer', KeyC: 'agachar', KeyX: 'parar', KeyV: 'camara', KeyM: 'musica', KeyN: 'voz', KeyH: 'ayuda', KeyR: 'reiniciar' };
+const SIEMPRE = new Set(['ayuda', 'musica', 'voz', 'camara']);
+const pulsadas = new Set();
+function press(acc) {
+  ac();
+  if (pausa && !SIEMPRE.has(acc)) return;
+  if (pulsadas.has(acc)) return;
+  const a = ACC[acc]; if (!a) return;
+  if (typeof a === 'function') a(); else { pulsadas.add(acc); a.press(); }
+  const b = document.querySelector(`.pb[data-acc="${acc}"]`); if (b && typeof a !== 'function') b.classList.add('on');
+}
+function release(acc) {
+  if (!pulsadas.has(acc)) return;
+  pulsadas.delete(acc); ACC[acc].release();
+  const b = document.querySelector(`.pb[data-acc="${acc}"]`); if (b) b.classList.remove('on');
+}
+addEventListener('keydown', (e) => {
+  const acc = TECLAS[e.code]; if (!acc) return;
+  e.preventDefault(); if (e.repeat) return;
+  if (!$('#inicio').hidden && (e.code === 'Space' || e.code === 'Enter')) { empezar(); return; }
+  press(acc);
+});
+addEventListener('keyup', (e) => { const acc = TECLAS[e.code]; if (acc) release(acc); });
+addEventListener('blur', () => { for (const a of [...pulsadas]) release(a); });
+document.querySelectorAll('.pb').forEach((b) => {
+  const acc = b.dataset.acc;
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} press(acc); });
+  const fin = () => release(acc);
+  b.addEventListener('pointerup', fin); b.addEventListener('pointercancel', fin); b.addEventListener('lostpointercapture', fin);
+  b.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); press(acc); setTimeout(() => release(acc), 400); } });
+});
+$('#b-cam').addEventListener('click', () => ACC.camara());
+$('#b-mus').addEventListener('click', () => ACC.musica());
+$('#b-voz').addEventListener('click', () => ACC.voz());
+$('#b-ayu').addEventListener('click', () => ACC.ayuda());
+$('#b-son').addEventListener('click', probarSonido);
+$('#b-cerrar-ayuda').addEventListener('click', () => ACC.ayuda());
+$('#b-repetir').addEventListener('click', () => { ACC.reiniciar(); });
+$('#b-mirar').addEventListener('click', () => { $('#final').hidden = true; });
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoom = Math.max(0.55, Math.min(1.9, zoom * (e.deltaY > 0 ? 1.08 : 0.93))); }, { passive: false });
+function empezar() { desbloquearAudio(); $('#inicio').hidden = true; pausa = false; toast('Levanta el paso: «¡A esta es!» (Espacio)', true); }
+$('#b-empezar').addEventListener('click', empezar);
+try { const rec = JSON.parse(localStorage.getItem('capataz-mudanza') || 'null'); if (rec) $('#record').textContent = `Tu récord: ${fmt(rec.nota, 1)} sobre 10, en ${reloj(rec.tiempo)}.`; } catch (e) {}
+
+function resize() {
+  const w = canvas.clientWidth || innerWidth, h = canvas.clientHeight || innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), css = mapa.clientWidth || 170;
+  mapa.width = mapa.height = Math.round(css * dpr);
+}
+addEventListener('resize', resize);
+
+paso.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+function aplicarCalidad() {
+  $('#b-graf').textContent = 'Gráficos: ' + { alta: 'altos', media: 'medios', baja: 'bajos' }[CALIDAD];
+  LUZ_SOMBRA.castShadow = CALIDAD === 'alta';
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, CALIDAD === 'baja' ? 1 : 2));
+  try { localStorage.setItem('capataz-calidad', CALIDAD); } catch (e) {}
+  resize();
+}
+$('#b-graf').addEventListener('click', () => { CALIDAD = CALIDAD === 'alta' ? 'media' : CALIDAD === 'media' ? 'baja' : 'alta'; aplicarCalidad(); });
+nuevaPartida(); resize(); aplicarCalidad();
+let last = performance.now();
+function loop(t) {
+  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+  if (!pausa) update(dt); else { update(0); }
+  updateCam(dt);
+  if (t - ultimoHud > 100) { hud(); ultimoHud = t; }
+  dibujarMapa();
+  if (composer && CALIDAD !== 'baja') composer.render(); else renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// Ganchos de prueba (no afectan al juego)
+window.__capataz = { get G() { return G; }, colisiona, OBS, press, release, TIERS, sim(seg) { pausa = false; for (let t = 0; t < seg; t += 1 / 60) update(1 / 60); } };
+})();
+</script>
+
+</body>
+</html>

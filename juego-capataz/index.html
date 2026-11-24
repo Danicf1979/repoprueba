@@ -1,0 +1,55 @@
+<title>Capataz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Marcellus+SC&display=swap">
+<style>
+/* Portada: elegir entre tronos (Málaga) y pasos (Sevilla). Terciopelo morado y oro, como los juegos. */
+:root {
+  color-scheme: light;
+  --fondo: #f6f0e4; --carta: #fffaf0; --texto: #2a1a2e; --texto-2: #6a5a62; --oro: #9a6a12; --borde: rgba(154, 106, 18, 0.35); --sombra: rgba(60, 30, 50, 0.15); --sobre-oro: #fffaf0;
+  --font-d: "Marcellus SC", "Book Antiqua", "Times New Roman", serif;
+  --font-b: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; --fondo: #0c0d1b; --carta: #1a1126; --texto: #f1e6cc; --texto-2: #b8ab92; --oro: #d9a441; --borde: rgba(217, 164, 65, 0.38); --sombra: rgba(0, 0, 0, 0.5); --sobre-oro: #1b1006; } }
+:root[data-theme="dark"] { color-scheme: dark; --fondo: #0c0d1b; --carta: #1a1126; --texto: #f1e6cc; --texto-2: #b8ab92; --oro: #d9a441; --borde: rgba(217, 164, 65, 0.38); --sombra: rgba(0, 0, 0, 0.5); --sobre-oro: #1b1006; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--fondo); color: var(--texto); font-family: var(--font-b); font-size: 16px; }
+main { max-width: 880px; margin: 0 auto; padding: calc(28px + env(safe-area-inset-top, 0px)) 16px 32px; display: grid; gap: 22px; }
+h1 { margin: 0; font-family: var(--font-d); font-weight: 400; font-size: clamp(2.6rem, 9vw, 4rem); color: var(--oro); letter-spacing: 0.06em; line-height: 1; }
+.sub { margin: 6px 0 0; color: var(--texto-2); font-size: 1.1rem; line-height: 1.4; max-width: 56ch; }
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.opcion { display: grid; gap: 10px; align-content: start; text-decoration: none; color: var(--texto); background: var(--carta); border: 1px solid var(--borde); border-radius: 14px; padding: 22px 20px; box-shadow: 0 14px 40px var(--sombra); transition: transform 0.15s, border-color 0.15s; }
+.opcion:hover, .opcion:focus-visible { transform: translateY(-2px); border-color: var(--oro); outline: none; }
+.opcion h2 { margin: 0; font-family: var(--font-d); font-weight: 400; font-size: 1.9rem; color: var(--oro); }
+.opcion .donde { font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-2); }
+.opcion p { margin: 0; line-height: 1.45; }
+.opcion ul { margin: 0; padding-left: 1.1em; line-height: 1.5; color: var(--texto-2); }
+.opcion .ir { justify-self: start; margin-top: 4px; background: var(--oro); color: var(--sobre-oro); border-radius: 9px; padding: 9px 18px; font-family: var(--font-d); }
+.extra { color: var(--texto-2); font-size: 0.92rem; line-height: 1.5; }
+.extra a { color: var(--oro); }
+@media (prefers-reduced-motion: reduce) { .opcion { transition: none; } .opcion:hover { transform: none; } }
+</style>
+<main>
+  <header>
+    <h1>Capataz</h1>
+    <p class="sub">Manda un trono o un paso de Semana Santa por las calles: ensayos, permisos, itinerario y la salida procesional.</p>
+  </header>
+  <div class="opciones">
+    <a class="opcion" href="trono.html">
+      <span class="donde">Málaga</span>
+      <h2>Tronos</h2>
+      <p>Eres el mayordomo de trono. Lo mandas con la campana: 7 toques suaves, el toque fuerte para meter el hombro y el toque grande para levantar.</p>
+      <ul><li>Trono de palio con arbotantes y 84 hombres de trono, sin relevos</li><li>Calles anchas; permisos del Ayuntamiento y la Agrupación</li></ul>
+      <span class="ir">Jugar con tronos</span>
+    </a>
+    <a class="opcion" href="paso.html">
+      <span class="donde">Sevilla</span>
+      <h2>Pasos</h2>
+      <p>Eres el capataz de un paso de misterio. Lo mandas con la voz y el llamador: «¡preparados!» y «¡a esta es!».</p>
+      <ul><li>Costaleros con relevos y agachaditos para los cables</li><li>Calles estrechas; permisos del Ayuntamiento y el Consejo</li></ul>
+      <span class="ir">Jugar con pasos</span>
+    </a>
+  </div>
+  <p class="extra">Los dos tienen los mismos cuatro niveles: ensayo en el polígono, en las afueras, de esquinas y cuestas, y la salida procesional. Empieza por el primero. Necesita conexión a internet; en iPhone, quita el modo silencio para oír la campana y la banda. También está <a href="mudanza.html">la mudanza</a>, el primer prototipo: un traslado corto de un paso hasta la parroquia.</p>
+</main>
