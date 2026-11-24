@@ -19,39 +19,54 @@ REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 OBL = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 DUCK = 0.15  # volumen de la canción mientras habla Sánchez
 
-def T(anio, tit, sub="", judicial=False, dur=2.0):
-    return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial, dur=dur)
+def lectura(*textos):
+    """Segundos para leerlo: 0,9 s base + 0,22 s por palabra (mín. 1,7 s)."""
+    n = sum(len(t.split()) for t in textos if t)
+    return max(1.7, 0.9 + 0.22 * n)
 
-def V(cita, contexto, voz, dur=3.0):
-    return dict(tipo="voz", cita=cita, contexto=contexto, voz=voz, dur=dur)
+def T(anio, tit, sub="", judicial=False, dur=None):
+    return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial,
+                dur=dur or lectura(tit, sub) + (0.3 if judicial else 0))
+
+def V(cita, contexto, voz, dur=None):
+    """Frase de Sánchez. voces/<voz>.mp4 (vídeo con sonido) o .mp3 (solo audio)."""
+    return dict(tipo="voz", cita=cita, contexto=contexto, voz=voz, dur=dur or lectura(cita) + 0.3)
+
+def R(clip, rotulo="Mientras tanto…", dur=1.8):
+    """Plano de contraste (Sánchez riendo, bailando…): reacciones/<clip>.mp4/.jpg. Si no existe, se salta."""
+    return dict(tipo="reac", clip=clip, rotulo=rotulo, dur=dur)
 
 TARJETAS = [
-    T("", "2018 – 2026", "Lo que ha pasado con Sánchez en el Gobierno", dur=2.5),
-    T("2020", "COVID: más de 100.000 muertos", "Los dos estados de alarma, declarados inconstitucionales por el TC", dur=2.2),
-    T("2020", "Ábalos y Delcy Rodríguez en Barajas", "Tenía prohibida la entrada en la UE"),
-    T("2021", "53 millones para rescatar Plus Ultra", "Una aerolínea pequeña, con fondos de la SEPI"),
-    T("2021", "Ceuta: 10.000 personas entran en dos días", "Mayo de 2021", dur=2.2),
-    T("2021", "Volcán de La Palma", "Quejas por el retraso de las ayudas"),
-    T("2022", "Ley del «solo sí es sí»", "Más de 1.000 agresores sexuales con la pena rebajada", dur=2.2),
-    T("2024", "Caso Koldo: mascarillas y comisiones", judicial=True),
-    T("2024", "Ley de Amnistía", "A cambio de los votos de Junts"),
-    T("2024", "Su mujer, Begoña Gómez, investigada", "Cátedra en la Complutense", True, 2.2),
-    T("2024", "DANA de Valencia: 229 muertos", "Y el presidente dijo…", dur=2.0),
-    V("Si necesitan más recursos, que los pidan", "Pedro Sánchez · 2 nov. 2024, tras la DANA", "dana"),
-    T("2025", "Apagón: España entera sin luz", "28 de abril"),
-    T("2025", "Su nº 3, Santos Cerdán, a prisión provisional", "", True, 2.2),
-    V("Son las cinco y no he comido", "Pedro Sánchez · junio 2025, cortando las preguntas sobre Cerdán", "cinco", 2.5),
-    T("2025", "Su hermano, enviado a juicio", "Por su puesto en la Diputación de Badajoz", True),
-    V("Hay jueces que no cumplen con la ley", "Pedro Sánchez · septiembre 2025", "jueces", 2.5),
-    V("¿La Fiscalía de quién depende? … Pues ya está", "Pedro Sánchez · noviembre 2019", "fiscalia", 2.8),
-    T("2025", "Su fiscal general, condenado por el Supremo", "Revelación de secretos", dur=2.2),
-    T("2025", "Ábalos y Koldo, a prisión provisional", "", True, 2.2),
-    T("2026", "Adamuz: 46 muertos", "Descarrilan dos trenes de alta velocidad · enero", dur=2.2),
-    T("2026", "Regularización masiva", "1,17 millones de solicitudes · plazo cerrado el 30 de junio", dur=2.2),
-    T("2026", "Ceuta otra vez: 72.000 entradas en dos días", "30 y 31 de julio, según Interior. La Ciudad habla de más de 96.000", dur=2.5),
-    T("2026", "Ley de nietos: el Supremo frena el voto de miles de nacionalizados", "Por el riesgo de un censo «irregular»", dur=2.5),
-    T("2026", "Urda: 69 muertos", "Choque de dos trenes de alta velocidad · octubre", dur=2.2),
-    T("", "Él no lo hizo solo.", "El 29-N, tú decides.", dur=3.2),
+    T("", "2018 – 2026", "Lo que ha pasado con Sánchez", dur=2.2),
+    T("2020", "COVID: +100.000 muertos", "Confinamiento inconstitucional"),
+    R("risa1"),
+    T("2020", "Ábalos y Delcy en Barajas"),
+    T("2021", "53 millones para Plus Ultra"),
+    T("2021", "Ceuta: 10.000 entradas en 2 días"),
+    T("2021", "La Palma", "Ayudas que no llegaban"),
+    T("2022", "«Solo sí es sí»", "+1.000 rebajas a agresores sexuales"),
+    T("2024", "Caso Koldo", "Mascarillas y comisiones", True),
+    T("2024", "Amnistía", "A cambio de 7 votos de Junts"),
+    T("2024", "Su mujer, investigada", "Begoña Gómez", True),
+    T("2024", "DANA: 229 muertos", "Y el presidente dijo…"),
+    V("Si necesitan más recursos, que los pidan", "2 nov. 2024", "dana"),
+    R("baile1"),
+    T("2025", "Apagón total", "28 de abril"),
+    T("2025", "Su nº 3, Cerdán, a prisión", "", True),
+    V("Son las cinco y no he comido", "Junio 2025, sobre Cerdán", "cinco"),
+    T("2025", "Su hermano, a juicio", "", True),
+    V("Hay jueces que no cumplen con la ley", "Septiembre 2025", "jueces"),
+    V("¿La Fiscalía de quién depende? Pues ya está", "2019", "fiscalia"),
+    T("2025", "Su fiscal general, condenado", "Por el Supremo"),
+    T("2025", "Ábalos y Koldo, a prisión", "", True),
+    T("2026", "Tren de Adamuz: 46 muertos"),
+    R("risa2"),
+    T("2026", "Regularización masiva", "1,17 millones de solicitudes"),
+    T("2026", "Ceuta: 72.000 entradas en 2 días", "96.000, según la Ciudad"),
+    T("2026", "Ley de nietos", "El Supremo frena su voto"),
+    T("2026", "Tren de Urda: 69 muertos"),
+    R("baile2"),
+    T("", "Si le vuelves a votar, no digas que no lo sabías.", "29-N", dur=3.5),
 ]
 
 PALETA = [((120, 10, 20), (15, 5, 10)), ((20, 20, 30), (90, 0, 15))]
@@ -81,8 +96,12 @@ def buscar(carpeta, base, exts):
             return p
 
 
-def fondo(i, t):
-    p = buscar("imagenes", f"{i:02d}", ("jpg", "jpeg", "png", "webp"))
+VIDEO = ("mp4", "mov", "m4v", "webm", "mkv")
+IMG = ("jpg", "jpeg", "png", "webp")
+
+
+def fondo(i, t, p=None):
+    p = p or buscar("imagenes", f"{i:02d}", IMG)
     S = (int(W * 1.1), int(H * 1.1))
     if p:
         im = Image.open(p).convert("RGB")
@@ -120,14 +139,25 @@ def texto_png(t, ruta):
     capa = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(capa)
     mw = W - 180
-    if t["tipo"] == "voz":
+    if t["tipo"] == "reac":
+        f = ImageFont.truetype(BOLD, 64)
+        w = d.textlength(t["rotulo"], font=f)
+        d.rounded_rectangle(((W - w) / 2 - 30, 1330, (W + w) / 2 + 30, 1420), 18, fill=(0, 0, 0, 170))
+        d.text(((W - w) / 2, 1338), t["rotulo"], font=f, fill="white")
+    elif t["tipo"] == "voz":
         fe = ImageFont.truetype(BOLD, 40)
         et = "🔊 EN SUS PALABRAS".replace("🔊 ", "")
         w = d.textlength(et, font=fe)
-        d.rounded_rectangle(((W - w) / 2 - 26, 640, (W + w) / 2 + 26, 708), 14, fill=(255, 210, 0, 255))
-        d.text(((W - w) / 2, 650), et, font=fe, fill="black")
-        f, ls = fit(d, f"«{t['cita']}»", OBL, mw, 92)
-        y = centrar(d, ls, f, 780, fill="white", stroke_width=5, stroke_fill="black")
+        if not t.get("video"):
+            d.rounded_rectangle(((W - w) / 2 - 26, 640, (W + w) / 2 + 26, 708), 14, fill=(255, 210, 0, 255))
+            d.text(((W - w) / 2, 650), et, font=fe, fill="black")
+        y0 = 1180 if t.get("video") else 780
+        if t.get("video"):
+            d.rectangle((0, y0 - 150, W, H - 330), fill=(0, 0, 0, 150))
+            d.rounded_rectangle(((W - w) / 2 - 26, y0 - 130, (W + w) / 2 + 26, y0 - 62), 14, fill=(255, 210, 0, 255))
+            d.text(((W - w) / 2, y0 - 120), et, font=fe, fill="black")
+        f, ls = fit(d, f"«{t['cita']}»", OBL, mw, 80 if t.get("video") else 92, 3)
+        y = centrar(d, ls, f, y0, fill="white", stroke_width=5, stroke_fill="black")
         fc, lc = fit(d, t["contexto"], REG, mw, 40, 3)
         centrar(d, lc, fc, y + 40, fill=(200, 200, 200))
     else:
@@ -182,12 +212,25 @@ def main():
     ap.add_argument("--salida", default=os.path.join(AQUI, "reel_sanchez.mp4"))
     args = ap.parse_args()
     tmp = tempfile.mkdtemp()
-    durs, fvoz = [], []
-    for t in TARJETAS:
-        v = buscar("voces", t["voz"], ("mp3", "m4a", "wav", "aac", "ogg", "mp4")) if t["tipo"] == "voz" else None
-        if t["tipo"] == "voz" and not v:
-            print(f"aviso: falta voces/{t['voz']}.mp3 — tarjeta sin voz")
-        fvoz.append(v)
+    tarjetas, durs, fvoz, fvid = [], [], [], []
+    for i, t in enumerate(TARJETAS):
+        t = dict(t, n=i)
+        v = vid = None
+        if t["tipo"] == "voz":
+            v = buscar("voces", t["voz"], ("mp3", "m4a", "wav", "aac", "ogg") + VIDEO)
+            if not v:
+                print(f"aviso: falta voces/{t['voz']}.mp4 — tarjeta sin voz")
+            elif v.rsplit(".", 1)[1].lower() in VIDEO:
+                vid = v
+        elif t["tipo"] == "reac":
+            vid = buscar("reacciones", t["clip"], VIDEO)
+            if not vid and not buscar("reacciones", t["clip"], IMG):
+                print(f"(se salta la reacción reacciones/{t['clip']}: no existe)")
+                continue
+        if not vid:
+            vid = buscar("imagenes", f"{i:02d}", VIDEO)
+        t["video"] = vid
+        tarjetas.append(t); fvoz.append(v); fvid.append(vid)
         durs.append(duracion(v) + 0.4 if v else t["dur"])
     if args.audio:  # encajar cada corte en un beat de la canción
         per, off = ritmo(args.audio, args.inicio_cancion)
@@ -204,20 +247,30 @@ def main():
             nuevos.append(fin_b - fin_prev); fin_prev = fin_b
         durs = nuevos
     clips, voces, t0 = [], [], 0.0
-    for i, t in enumerate(TARJETAS):
+    for i, t in enumerate(tarjetas):
         dur = durs[i]
         if fvoz[i]:
             voces.append((fvoz[i], t0 + 0.2, t0, t0 + dur))
         bg, tx = os.path.join(tmp, f"bg{i:02d}.png"), os.path.join(tmp, f"tx{i:02d}.png")
         clip = os.path.join(tmp, f"c{i:02d}.mp4")
-        fondo(i, t).save(bg)
         texto_png(t, tx)
         n = round(dur * FPS)
-        vf = (f"[0:v]scale={int(W*1.1)}:{int(H*1.1)},zoompan=z='1+0.08*on/{n}':d={n}"
-              f":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}[b];"
-              f"[1:v]fade=t=in:st=0:d=0.15:alpha=1[t];[b][t]overlay=0:0,format=yuv420p")
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", bg, "-loop", "1", "-i", tx,
-                        "-filter_complex", vf, "-frames:v", str(n), "-c:v", "libx264", "-crf", "18", clip], check=True)
+        if fvid[i]:  # vídeo de fondo: recorte a vertical y, si es dato, oscurecido
+            osc = "" if t["tipo"] in ("voz", "reac") else ",eq=brightness=-0.25"
+            vf = (f"[0:v]fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1"
+                  f"{osc},tpad=stop_mode=clone:stop_duration=30[b];"
+                  f"[1:v]fade=t=in:st=0:d=0.15:alpha=1[t];[b][t]overlay=0:0,format=yuv420p")
+            entrada = ["-i", fvid[i]]
+        else:
+            img = buscar("reacciones", t["clip"], IMG) if t["tipo"] == "reac" else None
+            fondo(t["n"], t, img).save(bg)
+            vf = (f"[0:v]scale={int(W*1.1)}:{int(H*1.1)},zoompan=z='1+0.08*on/{n}':d={n}"
+                  f":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps={FPS}[b];"
+                  f"[1:v]fade=t=in:st=0:d=0.15:alpha=1[t];[b][t]overlay=0:0,format=yuv420p")
+            entrada = ["-loop", "1", "-i", bg]
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *entrada, "-loop", "1", "-i", tx,
+                        "-filter_complex", vf, "-frames:v", str(n), "-an", "-c:v", "libx264", "-crf", "18", clip],
+                       check=True)
         clips.append(clip)
         t0 += n / FPS
     total = t0
