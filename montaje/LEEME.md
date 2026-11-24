@@ -8,7 +8,7 @@ python hacer_reel.py --audio cancion.mp3 --inicio-cancion <s>   # con canción, 
 | Carpeta / archivo | Qué es | Fuente |
 |---|---|---|
 | `voces/dana.mp4` | «Si necesita más recursos, que los pida» (2 nov 2024, Moncloa) | YouTube vhoLEqDQYQs, 3,24 s |
-| `voces/cinco.mp4` | «Son las cinco, no he comido» (jun 2025, Ferraz) | YouTube Cl1oq0QoLtA, 0,40 s |
+| `voces/cinco.mp4` | «Son las cinco, no he comido» (jun 2025, rueda de prensa en Ferraz) | YouTube Cl1oq0QoLtA, 0,40 s |
 | `voces/jueces.mp4` | «Hay jueces haciendo política y políticos que tratan de hacer justicia» (sept 2025, TVE) | YouTube 8bcgPpIp5Dg, 4,84 s |
 | `voces/fiscalia.mp4` | «La Fiscalía, ¿de quién depende? … Pues ya está» (nov 2019, RNE) | YouTube wnD_JxaN-2k, 28,0 s |
 | `reacciones/risa1.mp4` | Congreso, nov 2023 | zc2k-dycS5g |
@@ -51,7 +51,7 @@ Fuentes de las tarjetas añadidas (nov. 2026):
 - Impuestos: Impuestómetro 2026 del Instituto Juan de Mariana (63 explícitas + 46 por no deflactar
   + 32 catastrales = 141). Hacienda discute el recuento total.
 
-Los rótulos de las reacciones solo dicen quién, dónde y cuándo: nada de insinuaciones sobre su estado.
+Los planos de bailes y risas solo llevan la fecha (sin nombres ni comentarios), para que no se confundan con el momento de la tarjeta anterior.
 
 Cortes de voz en el vídeo (120 s): 35–37,5 s · 45,5–47,5 s · 57–70,5 s. Si añades la música en TikTok/IG,
 bájala ahí. En TikTok web las canciones de la biblioteca duran 60 s y no se pueden dividir: volumen único
