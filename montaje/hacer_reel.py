@@ -24,8 +24,8 @@ def lectura(*textos):
     n = sum(len(t.split()) for t in textos if t)
     return max(1.7, 0.9 + 0.22 * n)
 
-def T(anio, tit, sub="", judicial=False, dur=None):
-    return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial,
+def T(anio, tit, sub="", judicial=False, dur=None, sello=""):
+    return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial, sello=sello,
                 dur=dur or lectura(tit, sub) + (0.3 if judicial else 0))
 
 def V(cita, contexto, voz, dur=None):
@@ -66,7 +66,7 @@ TARJETAS = [
     T("2026", "Ley de nietos", "El Supremo frena su voto"),
     T("2026", "Tren de Urda: 69 muertos"),
     R("baile2"),
-    T("", "Si le vuelves a votar, no digas que no lo sabías.", "29-N", dur=3.5),
+    T("", "Si le vuelves a votar, no digas que no lo sabías.", dur=3.5, sello="29-N"),
 ]
 
 PALETA = [((120, 10, 20), (15, 5, 10)), ((20, 20, 30), (90, 0, 15))]
@@ -161,7 +161,7 @@ def texto_png(t, ruta):
         fc, lc = fit(d, t["contexto"], REG, mw, 40, 3)
         centrar(d, lc, fc, y + 40, fill=(200, 200, 200))
     else:
-        y = 700 if t["anio"] else 760
+        y = 520 if t.get("sello") else (700 if t["anio"] else 760)
         if t["anio"]:
             f = ImageFont.truetype(BOLD, 64)
             w = d.textlength(t["anio"], font=f)
@@ -173,6 +173,12 @@ def texto_png(t, ruta):
         if t["sub"]:
             fs, ls = fit(d, t["sub"], REG, mw, 54)
             y = centrar(d, ls, fs, y + 25, fill=(255, 225, 120), stroke_width=4, stroke_fill="black")
+        if t.get("sello"):
+            fb = ImageFont.truetype(BOLD, 210)
+            w = d.textlength(t["sello"], font=fb)
+            y += 50
+            d.rounded_rectangle(((W - w) / 2 - 50, y, (W + w) / 2 + 50, y + 270), 30, fill=(220, 20, 40, 255))
+            d.text(((W - w) / 2, y + 15), t["sello"], font=fb, fill="white")
         if t["judicial"]:
             centrar(d, ["Caso abierto · presunción de inocencia"], ImageFont.truetype(REG, 34), y + 30,
                     fill=(230, 230, 230), stroke_width=2, stroke_fill="black")
