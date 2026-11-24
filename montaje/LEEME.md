@@ -46,4 +46,4 @@ Fuentes de las tarjetas añadidas (nov. 2026):
 - Impuestos: Impuestómetro 2026 del Instituto Juan de Mariana (63 explícitas + 46 por no deflactar
   + 32 catastrales = 141). Hacienda discute el recuento total.
 
-Si añades la música en TikTok/IG, bájala en: 31–34,5 s · 43,5–46,5 s · 55–69 s.
+Si añades la música en TikTok/IG, bájala en: 33–36 s · 43,5–46,5 s · 55–69 s.

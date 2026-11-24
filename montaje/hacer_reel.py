@@ -44,8 +44,8 @@ def R(clip, rotulo="Mientras tanto…", dur=1.7):
 
 TARJETAS = [
     T("", "2018 – 2026", "Lo que ha pasado con Sánchez", dur=1.9, img="intro"),
+    R("baile1", "Madrid, feb. 2019"),
     T("2020", "COVID: +100.000 muertos", "Confinamiento inconstitucional", img="covid"),
-    R("risa1", "Congreso, nov. 2023"),
     T("2020", "Ábalos y Delcy en Barajas", img="delcy"),
     T("2021", "53 millones para Plus Ultra", img="plusultra"),
     T("2021", "Ceuta: 10.000 entradas en 2 días", img="ceuta21"),
@@ -54,13 +54,13 @@ TARJETAS = [
     T("2022", "«Solo sí es sí»", "+1.000 rebajas a agresores sexuales", img="solosi"),
     T("2022", "Suprime la sedición", "Y rebaja la malversación"),
     T("2023", "«Tito Berni», diputado del PSOE", "A juicio por cohecho (caso Mediador)", True, img="tito"),
+    R("risa1", "Congreso, nov. 2023"),
     T("2024", "Caso Koldo", "Mascarillas y comisiones", True, img="koldo"),
     T("2024", "Su mujer, investigada", "Begoña Gómez", True, img="begona"),
     T("2024", "Amnistía", "A cambio de 7 votos de Junts", img="amnistia"),
     T("2024", "ERE: el Constitucional anula las condenas", "Chaves y Griñán · 680 M€ malversados", img="ere"),
     T("2024", "DANA: 229 muertos", "Y el presidente dijo…", img="dana"),
     V("Si necesita más recursos, que los pida", "2 nov. 2024, comparecencia tras la DANA", "dana"),
-    R("baile1", "Madrid, feb. 2019"),
     T("2025", "La expareja de Ábalos cobró de empresas públicas", "Admitió en el Supremo que no fue ni un día"),
     T("2025", "Apagón total", "28 de abril", img="apagon"),
     T("2025", "Su nº 3, Cerdán, a prisión", "", True, img="cerdan"),
@@ -72,8 +72,8 @@ TARJETAS = [
     V("¿La Fiscalía de quién depende? Pues ya está", "Nov. 2019, entrevista en RNE", "fiscalia"),
     T("2025", "Su fiscal general, condenado", "Por el Supremo", img="fiscal"),
     T("2025", "Ábalos y Koldo, a prisión", "", True, img="abalos"),
-    T("2026", "Tren de Adamuz: 46 muertos", img="adamuz"),
     R("risa2", "Rueda de prensa G20, nov. 2025"),
+    T("2026", "Tren de Adamuz: 46 muertos", img="adamuz"),
     T("2026", "Tercer año sin Presupuestos", "Siguen los de 2023, prorrogados"),
     T("2026", "Regularización masiva", "1,17 millones de solicitudes", img="regularizacion"),
     T("2026", "Zapatero, imputado en el caso Plus Ultra", "Primer expresidente imputado", True, img="zapatero"),
@@ -84,9 +84,9 @@ TARJETAS = [
     T("2026", "Su mujer, a juicio con jurado", "Tráfico de influencias y malversación", True, img="begona_juicio"),
     T("2026", "Ley de nietos", "El Supremo frena su voto"),
     T("2026", "63 subidas de impuestos y cotizaciones", "141 con las encubiertas · Instituto Juan de Mariana"),
-    T("2026", "Tren de Urda: 69 muertos", img="urda"),
     R("baile2", "Mitin en Fuenlabrada, oct. 2026"),
-    T("", "Si le vuelves a votar, no digas que no lo sabías.", dur=3.5, sello="29-N"),
+    T("2026", "Tren de Urda: 69 muertos", img="urda"),
+    T("", "Yo sí te voy a votar…\n¿sabiendo todo esto?", dur=3.5, sello="29-N"),
 ]
 
 # Encuadre por clip para el recorte vertical: (centro_x, centro_y, zoom), en fracciones del fotograma
@@ -122,14 +122,16 @@ PALETA = [((120, 10, 20), (15, 5, 10)), ((20, 20, 30), (90, 0, 15))]
 def fit(draw, texto, fuente_path, max_w, tam, max_lineas=4):
     while tam > 30:
         f = ImageFont.truetype(fuente_path, tam)
-        lineas, act = [], ""
-        for p in texto.split():
-            prueba = (act + " " + p).strip()
-            if draw.textlength(prueba, font=f) <= max_w:
-                act = prueba
-            else:
-                lineas.append(act); act = p
-        lineas.append(act)
+        lineas = []
+        for parrafo in texto.split("\n"):  # respeta saltos manuales
+            act = ""
+            for p in parrafo.split():
+                prueba = (act + " " + p).strip()
+                if draw.textlength(prueba, font=f) <= max_w:
+                    act = prueba
+                else:
+                    lineas.append(act); act = p
+            lineas.append(act)
         if len(lineas) <= max_lineas and all(draw.textlength(l, font=f) <= max_w for l in lineas):
             return f, lineas
         tam -= 6
@@ -219,7 +221,7 @@ def texto_png(t, ruta):
             d.rounded_rectangle(((W - w) / 2 - 30, y - 15, (W + w) / 2 + 30, y + 85), 18, fill=(220, 20, 40, 255))
             d.text(((W - w) / 2, y), t["anio"], font=f, fill="white")
             y += 140
-        f, ls = fit(d, t["tit"], BOLD, mw, 96)
+        f, ls = fit(d, t["tit"], BOLD, mw, 96, 2 if t.get("sello") else 4)
         y = centrar(d, ls, f, y, fill="white", stroke_width=6, stroke_fill="black")
         if t["sub"]:
             fs, ls = fit(d, t["sub"], REG, mw, 54)
