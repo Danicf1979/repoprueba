@@ -14,15 +14,20 @@ from PIL import Image, ImageDraw, ImageFont
 
 W, H, FPS = 1080, 1920, 30
 AQUI = os.path.dirname(os.path.abspath(__file__))
-BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-REG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-OBL = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+def _fuente(*cands):
+    for c in cands:
+        if os.path.exists(c):
+            return c
+    raise SystemExit(f"No encuentro ninguna fuente: {cands}")
+BOLD = _fuente("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "C:/Windows/Fonts/arialbd.ttf")
+REG = _fuente("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "C:/Windows/Fonts/arial.ttf")
+OBL = BOLD
 DUCK = 0.15  # volumen de la canción mientras habla Sánchez
 
 def lectura(*textos):
-    """Segundos para leerlo: 0,9 s base + 0,22 s por palabra (mín. 1,7 s)."""
+    """Segundos para leerlo: 0,5 s base + 0,2 s por palabra (mín. 1,4 s)."""
     n = sum(len(t.split()) for t in textos if t)
-    return max(1.7, 0.9 + 0.22 * n)
+    return max(1.4, 0.5 + 0.2 * n)
 
 def T(anio, tit, sub="", judicial=False, dur=None, sello=""):
     return dict(tipo="dato", anio=anio, tit=tit, sub=sub, judicial=judicial, sello=sello,
@@ -32,14 +37,14 @@ def V(cita, contexto, voz, dur=None):
     """Frase de Sánchez. voces/<voz>.mp4 (vídeo con sonido) o .mp3 (solo audio)."""
     return dict(tipo="voz", cita=cita, contexto=contexto, voz=voz, dur=dur or lectura(cita) + 0.3)
 
-def R(clip, rotulo="Mientras tanto…", dur=1.8):
+def R(clip, rotulo="Mientras tanto…", dur=1.7):
     """Plano de contraste (Sánchez riendo, bailando…): reacciones/<clip>.mp4/.jpg. Si no existe, se salta."""
     return dict(tipo="reac", clip=clip, rotulo=rotulo, dur=dur)
 
 TARJETAS = [
-    T("", "2018 – 2026", "Lo que ha pasado con Sánchez", dur=2.2),
+    T("", "2018 – 2026", "Lo que ha pasado con Sánchez", dur=1.9),
     T("2020", "COVID: +100.000 muertos", "Confinamiento inconstitucional"),
-    R("risa1"),
+    R("risa1", "Congreso, nov. 2023"),
     T("2020", "Ábalos y Delcy en Barajas"),
     T("2021", "53 millones para Plus Ultra"),
     T("2021", "Ceuta: 10.000 entradas en 2 días"),
@@ -49,25 +54,53 @@ TARJETAS = [
     T("2024", "Amnistía", "A cambio de 7 votos de Junts"),
     T("2024", "Su mujer, investigada", "Begoña Gómez", True),
     T("2024", "DANA: 229 muertos", "Y el presidente dijo…"),
-    V("Si necesitan más recursos, que los pidan", "2 nov. 2024", "dana"),
-    R("baile1"),
+    V("Si necesita más recursos, que los pida", "2 nov. 2024, comparecencia tras la DANA", "dana"),
+    R("baile1", "Madrid, feb. 2019"),
     T("2025", "Apagón total", "28 de abril"),
     T("2025", "Su nº 3, Cerdán, a prisión", "", True),
-    V("Son las cinco y no he comido", "Junio 2025, sobre Cerdán", "cinco"),
+    V("Son las cinco, no he comido", "Junio 2025, sobre Cerdán", "cinco"),
     T("2025", "Su hermano, a juicio", "", True),
-    V("Hay jueces que no cumplen con la ley", "Septiembre 2025", "jueces"),
-    V("¿La Fiscalía de quién depende? Pues ya está", "2019", "fiscalia"),
+    V("Hay jueces haciendo política y políticos que tratan de hacer justicia", "Septiembre 2025, entrevista en TVE", "jueces"),
+    V("¿La Fiscalía de quién depende? Pues ya está", "Nov. 2019, entrevista en RNE", "fiscalia"),
     T("2025", "Su fiscal general, condenado", "Por el Supremo"),
     T("2025", "Ábalos y Koldo, a prisión", "", True),
     T("2026", "Tren de Adamuz: 46 muertos"),
-    R("risa2"),
+    R("risa2", "Rueda de prensa G20, nov. 2025"),
     T("2026", "Regularización masiva", "1,17 millones de solicitudes"),
     T("2026", "Ceuta: 72.000 entradas en 2 días", "96.000, según la Ciudad"),
+    R("vacaciones", "Mientras tanto…\nAgosto 2026, de vacaciones en La Mareta", dur=2.6),
     T("2026", "Ley de nietos", "El Supremo frena su voto"),
     T("2026", "Tren de Urda: 69 muertos"),
-    R("baile2"),
+    R("baile2", "Mitin en Fuenlabrada, oct. 2026"),
     T("", "Si le vuelves a votar, no digas que no lo sabías.", dur=3.5, sello="29-N"),
 ]
+
+# Encuadre por clip para el recorte vertical: (centro_x, centro_y, zoom), en fracciones del fotograma
+# original. Sin entrada = recorte centrado sin zoom.
+ENCUADRE = {}
+try:
+    with open(os.path.join(AQUI, "encuadre.json"), encoding="utf-8") as fh:
+        ENCUADRE = {k: tuple(v) for k, v in json.load(fh).items()}
+except FileNotFoundError:
+    pass
+
+
+def recorte(ruta, clave):
+    """Filtro crop 9:16 centrado en el encuadre de `clave` (o centrado sin zoom)."""
+    # Fondos de archivo (NN): zoom ligero hacia arriba para dejar fuera los rótulos de las cadenas.
+    defecto = (0.5, 0.42, 1.3) if clave.isdigit() else (0.5, 0.5, 1.0)
+    cx, cy, z = ENCUADRE.get(clave, defecto)
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                        "stream=width,height", "-of", "csv=p=0", ruta], capture_output=True, text=True, check=True)
+    iw, ih = map(int, r.stdout.strip().split(",")[:2])
+    ch = ih / z
+    cw = ch * W / H
+    if cw > iw:
+        cw = iw; ch = cw * H / W
+    x = min(max(cx * iw - cw / 2, 0), iw - cw)
+    y = min(max(cy * ih - ch / 2, 0), ih - ch)
+    return f"crop={int(cw)}:{int(ch)}:{int(x)}:{int(y)},"
+
 
 PALETA = [((120, 10, 20), (15, 5, 10)), ((20, 20, 30), (90, 0, 15))]
 
@@ -140,10 +173,14 @@ def texto_png(t, ruta):
     d = ImageDraw.Draw(capa)
     mw = W - 180
     if t["tipo"] == "reac":
-        f = ImageFont.truetype(BOLD, 64)
-        w = d.textlength(t["rotulo"], font=f)
-        d.rounded_rectangle(((W - w) / 2 - 30, 1330, (W + w) / 2 + 30, 1420), 18, fill=(0, 0, 0, 170))
-        d.text(((W - w) / 2, 1338), t["rotulo"], font=f, fill="white")
+        y = 1330
+        for k, linea in enumerate(t["rotulo"].split("\n")):
+            f, ls = fit(d, linea, BOLD, mw, 64 if k == 0 else 46, 2)
+            for l in ls:
+                w = d.textlength(l, font=f)
+                d.rounded_rectangle(((W - w) / 2 - 30, y, (W + w) / 2 + 30, y + f.size + 26), 18, fill=(0, 0, 0, 170))
+                d.text(((W - w) / 2, y + 8), l, font=f, fill="white")
+                y += f.size + 36
     elif t["tipo"] == "voz":
         fe = ImageFont.truetype(BOLD, 40)
         et = "🔊 EN SUS PALABRAS".replace("🔊 ", "")
@@ -263,7 +300,8 @@ def main():
         n = round(dur * FPS)
         if fvid[i]:  # vídeo de fondo: recorte a vertical y, si es dato, oscurecido
             osc = "" if t["tipo"] in ("voz", "reac") else ",eq=brightness=-0.25"
-            vf = (f"[0:v]fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1"
+            clave = t.get("voz") or t.get("clip") or f"{i:02d}"
+            vf = (f"[0:v]fps={FPS},{recorte(fvid[i], clave)}scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1"
                   f"{osc},tpad=stop_mode=clone:stop_duration=30[b];"
                   f"[1:v]fade=t=in:st=0:d=0.15:alpha=1[t];[b][t]overlay=0:0,format=yuv420p")
             entrada = ["-i", fvid[i]]
@@ -281,8 +319,8 @@ def main():
         t0 += n / FPS
     total = t0
     lista = os.path.join(tmp, "lista.txt")
-    with open(lista, "w") as fh:
-        fh.writelines(f"file '{c}'\n" for c in clips)
+    with open(lista, "w", encoding="utf-8") as fh:
+        fh.writelines(f"file '{c.replace(os.sep, '/')}'\n" for c in clips)
 
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lista]
     filtros, mezcla = [], []
@@ -296,7 +334,7 @@ def main():
     for k, (v, ini, _, _) in enumerate(voces):
         cmd += ["-i", v]
         ms = int(ini * 1000)
-        filtros.append(f"[{base+k}:a]aresample=44100,volume=1.6,adelay={ms}|{ms}[v{k}]")
+        filtros.append(f"[{base+k}:a]aresample=44100,volume=1.6,alimiter=limit=0.85:level=false,adelay={ms}|{ms}[v{k}]")
         mezcla.append(f"[v{k}]")
     cmd += ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
     mezcla.append(f"[{base+len(voces)}:a]")
