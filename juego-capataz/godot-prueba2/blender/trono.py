@@ -348,62 +348,54 @@ lagrima = material('lagrima', (0.9, 0.95, 1.0), 0.05, alpha=0.5)
 
 X, Y, Z = 0.0, Y_IMG, Z_IMG
 def T(v): return Vector((X + v[0], Y + v[1], Z + v[2]))
-sy = objeto('saya', torno([(0.4, 0), (0.39, 0.1), (0.365, 0.3), (0.335, 0.5), (0.3, 0.64), (0.24, 0.74), (0.14, 0.8), (0.0, 0.82)], 36, rep_u=3, rep_v=1.5), saya)
+sy = objeto('saya', torno([(0.34, 0), (0.33, 0.08), (0.28, 0.3), (0.21, 0.5), (0.15, 0.62), (0.11, 0.72), (0.0, 0.74)], 36, rep_u=3, rep_v=1.5), saya)
 sy.location = T((0, 0, 0))
-# Manto sobre la cabeza (la corona va encima) que cae cubriendo los hombros y se abre en triángulo hasta la peana.
-# Cada fila: (radio, altura, media abertura delantera en rad): estrecha junto a la cara, más abierta abajo (se ve la saya).
-FILAS_M = [(0.46, 0.0, 0.58), (0.44, 0.15, 0.55), (0.415, 0.35, 0.5), (0.39, 0.55, 0.46), (0.375, 0.67, 0.44), (0.35, 0.735, 0.46),
-           (0.285, 0.785, 0.5), (0.21, 0.83, 0.56), (0.168, 0.88, 0.56), (0.16, 0.95, 0.52), (0.135, 1.02, 0.45), (0.085, 1.07, 0.3),
-           (0.012, 1.095, 0.1)]   # hombros anchos justo bajo la barbilla y caída casi recta, como una campana
-SEG_M = 40
+# Manto: una sola pieza, como en Málaga. Pasa por encima de la cabeza (el tocado va encima), cae por los hombros en
+# triángulo hasta la peana y por detrás se alarga en la cola: la parte de la espalda se estira hacia atrás, baja a la
+# cubierta y sigue sobre los varales traseros hasta casi su final, abriéndose a lo ancho. Bordado simétrico
+# (textura_manto): el eje del dibujo va por la espalda y la cenefa queda en la abertura delantera y en el bajo.
+cola_m = material('manto', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto', MANTO, nivel=V['bordado_manto']), escala_nor=0.8)
+def smooth(t): return t * t * (3 - 2 * t)
+# perfil (radio, altura, media abertura delantera en rad), de abajo arriba
+PERFIL_M = [(0.46, 0.0, 0.95), (0.44, 0.1, 0.92), (0.4, 0.3, 0.85), (0.345, 0.5, 0.78), (0.295, 0.64, 0.72), (0.25, 0.74, 0.66),
+            (0.205, 0.84, 0.6), (0.178, 0.92, 0.56), (0.162, 0.98, 0.52), (0.135, 1.03, 0.45), (0.085, 1.075, 0.3), (0.012, 1.095, 0.1)]
+FILAS = [Vector(p) for p in catmull(PERFIL_M, 4)]            # filas intermedias, para que la cola salga suave
+Z_TOP = 1.095
+LARGO_COLA = (L2 + 1.33) - Y_IMG                              # de la imagen hasta casi el final de los varales traseros
+BAJA_COLA = Z_IMG - (Z_CUB - 0.02)                            # de la peana a la altura de la cubierta
+SEG_M = 72
 bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); anillos_m = []
-for (r, z, a_) in FILAS_M:
-    anillos_m.append([bm.verts.new(T((r * math.sin(a_ + (2 * math.pi - 2 * a_) * i / SEG_M), -r * math.cos(a_ + (2 * math.pi - 2 * a_) * i / SEG_M), z)))
-                      for i in range(SEG_M + 1)])
-for k in range(len(anillos_m) - 1):
+for p in FILAS:
+    r, z, a_ = p.x, p.y, p.z
+    tau = max(0.0, 1 - z / Z_TOP)                             # 0 en lo alto de la cabeza, 1 en el bajo
+    fila = []
+    for i in range(SEG_M + 1):
+        th = a_ + (2 * math.pi - 2 * a_) * i / SEG_M
+        x, y = r * math.sin(th), -r * math.cos(th)
+        atras = max(0.0, -math.cos(th))                       # 1 justo en la espalda, 0 a los lados y delante
+        k = atras ** 1.4 * tau ** 1.35
+        y += LARGO_COLA * k                                   # la espalda se estira hacia atrás
+        x *= 1 + 1.9 * atras ** 0.6 * tau ** 1.6              # y se abre a lo ancho
+        zz = z - BAJA_COLA * atras ** 0.8 * tau ** 2.2        # y baja hasta la cubierta
+        yy = Y_IMG + y
+        if yy > L2:                                           # pasada la mesa, los lados cuelgan un poco
+            zz -= 0.18 * min(1, (yy - L2) / 0.6) * (1 - atras) ** 2
+        if yy < L2 + 0.05:                                    # sobre la cubierta, nunca por debajo de ella
+            zz = max(zz, Z_CUB + 0.012 - Z_IMG)
+        fila.append(bm.verts.new(T((x, y, zz))))
+    anillos_m.append(fila)
+nf = len(anillos_m) - 1
+for k in range(nf):
     for i in range(SEG_M):
         f = bm.faces.new((anillos_m[k][i], anillos_m[k][i + 1], anillos_m[k + 1][i + 1], anillos_m[k + 1][i]))
-        for lp, uv in zip(f.loops, [(i / SEG_M * 4, k / 6), ((i + 1) / SEG_M * 4, k / 6), ((i + 1) / SEG_M * 4, (k + 1) / 6), (i / SEG_M * 4, (k + 1) / 6)]):
+        # u a lo ancho (0,5 = espalda), v de la cabeza (0) al bajo y final de la cola (1)
+        for lp, uv in zip(f.loops, [(i / SEG_M, 1 - k / nf), ((i + 1) / SEG_M, 1 - k / nf), ((i + 1) / SEG_M, 1 - (k + 1) / nf), (i / SEG_M, 1 - (k + 1) / nf)]):
             lp[capa].uv = uv
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-borde_m = [anillos_m[k][0].co.copy() for k in range(len(anillos_m) - 2, -1, -1)] + [v.co.copy() for v in anillos_m[0][1:]] + \
-          [anillos_m[k][-1].co.copy() for k in range(1, len(anillos_m) - 1)]
-mt = objeto('manto', bm, manto_m, subdiv=1)
-s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickness = 0.012; mt.modifiers.move(1, 0)
-# cola del manto, como los de Málaga: nace en punta detrás de la corona, baja en rampa abombada, cada vez más
-# ancha, con los bordes caídos, y acaba redondeada sobre los varales traseros, por encima de las cabezas de los
-# hombres de trono. Bordado simétrico propio (textura_manto) y galón dorado alrededor.
-cola_m = material('manto_cola', MANTO, 0.65, sheen=0.25, tex=textura_manto('manto_cola', MANTO, nivel=V['bordado_manto']), escala_nor=0.8)
-def smooth(t): return t * t * (3 - 2 * t)
-A = Vector((0.0, Y_IMG + 0.17, Z_IMG + 0.98))
-E_y, E_z = L2 + 1.33, Z_CUB - 0.02
-NS, NT = 44, 28
-bm = bmesh.new(); capa = bm.loops.layers.uv.verify(); filas = []
-for j in range(NS + 1):
-    s_ = j / NS; fila = []
-    for i in range(NT + 1):
-        t = -1 + 2 * i / NT
-        sr = s_ * (1 - 0.22 * (1 - math.sqrt(max(0.0, 1 - t * t))))        # final redondeado
-        w = min(1.15, 0.05 + 1.1 * sr ** 0.8)
-        y = A.y + (E_y - A.y) * sr
-        zc_ = A.z + (E_z - A.z) * (1 - (1 - sr) ** 1.5) + 0.1 * sr * (1 - t * t)
-        # los lados caen: sobre la cubierta llegan hasta ella (no queda hueco por debajo); pasada la mesa cuelgan
-        d = smooth(min(1, max(0, (y - Y_IMG - 0.25) / 0.5)))
-        g = smooth(min(1, max(0, (y - L2 + 0.1) / 0.35)))
-        caida_cub = d * (zc_ - Z_CUB - 0.01) * abs(t) ** 2.2 + (1 - d) * 0.36 * sr * abs(t) ** 4
-        caida_fuera = (0.36 * sr + 0.12) * abs(t) ** 3
-        z = zc_ - ((1 - g) * caida_cub + g * caida_fuera)
-        fila.append(bm.verts.new((t * w, y, z)))
-    filas.append(fila)
-for j in range(NS):
-    for i in range(NT):
-        f = bm.faces.new((filas[j][i], filas[j][i + 1], filas[j + 1][i + 1], filas[j + 1][i]))
-        for lp, uv in zip(f.loops, [(i / NT, j / NS), ((i + 1) / NT, j / NS), ((i + 1) / NT, (j + 1) / NS), (i / NT, (j + 1) / NS)]):
-            lp[capa].uv = uv
-borde = [f[0].co.copy() for f in filas][::-1] + [v.co.copy() for v in filas[-1]] + [f[-1].co.copy() for f in filas]
-cola = objeto('manto_cola', bm, cola_m)
-cola.modifiers.new('grosor', 'SOLIDIFY').thickness = 0.012
-objeto('cola_galon', tubo([p + Vector((0, 0, 0.006)) for p in borde[1:-1]], 0.016, segs=6, tapas=False), oro)
+borde_m = [anillos_m[k][0].co.copy() for k in range(nf - 1, -1, -1)] + [v.co.copy() for v in anillos_m[0][1:]] + \
+          [anillos_m[k][-1].co.copy() for k in range(1, nf)]
+mt = objeto('manto', bm, cola_m)
+s = mt.modifiers.new('grosor', 'SOLIDIFY'); s.thickness = 0.012
 objeto('manto_galon', tubo(borde_m, 0.011, segs=6, tapas=False), oro)       # galón por la abertura y el bajo
 
 # cabeza, toca y rostrillo
@@ -431,8 +423,8 @@ objeto('boca', tubo([sup(-0.009 + 0.018 * t, -0.056 + 0.0025 * math.sin(math.pi 
 
 # manos juntas sobre el pecho con el pañuelo
 for s_ in (-1, 1):
-    objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.33, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
-objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.345, 0.55))), encaje)
+    objeto('mano', elipsoide((0.026, 0.02, 0.048), T((s_ * 0.017, -0.232, 0.6))), piel).rotation_euler = (0.3, s_ * 0.25, 0)
+objeto('panuelo', elipsoide((0.026, 0.012, 0.03), T((0.012, -0.245, 0.55))), encaje)
 
 # tocado (opción de gestión): corona con ráfaga, corona sola, solo ráfaga, diadema o aro de estrellas
 TOC = V['tocado']

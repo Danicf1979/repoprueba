@@ -44,9 +44,10 @@ hermandad**.
 
 **Catálogo para la gestión** (cada trono cambia; según las fotos de tronos de Málaga):
 
-- **Manto de cola**: nace en punta detrás de la corona y cae por los lados hasta la cubierta (sin dejar hueco debajo); baja en rampa abombada, cada vez más ancho, y acaba
-  redondeado sobre los varales traseros, con los bordes caídos. Varía el color del terciopelo (granate, morado, azul,
-  negro, blanco, rojo) y el bordado: un gran dibujo simétrico con motivo central (escudo, paloma, anagrama) y cenefa.
+- **Manto**: una sola pieza, como en Málaga: pasa por encima de la cabeza (el tocado va encima), cae por los hombros
+  en triángulo hasta la peana y por la espalda se alarga en cola sobre la cubierta y los varales traseros, hasta casi su
+  final, abriéndose a lo ancho. Varía el color del terciopelo y el bordado (cinco niveles; motivo central: escudo,
+  paloma, anagrama), con cenefa en la abertura y el bajo.
 - **Bordado** (palio —techo y bambalinas— y manto, por separado; los faldones del trono van lisos con galón): cinco niveles, del más barato al más caro, con su plazo de
   taller orientativo: liso (solo galón, una temporada), sencillo (motivos sueltos, un año), medio (dos años),
   cargado (roleos gruesos y filigrana, tres o cuatro años) y riquísimo (casi todo oro, a realce, cinco años o más).
